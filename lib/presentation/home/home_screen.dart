@@ -1,55 +1,31 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/discover/discover_screen.dart';
-import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
-import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  static const double _marginMobile = 20;
-  static const double _sheetTopRadius = 24;
+  static double get _sheetTopRadius => 30.r;
+  static double get _gapBalanceToActions => 210.h;
+  static double get _gapActionsToSheet => 20.h;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _navIndex = 0;
   final _destinationController = TextEditingController();
 
   @override
   void dispose() {
     _destinationController.dispose();
     super.dispose();
-  }
-
-  void _openEventDetail(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
-    );
-  }
-
-  void _openJetski(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const JetskiScreen()),
-    );
-  }
-
-  void _onNavTap(BuildContext context, int index) {
-    setState(() => _navIndex = index);
-    if (index == 0) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const DiscoverScreen()),
-      );
-    } else if (index == 1) {
-      _openJetski(context);
-    } else if (index == 2) {
-      _openEventDetail(context);
-    }
   }
 
   @override
@@ -61,14 +37,26 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const _MapBackground(),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _HomeAppBar(),
-              const SizedBox(height: 8),
+              SizedBox(height: 12.h),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: HomeScreen._marginMobile,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppLayout.marginMobile,
                 ),
-                child: const _BalanceCard(),
+                child: _BalanceCard(),
+              ),
+              SizedBox(height: HomeScreen._gapBalanceToActions),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppLayout.marginMobile,
+                ),
+                child: _QuickActionsRow(
+                  onReservar: () => AppNavigation.toEventBooking(context),
+                  onAluguel: () => AppNavigation.toJetskiRental(context),
+                  onExplorarIlhas: () => AppNavigation.toDiscover(context),
+                ),
               ),
               const Spacer(),
             ],
@@ -80,22 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HomeScreen._marginMobile,
-                  ),
-                  child: _QuickActionsRow(
-                    onPedir: () => _openJetski(context),
-                    onReservar: () => _openEventDetail(context),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _TripBottomSheet(
-                  destinationController: _destinationController,
-                ),
+                SizedBox(height: HomeScreen._gapActionsToSheet),
+                _TripBottomSheet(destinationController: _destinationController),
                 AppBottomNav(
-                  selectedIndex: _navIndex,
-                  onItemTap: (index) => _onNavTap(context, index),
+                  selectedIndex: AppNavIndex.inicio,
+                  onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
                 ),
               ],
             ),
@@ -109,25 +86,27 @@ class _HomeScreenState extends State<HomeScreen> {
 class _MapBackground extends StatelessWidget {
   const _MapBackground();
 
+  static const String _citySkylineUrl = AppAssets.mapBackgroundImage;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColorFiltered(
-          colorFilter: const ColorFilter.matrix(<double>[
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0, 0, 0, 0.9, 0,
-          ]),
-          child: Image.network(
-            AppAssets.mapBackgroundImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => ColoredBox(
-              color: AppColors.primaryFixedDim.withValues(alpha: 0.3),
-              child: Center(
-                child: Icon(Icons.map, size: 64, color: AppColors.outline),
+        Image.network(
+          _citySkylineUrl,
+          fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.15),
+          width: double.infinity,
+          height: double.infinity,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stackTrace) => ColoredBox(
+            color: AppColors.background,
+            child: Center(
+              child: Icon(
+                Icons.location_city,
+                size: 64.sp,
+                color: AppColors.outline,
               ),
             ),
           ),
@@ -138,12 +117,12 @@ class _MapBackground extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.background.withValues(alpha: 0.8),
-                AppColors.background.withValues(alpha: 0),
-                AppColors.background.withValues(alpha: 0),
-                AppColors.background.withValues(alpha: 0.9),
+                AppColors.background.withValues(alpha: 0.88),
+                AppColors.background.withValues(alpha: 0.35),
+                Colors.transparent,
+                AppColors.surfaceContainerLowest.withValues(alpha: 0.82),
               ],
-              stops: const [0.0, 0.2, 0.8, 1.0],
+              stops: const [0.0, 0.22, 0.52, 1.0],
             ),
           ),
         ),
@@ -160,8 +139,10 @@ class _HomeAppBar extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: HomeScreen._marginMobile),
+        height: 56.h,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppLayout.marginMobile,
+        ),
         color: AppColors.background,
         child: Row(
           children: [
@@ -169,37 +150,40 @@ class _HomeAppBar extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {},
-                borderRadius: BorderRadius.circular(999),
-                child: const SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Icon(Icons.menu, color: AppColors.primary, size: 24),
+                borderRadius: BorderRadius.circular(999.r),
+                child: SizedBox(width: 40.w,
+                  height: 40.h,
+                  child: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'Mobilidade Premium',
-                style: GoogleFonts.manrope(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 32 / 24,
-                  color: AppColors.primary,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Mobilidade Premium',
+                    maxLines: 1,
+                    style: GoogleFonts.manrope(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 32 / 24,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
-              width: 40,
-              height: 40,
+              width: 40.w,
+              height: 40.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: Colors.white, width: 2.w),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
+                    blurRadius: 4.r,
                   ),
                 ],
               ),
@@ -227,18 +211,18 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: AppColors.surfaceVariant.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 8.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
@@ -251,17 +235,17 @@ class _BalanceCard extends StatelessWidget {
                 Text(
                   'Saldo Disponível',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                     height: 16 / 12,
-                    color: AppColors.onSurfaceVariant,
+                    color: AppColors.labelMuted,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   '42,50 €',
                   style: GoogleFonts.manrope(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
                     height: 28 / 20,
                     color: AppColors.primary,
@@ -273,16 +257,16 @@ class _BalanceCard extends StatelessWidget {
           FilledButton(
             onPressed: () {},
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.secondaryContainer,
-              foregroundColor: AppColors.onSecondaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: AppColors.accent,
+              foregroundColor: AppColors.onAccent,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8),
               shape: const StadiumBorder(),
               elevation: 0,
             ),
             child: Text(
               'Carregar',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
               ),
@@ -296,41 +280,51 @@ class _BalanceCard extends StatelessWidget {
 
 class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow({
-    required this.onPedir,
     required this.onReservar,
+    required this.onAluguel,
+    required this.onExplorarIlhas,
   });
 
-  final VoidCallback onPedir;
   final VoidCallback onReservar;
+  final VoidCallback onAluguel;
+  final VoidCallback onExplorarIlhas;
 
   static const _actions = [
-    (Icons.directions_car, 'Pedir'),
     (Icons.calendar_today, 'Reservar'),
+    (Icons.directions_boat, 'Aluguel'),
+    (Icons.travel_explore, 'Explorar Ilhas'),
     (Icons.history, 'Histórico'),
-    (Icons.account_balance_wallet, 'Saldo'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: _actions
-          .map(
-            (action) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 8.0;
+        final tileWidth = (constraints.maxWidth - gap * 3) / 4;
+
+        return Row(
+          children: [
+            for (var i = 0; i < _actions.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
+              SizedBox(
+                width: tileWidth,
+                height: tileWidth,
                 child: _QuickActionButton(
-                  icon: action.$1,
-                  label: action.$2,
-                  onTap: switch (action.$2) {
-                    'Pedir' => onPedir,
+                  icon: _actions[i].$1,
+                  label: _actions[i].$2,
+                  onTap: switch (_actions[i].$2) {
                     'Reservar' => onReservar,
+                    'Aluguel' => onAluguel,
+                    'Explorar Ilhas' => onExplorarIlhas,
                     _ => () {},
                   },
                 ),
               ),
-            ),
-          )
-          .toList(),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -352,48 +346,62 @@ class _QuickActionButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Ink(
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: AppColors.surfaceVariant.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                blurRadius: 8.r,
+                offset: Offset(0, 2.h),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Column(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.05),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final iconSize = (constraints.maxHeight * 0.48).clamp(28.0, 40.0);
+              final labelSize = constraints.maxHeight < 72 ? 11.0 : 12.0;
+
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: iconSize,
+                      height: iconSize,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.accentSurface,
+                      ),
+                      child: Icon(
+                        icon,
+                        color: AppColors.accent,
+                        size: iconSize * 0.55,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(
+                        fontSize: labelSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1.0,
+                        color: AppColors.labelMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: AppColors.secondary, size: 22),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  height: 16 / 12,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -411,64 +419,65 @@ class _TripBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: const BorderRadius.vertical(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(HomeScreen._sheetTopRadius),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
+            blurRadius: 24.r,
+            offset: Offset(0, -4.h),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
             child: Container(
-              width: 48,
-              height: 6,
+              width: 40.w,
+              height: 4.h,
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(999.r),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 8.h),
           Text(
             'Para onde vamos hoje?',
             style: GoogleFonts.manrope(
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.w600,
               height: 28 / 20,
               color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 16.h),
           Stack(
             children: [
               Positioned(
-                left: 23,
-                top: 48,
+                left: 19,
+                top: 42,
                 child: Container(
-                  width: 2,
-                  height: 40,
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  width: 2.w,
+                  height: 32.h,
+                  color: AppColors.outlineVariant.withValues(alpha: 0.35),
                 ),
               ),
               Column(
                 children: [
                   _LocationField(
                     icon: Icons.my_location,
-                    iconColor: AppColors.secondary,
+                    iconColor: AppColors.accent,
                     label: 'Localização Atual',
+                    labelColor: AppColors.accent,
                     value: 'Av. da Liberdade, Lisboa',
                     readOnly: true,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 12.h),
                   _LocationField(
                     icon: Icons.location_on,
                     iconColor: AppColors.outline,
@@ -480,24 +489,23 @@ class _TripBottomSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 56,
+          SizedBox(height: 12.h),
+          SizedBox(height: 48.h,
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: AppColors.onSecondary,
-                elevation: 8,
-                shadowColor: AppColors.secondary.withValues(alpha: 0.2),
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.onAccent,
+                elevation: 4,
+                shadowColor: AppColors.accent.withValues(alpha: 0.25),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: Text(
                 'Confirmar Trajeto',
                 style: GoogleFonts.inter(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.1,
                 ),
@@ -515,6 +523,7 @@ class _LocationField extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.label,
+    this.labelColor,
     this.value,
     this.hint,
     this.controller,
@@ -524,6 +533,7 @@ class _LocationField extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
+  final Color? labelColor;
   final String? value;
   final String? hint;
   final TextEditingController? controller;
@@ -532,19 +542,19 @@ class _LocationField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(10.r),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, color: iconColor, size: 24),
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(icon, color: iconColor, size: 22.sp),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,19 +562,20 @@ class _LocationField extends StatelessWidget {
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
-                    height: 16 / 12,
-                    color: AppColors.onSurfaceVariant,
+                    height: 1.2,
+                    color: labelColor ?? AppColors.labelMuted,
                   ),
                 ),
+                SizedBox(height: 2.h),
                 if (readOnly)
                   Text(
                     value ?? '',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
-                      height: 24 / 16,
+                      height: 1.25,
                       color: AppColors.onSurface,
                     ),
                   )
@@ -572,8 +583,9 @@ class _LocationField extends StatelessWidget {
                   TextField(
                     controller: controller,
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
+                      height: 1.25,
                       color: AppColors.onSurface,
                     ),
                     decoration: InputDecoration(
@@ -582,7 +594,7 @@ class _LocationField extends StatelessWidget {
                       border: InputBorder.none,
                       hintText: hint,
                       hintStyle: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: 15.sp,
                         color: AppColors.outline,
                       ),
                     ),
@@ -595,4 +607,3 @@ class _LocationField extends StatelessWidget {
     );
   }
 }
-

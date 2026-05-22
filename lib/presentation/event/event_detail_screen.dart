@@ -1,16 +1,19 @@
 import 'dart:ui';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 
 class EventDetailScreen extends StatefulWidget {
   const EventDetailScreen({super.key});
 
-  static const double _marginMobile = 20;
-  static const double _heroHeight = 353;
+    static double get _heroHeight => 353.h;
   static const double _ticketPrice = 45.0;
   static const double _serviceFee = 2.5;
 
@@ -40,17 +43,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 children: [
                   const _EventHero(),
                   Transform.translate(
-                    offset: const Offset(0, -32),
+                    offset: Offset(0, -40.h),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: EventDetailScreen._marginMobile,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppLayout.marginMobile,
                       ),
                       child: Column(
                         children: [
+                          SizedBox(height: 12.h),
                           const _EventInfoCard(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                           const _MapCard(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                           _TicketCard(
                             quantity: _quantity,
                             subtotal: _subtotal,
@@ -63,9 +67,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             },
                             onIncrement: () => setState(() => _quantity++),
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                           const _VipCard(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                         ],
                       ),
                     ),
@@ -75,23 +79,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
           ),
           AppBottomNav(
-            selectedIndex: 2,
-            onItemTap: (index) => _onNavTap(context, index),
+            selectedIndex: AppNavIndex.reservas,
+            onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
           ),
         ],
       ),
     );
-  }
-
-  void _onNavTap(BuildContext context, int index) {
-    if (index == 0) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      return;
-    }
-    if (index == 2) return;
-    if (index == 1 || index == 3) {
-      Navigator.of(context).pop();
-    }
   }
 }
 
@@ -103,35 +96,39 @@ class _EventAppBar extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Container(
-        height: 56,
+        height: 56.h,
         color: AppColors.background,
-        padding: const EdgeInsets.symmetric(
-          horizontal: EventDetailScreen._marginMobile,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppLayout.marginMobile,
         ),
         child: Row(
           children: [
             IconButton(
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () => AppNavigation.back(context),
               icon: const Icon(Icons.arrow_back, color: AppColors.primary),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             Expanded(
-              child: Text(
-                'Mobilidade Premium',
-                style: GoogleFonts.manrope(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 32 / 24,
-                  color: AppColors.primary,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Mobilidade Premium',
+                    maxLines: 1,
+                    style: GoogleFonts.manrope(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
-              width: 32,
-              height: 32,
+              width: 32.w,
+              height: 32.h,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.secondaryContainer,
@@ -140,9 +137,9 @@ class _EventAppBar extends StatelessWidget {
                 child: Image.network(
                   AppAssets.eventProfileAvatarImage,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.person,
-                    size: 18,
+                    size: 18.sp,
                     color: AppColors.onSecondaryContainer,
                   ),
                 ),
@@ -170,7 +167,7 @@ class _EventHero extends StatelessWidget {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => ColoredBox(
               color: AppColors.primary,
-              child: const Icon(Icons.event, color: Colors.white54, size: 48),
+              child: Icon(Icons.event, color: Colors.white54, size: 48.sp),
             ),
           ),
           DecoratedBox(
@@ -186,31 +183,30 @@ class _EventHero extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: EventDetailScreen._marginMobile,
-            right: EventDetailScreen._marginMobile,
-            bottom: 24,
+            left: AppLayout.marginMobile,
+            right: AppLayout.marginMobile,
+            bottom: 30,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                      padding: EdgeInsets.symmetric(horizontal: 8.w,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.secondaryContainer.withValues(
                           alpha: 0.2,
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
                         'MÚSICA ELETRÓNICA',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.2,
                           color: AppColors.secondaryFixed,
@@ -219,13 +215,13 @@ class _EventHero extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 10.h),
                 Text(
                   'Gala de Verão: Porto Sunset',
                   style: GoogleFonts.manrope(
-                    fontSize: 32,
+                    fontSize: 32.sp,
                     fontWeight: FontWeight.w700,
-                    height: 40 / 32,
+                    height: 1.1,
                     letterSpacing: -0.64,
                     color: Colors.white,
                   ),
@@ -248,6 +244,11 @@ class _EventInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _WhiteCard(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(24.r),
+        bottom: Radius.circular(12.r),
+      ),
+      padding: EdgeInsets.fromLTRB(24.w, 28.h, 24.w, 24.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -267,23 +268,23 @@ class _EventInfoCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Divider(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Text(
             'Sobre o Evento',
             style: GoogleFonts.manrope(
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.w600,
               height: 28 / 20,
               color: AppColors.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             _description,
             style: GoogleFonts.inter(
-              fontSize: 16,
+              fontSize: 16.sp,
               fontWeight: FontWeight.w400,
               height: 24 / 16,
               color: AppColors.onSurfaceVariant,
@@ -309,41 +310,42 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 40.w,
+          height: 40.h,
           decoration: const BoxDecoration(
             color: AppColors.surfaceContainerHigh,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: AppColors.secondary, size: 22),
+          child: Icon(icon, color: AppColors.secondary, size: 22.sp),
         ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 16 / 12,
-                color: AppColors.onSurfaceVariant,
+        SizedBox(width: 8.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  height: 16 / 12,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
-            ),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                height: 20 / 14,
-                letterSpacing: 0.1,
-                color: AppColors.onSurface,
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 20 / 14,
+                  letterSpacing: 0.1,
+                  color: AppColors.onSurface,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -361,28 +363,43 @@ class _MapCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 8.h),
             child: Text(
               'Como chegar',
               style: GoogleFonts.manrope(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
                 height: 28 / 20,
                 color: AppColors.onSurface,
               ),
             ),
           ),
-          SizedBox(
-            height: 192,
+          SizedBox(height: 192.h,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 ColorFiltered(
                   colorFilter: const ColorFilter.matrix(<double>[
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0, 0, 0, 0.5, 0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.5,
+                    0,
                   ]),
                   child: Image.network(
                     AppAssets.eventMapImage,
@@ -393,22 +410,22 @@ class _MapCard extends StatelessWidget {
                 ),
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.secondary, width: 2),
+                      border: Border.all(color: AppColors.secondary, width: 2.w),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 12,
+                          blurRadius: 12.r,
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.location_on,
                       color: AppColors.secondary,
-                      size: 24,
+                      size: 24.sp,
                     ),
                   ),
                 ),
@@ -417,29 +434,28 @@ class _MapCard extends StatelessWidget {
                   bottom: 8,
                   child: Material(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                     elevation: 4,
                     child: InkWell(
                       onTap: () {},
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
+                        padding: EdgeInsets.symmetric(horizontal: 16.w,
                           vertical: 8,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.directions,
-                              size: 18,
+                              size: 18.sp,
                               color: AppColors.primary,
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8.w),
                             Text(
                               'Abrir no GPS',
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.1,
                                 color: AppColors.primary,
@@ -493,7 +509,7 @@ class _TicketCard extends StatelessWidget {
                     Text(
                       'Bilhete Normal',
                       style: GoogleFonts.manrope(
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
                         height: 28 / 20,
                         color: AppColors.onSurface,
@@ -502,7 +518,7 @@ class _TicketCard extends StatelessWidget {
                     Text(
                       'Acesso geral + 1 bebida',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
                         height: 16 / 12,
                         color: AppColors.onSurfaceVariant,
@@ -514,7 +530,7 @@ class _TicketCard extends StatelessWidget {
               Text(
                 formatPrice(EventDetailScreen._ticketPrice),
                 style: GoogleFonts.manrope(
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
                   height: 28 / 20,
                   color: AppColors.secondary,
@@ -522,23 +538,23 @@ class _TicketCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           Text(
             'Quantidade',
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               height: 20 / 14,
               letterSpacing: 0.1,
               color: AppColors.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: EdgeInsets.all(4.w),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -551,7 +567,7 @@ class _TicketCard extends StatelessWidget {
                 Text(
                   '$quantity',
                   style: GoogleFonts.manrope(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
                     color: AppColors.onSurface,
                   ),
@@ -564,25 +580,24 @@ class _TicketCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Divider(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           _PriceRow(label: 'Subtotal', value: formatPrice(subtotal)),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           _PriceRow(
             label: 'Taxa de Serviço',
             value: formatPrice(EventDetailScreen._serviceFee),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           _PriceRow(
             label: 'Total',
             value: formatPrice(total),
             isBold: true,
             valueColor: AppColors.secondary,
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 56,
+          SizedBox(height: 24.h),
+          SizedBox(height: 56.h,
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
@@ -590,18 +605,18 @@ class _TicketCard extends StatelessWidget {
                 foregroundColor: AppColors.onSecondary,
                 elevation: 4,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.shopping_cart_checkout, size: 22),
-                  const SizedBox(width: 8),
+                  Icon(Icons.shopping_cart_checkout, size: 22.sp),
+                  SizedBox(width: 8.w),
                   Text(
                     'Pagar Agora',
                     style: GoogleFonts.manrope(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -609,20 +624,20 @@ class _TicketCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Opacity(
             opacity: 0.6,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.credit_card, color: AppColors.onSurfaceVariant),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Icon(Icons.account_balance, color: AppColors.onSurfaceVariant),
-                const SizedBox(width: 16),
+                SizedBox(width: 16.w),
                 Text(
                   'MBWAY',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.5,
                     color: AppColors.onSurfaceVariant,
@@ -652,14 +667,13 @@ class _QuantityButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: isPrimary ? AppColors.secondary : Colors.white,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(8.r),
       elevation: isPrimary ? 0 : 1,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 48,
-          height: 48,
+        borderRadius: BorderRadius.circular(8.r),
+        child: SizedBox(width: 48.w,
+          height: 48.h,
           child: Icon(
             icon,
             color: isPrimary ? AppColors.onSecondary : AppColors.primary,
@@ -697,7 +711,8 @@ class _PriceRow extends StatelessWidget {
       fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
       height: isBold ? 28 / 20 : 20 / 14,
       letterSpacing: isBold ? 0 : 0.1,
-      color: valueColor ??
+      color:
+          valueColor ??
           (isBold ? AppColors.onSurface : AppColors.onSurfaceVariant),
     );
 
@@ -717,10 +732,10 @@ class _VipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: AppColors.outlineVariant,
           style: BorderStyle.solid,
@@ -736,7 +751,7 @@ class _VipCard extends StatelessWidget {
                 child: Text(
                   'Experiência VIP',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     height: 20 / 14,
                     letterSpacing: 0.1,
@@ -745,15 +760,15 @@ class _VipCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.tertiary,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
                   'LIMITADO',
                   style: GoogleFonts.inter(
-                    fontSize: 10,
+                    fontSize: 10.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.onTertiary,
                   ),
@@ -761,23 +776,23 @@ class _VipCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             'Mesa reservada, garrafa incluída e acesso ao backstage.',
             style: GoogleFonts.inter(
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w500,
               height: 16 / 12,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           GestureDetector(
             onTap: () {},
             child: Text(
               'Ver disponibilidade →',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 height: 20 / 14,
                 letterSpacing: 0.1,
@@ -792,27 +807,28 @@ class _VipCard extends StatelessWidget {
 }
 
 class _WhiteCard extends StatelessWidget {
-  const _WhiteCard({required this.child, this.padding});
+  const _WhiteCard({required this.child, this.padding, this.borderRadius});
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
+  final BorderRadiusGeometry? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: padding ?? EdgeInsets.all(24.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: borderRadius ?? BorderRadius.circular(12.r),
         border: Border.all(
           color: AppColors.outlineVariant.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 8.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),

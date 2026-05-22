@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/discover/discover_screen.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 
 enum UserRole { cliente, profissional }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
-  static const double _marginMobile = 20;
-  static const double _inputRadius = 12;
-  static const double _buttonRadius = 12;
+    static double get _inputRadius => 12.r;
+  static double get _buttonRadius => 12.r;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -36,30 +38,31 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: LoginScreen._marginMobile,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppLayout.marginMobile,
             vertical: 32,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+                SizedBox(height: 20.h),
               _buildHeader(),
-              const SizedBox(height: 48),
+              SizedBox(height: 60.h),
               _RoleSelector(
                 selected: _role,
                 onChanged: (role) => setState(() => _role = role),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 35.h),
               _buildEmailField(),
-              const SizedBox(height: 16),
+              SizedBox(height: 30.h),
               _buildPasswordField(),
-              const SizedBox(height: 8),
+              SizedBox(height: 12.h),
               _buildSecurityNote(),
-              const SizedBox(height: 24),
+              SizedBox(height: 30.h),
               _buildLoginButton(),
-              const SizedBox(height: 24),
+              SizedBox(height: 40.h),
               _buildRegisterPrompt(),
-              const SizedBox(height: 48),
+              SizedBox(height: 60.h),
               _buildFooterLinks(),
             ],
           ),
@@ -75,17 +78,17 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'Mobilidade Premium',
           style: GoogleFonts.manrope(
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w700,
             height: 32 / 24,
             color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Text(
           'Inicie sessão para gerir as suas viagens.',
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 16.sp,
             fontWeight: FontWeight.w400,
             height: 24 / 16,
             color: AppColors.onSurfaceVariant,
@@ -100,11 +103,11 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
+          padding: EdgeInsets.only(left: 4, bottom: 4),
           child: Text(
             'E-mail ou Telemóvel',
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               height: 20 / 14,
               letterSpacing: 0.1,
@@ -128,13 +131,13 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
+          padding: EdgeInsets.only(left: 4, bottom: 4),
           child: Row(
             children: [
               Text(
                 'Palavra-passe',
                 style: GoogleFonts.inter(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   height: 20 / 14,
                   letterSpacing: 0.1,
@@ -147,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   'Esqueceu-se?',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                     height: 16 / 12,
                     color: AppColors.secondary,
@@ -168,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 setState(() => _obscurePassword = !_obscurePassword),
             icon: Icon(
               _obscurePassword ? Icons.visibility : Icons.visibility_off,
-              size: 22,
+              size: 22.sp,
               color: AppColors.onSurfaceVariant,
             ),
           ),
@@ -179,20 +182,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildSecurityNote() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
           Icon(
             Icons.verified_user,
-            size: 18,
+            size: 18.sp,
             color: AppColors.onSurfaceVariant,
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4.w),
           Expanded(
             child: Text(
               'Ligação segura e encriptada ponta-a-ponta.',
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
                 color: AppColors.onSurfaceVariant,
@@ -207,13 +210,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginButton() {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 56.h,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(builder: (_) => const DiscoverScreen()),
-          );
-        },
+        onPressed: () => AppNavigation.toHomeAfterLogin(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.secondary,
           foregroundColor: AppColors.onSecondary,
@@ -228,13 +227,13 @@ class _LoginScreenState extends State<LoginScreen> {
             Text(
               'Entrar',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
               ),
             ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, size: 20),
+            SizedBox(width: 8.w),
+            Icon(Icons.arrow_forward, size: 20.sp),
           ],
         ),
       ),
@@ -243,13 +242,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildRegisterPrompt() {
     final bodyStyle = GoogleFonts.inter(
-      fontSize: 16,
+      fontSize: 16.sp,
       fontWeight: FontWeight.w400,
       height: 24 / 16,
       color: AppColors.onSurfaceVariant,
     );
     final linkStyle = GoogleFonts.inter(
-      fontSize: 14,
+      fontSize: 14.sp,
       fontWeight: FontWeight.w600,
       height: 20 / 14,
       letterSpacing: 0.1,
@@ -276,9 +275,11 @@ class _LoginScreenState extends State<LoginScreen> {
       opacity: 0.6,
       child: Column(
         children: [
-          const Divider(color: AppColors.surfaceContainer, height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Divider(color: AppColors.surfaceContainer, height: 48.h),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16.w,
+            runSpacing: 8.h,
             children: [
               _FooterLink(label: 'Privacidade', onTap: () {}),
               _FooterLink(label: 'Termos de Uso', onTap: () {}),
@@ -303,7 +304,7 @@ class _RoleSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
@@ -351,34 +352,38 @@ class _RoleTab extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.secondaryContainer
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8.r),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 20.sp,
               color: isSelected
                   ? AppColors.onSecondaryContainer
                   : AppColors.onSurfaceVariant,
             ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                height: 20 / 14,
-                letterSpacing: 0.1,
-                color: isSelected
-                    ? AppColors.onSecondaryContainer
-                    : AppColors.onSurfaceVariant,
+            SizedBox(width: 8.w),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 20 / 14,
+                  letterSpacing: 0.1,
+                  color: isSelected
+                      ? AppColors.onSecondaryContainer
+                      : AppColors.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -415,24 +420,24 @@ class _AuthTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       style: GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 16.sp,
         fontWeight: FontWeight.w400,
         color: AppColors.onSurface,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: GoogleFonts.inter(
-          fontSize: 16,
+          fontSize: 16.sp,
           fontWeight: FontWeight.w400,
           color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
         ),
         filled: true,
         fillColor: AppColors.surfaceContainerLowest,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        prefixIcon: Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22),
-        prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
+        prefixIcon: Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22.sp),
+        prefixIconConstraints: BoxConstraints(minWidth: 48.w, minHeight: 48.h),
         suffixIcon: suffixIcon,
-        suffixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        suffixIconConstraints: BoxConstraints(minWidth: 48.w, minHeight: 48.h),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
           borderSide: const BorderSide(color: AppColors.outlineVariant),
@@ -443,9 +448,9 @@ class _AuthTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.secondary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.secondary, width: 1.5.w),
         ),
-        constraints: const BoxConstraints(minHeight: 56),
+        constraints: BoxConstraints(minHeight: 56.h),
       ),
     );
   }
@@ -464,7 +469,7 @@ class _FooterLink extends StatelessWidget {
       child: Text(
         label,
         style: GoogleFonts.inter(
-          fontSize: 12,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w500,
           height: 16 / 12,
           color: AppColors.onSurfaceVariant,

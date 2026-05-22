@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/splash/splash_screen.dart';
 
 void main() {
@@ -13,7 +14,11 @@ void main() {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const MobilidadePremiumApp());
+  runApp(
+    AppScreenUtil.init(
+      child: const MobilidadePremiumApp(),
+    ),
+  );
 }
 
 class MobilidadePremiumApp extends StatelessWidget {

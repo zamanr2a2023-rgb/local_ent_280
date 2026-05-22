@@ -1,17 +1,19 @@
 import 'dart:ui';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/login/login_screen.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
-  static const double _marginMobile = 20;
-  static const double _cardRadius = 32;
-  static const double _buttonRadius = 12;
+    static double get _cardRadius => 28.r;
+  static double get _buttonRadius => 16.r;
 
   @override
   Widget build(BuildContext context) {
@@ -19,34 +21,35 @@ class SplashScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          const _BackgroundOrbs(),
+          const _BackgroundGradient(),
           SafeArea(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 32),
-                const _Header(),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: _marginMobile,
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      AppLayout.marginMobile,
+                      16,
+                      AppLayout.marginMobile,
+                      24,
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 48),
+                        const _Header(),
+                        SizedBox(height: 24.h),
                         const _HeroCard(),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 20.h),
                         const _InstantBookingCard(),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         const _DriverCard(),
-                        const SizedBox(height: 48),
                       ],
                     ),
                   ),
                 ),
-                const _FooterActions(),
-                const SizedBox(height: 8),
-                const _HomeIndicator(),
-                const SizedBox(height: 8),
+                const _FooterPanel(),
               ],
             ),
           ),
@@ -56,42 +59,50 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-class _BackgroundOrbs extends StatelessWidget {
-  const _BackgroundOrbs();
+class _BackgroundGradient extends StatelessWidget {
+  const _BackgroundGradient();
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned(
-          top: -80,
-          right: -80,
-          child: Container(
-            width: 300,
-            height: 300,
+        Positioned.fill(
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primary.withValues(alpha: 0.05),
-            ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: const SizedBox.expand(),
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  AppColors.secondaryFixed.withValues(alpha: 0.45),
+                  AppColors.background,
+                  AppColors.background,
+                ],
+                stops: const [0.0, 0.35, 1.0],
+              ),
             ),
           ),
         ),
         Positioned(
-          bottom: -80,
-          left: -80,
+          top: -100,
+          right: -60,
           child: Container(
-            width: 200,
-            height: 200,
+            width: 280.w,
+            height: 280.h,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.secondary.withValues(alpha: 0.05),
+              color: AppColors.secondary.withValues(alpha: 0.06),
             ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-              child: const SizedBox.expand(),
+          ),
+        ),
+        Positioned(
+          bottom: 120,
+          left: -80,
+          child: Container(
+            width: 220.w,
+            height: 220.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary.withValues(alpha: 0.04),
             ),
           ),
         ),
@@ -106,37 +117,44 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 44.w,
+          height: 44.h,
           decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primary, Color(0xFF0A2D5C)],
+            ),
+            borderRadius: BorderRadius.circular(14.r),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+                color: AppColors.primary.withValues(alpha: 0.18),
+                blurRadius: 12.r,
+                offset: Offset(0, 4.h),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.directions_car,
+          child: Icon(
+            Icons.directions_car_filled_rounded,
             color: AppColors.onPrimary,
-            size: 28,
+            size: 24.sp,
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          'Mobilidade Premium',
-          style: GoogleFonts.manrope(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            height: 32 / 24,
-            color: AppColors.primary,
-            letterSpacing: -0.5,
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Text(
+            'Mobilidade Premium',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.manrope(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+              color: AppColors.primary,
+              letterSpacing: -0.3,
+            ),
           ),
         ),
       ],
@@ -149,94 +167,141 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SplashScreen._cardRadius),
-      child: SizedBox(
-        width: double.infinity,
-        height: 340,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              AppAssets.heroCarImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: AppColors.primary,
-                child: const Icon(Icons.image_not_supported, color: Colors.white54),
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.2),
-                    AppColors.primary.withValues(alpha: 0.5),
-                    AppColors.primary.withValues(alpha: 0.8),
-                  ],
-                  stops: const [0.0, 0.45, 1.0],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(SplashScreen._cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            blurRadius: 24.r,
+            offset: Offset(0, 12.h),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(SplashScreen._cardRadius),
+        child: SizedBox(
+          width: double.infinity,
+          height: 300.h,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                AppAssets.heroCarImage,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppColors.primary,
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: Colors.white54,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Text(
-                          'EXECUTIVO',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                          ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.15),
+                      Colors.black.withValues(alpha: 0.35),
+                      AppColors.primary.withValues(alpha: 0.92),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(22.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _GlassBadge(
+                      label: 'EXECUTIVO',
+                      icon: Icons.workspace_premium_rounded,
+                    ),
+                    const Spacer(),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.bottomLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'O seu tempo,\nvalorizado.',
+                              style: GoogleFonts.manrope(
+                                fontSize: 30.sp,
+                                fontWeight: FontWeight.w800,
+                                height: 1.15,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            SizedBox(height: 10.h),
+                            Text(
+                              'Transporte personalizado com conforto e pontualidade.',
+                              style: GoogleFonts.inter(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w400,
+                                height: 1.45,
+                                color: Colors.white.withValues(alpha: 0.88),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'O seu tempo, valorizado.',
-                    style: GoogleFonts.manrope(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      height: 40 / 32,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Experiência de transporte personalizada para quem não abdica do conforto e da pontualidade.',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 24 / 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassBadge extends StatelessWidget {
+  const _GlassBadge({required this.label, this.icon});
+
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999.r),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(999.r),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 14.sp, color: Colors.white),
+                SizedBox(width: 6.w),
+              ],
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 1.6,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -246,64 +311,114 @@ class _HeroCard extends StatelessWidget {
 class _InstantBookingCard extends StatelessWidget {
   const _InstantBookingCard();
 
+  static double get _cardRadius => 32.r;
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(SplashScreen._cardRadius),
+      borderRadius: BorderRadius.circular(_cardRadius),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
           color: AppColors.secondaryContainer,
+          borderRadius: BorderRadius.circular(_cardRadius),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.secondary.withValues(alpha: 0.2),
+              blurRadius: 16.r,
+              offset: Offset(0, 6.h),
+            ),
+          ],
         ),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Positioned(
-              right: -32,
-              bottom: -32,
+              right: -40,
+              bottom: -40,
               child: Container(
-                width: 128,
-                height: 128,
+                width: 140.w,
+                height: 140.h,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withValues(alpha: 0.12),
                 ),
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.schedule,
-                  color: AppColors.onSecondaryContainer,
-                  size: 32,
+                Container(
+                  width: 48.w,
+                  height: 48.h,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.schedule_rounded,
+                    color: AppColors.secondaryContainer,
+                    size: 28.sp,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 Text(
                   'Reservas Instantâneas',
                   style: GoogleFonts.manrope(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
                     height: 28 / 20,
                     color: AppColors.onSecondaryContainer,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   'Planeie a sua viagem em segundos com a nossa rede exclusiva.',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     height: 20 / 14,
                     letterSpacing: 0.1,
-                    color: AppColors.onSecondaryContainer.withValues(alpha: 0.8),
+                    color: AppColors.onSecondaryContainer.withValues(
+                      alpha: 0.85,
+                    ),
                   ),
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _VerifiedBadge extends StatelessWidget {
+  const _VerifiedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryFixed.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(999.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_rounded, size: 14.sp, color: AppColors.secondary),
+          SizedBox(width: 4.w),
+          Text(
+            'Verificado',
+            style: GoogleFonts.inter(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.secondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -314,214 +429,100 @@ class _DriverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SplashScreen._cardRadius),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh,
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+    return Container(
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.25),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 16.r,
+            offset: Offset(0, 4.h),
           ),
-        ),
-        child: Stack(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.network(
-                      AppAssets.driverAvatarImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => ColoredBox(
-                        color: AppColors.outlineVariant,
-                        child: Icon(
-                          Icons.person,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'MOTORISTA DE HOJE',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          height: 16 / 12,
-                          color: AppColors.onSurfaceVariant,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Ricardo Santos',
-                        style: GoogleFonts.manrope(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          height: 28 / 20,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            size: 16,
-                            color: AppColors.secondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '4.98 Rating',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              height: 20 / 14,
-                              letterSpacing: 0.1,
-                              color: AppColors.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Icon(
-                Icons.verified_user,
-                size: 56,
-                color: AppColors.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-}
-
-class _FooterActions extends StatelessWidget {
-  const _FooterActions();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
+      child: Row(
         children: [
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LoginScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: AppColors.onSecondary,
-                elevation: 8,
-                shadowColor: AppColors.secondary.withValues(alpha: 0.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SplashScreen._buttonRadius),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Entrar',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward, size: 20),
-                ],
+          Container(
+            width: 56.w,
+            height: 56.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.35),
+                width: 2.w,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LoginScreen(),
-                  ),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                backgroundColor: AppColors.surfaceContainerLow,
-                foregroundColor: AppColors.primary,
-                side: BorderSide(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SplashScreen._buttonRadius),
-                ),
-              ),
-              child: Text(
-                'Criar conta',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Opacity(
-            opacity: 0.6,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.lock_outline,
-                  size: 14,
-                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Conexão Segura & Encriptada',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    height: 16 / 12,
+            child: ClipOval(
+              child: Image.network(
+                AppAssets.driverAvatarImage,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => ColoredBox(
+                  color: AppColors.surfaceContainer,
+                  child: Icon(
+                    Icons.person_rounded,
                     color: AppColors.onSurfaceVariant,
                   ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'MOTORISTA DE HOJE',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const _VerifiedBadge(),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Ricardo Santos',
+                  maxLines: 1,
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Row(
+                  children: [
+                    ...List.generate(
+                      5,
+                      (i) => Icon(
+                        i < 5 ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 14.sp,
+                        color: const Color(0xFFFFB800),
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      '4.98',
+                      style: GoogleFonts.inter(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -532,17 +533,142 @@ class _FooterActions extends StatelessWidget {
   }
 }
 
-class _HomeIndicator extends StatelessWidget {
-  const _HomeIndicator();
+class _FooterPanel extends StatelessWidget {
+  const _FooterPanel();
+
+  void _goToLogin(BuildContext context) {
+    AppNavigation.toLogin(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 128,
-      height: 4,
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.outlineVariant.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(999),
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 24.r,
+            offset: Offset(0, -8.h),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppLayout.marginMobile,
+          20,
+          AppLayout.marginMobile,
+          16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 54.h,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    SplashScreen._buttonRadius,
+                  ),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0066FF), AppColors.secondary],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withValues(alpha: 0.35),
+                      blurRadius: 16.r,
+                      offset: Offset(0, 6.h),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () => _goToLogin(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: AppColors.onSecondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        SplashScreen._buttonRadius,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Entrar',
+                        style: GoogleFonts.inter(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Icon(Icons.arrow_forward_rounded, size: 20.sp),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            SizedBox(
+              width: double.infinity,
+              height: 54.h,
+              child: OutlinedButton(
+                onPressed: () => _goToLogin(context),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: AppColors.background,
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      SplashScreen._buttonRadius,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Criar conta',
+                  style: GoogleFonts.inter(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 14.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(999.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 14.sp,
+                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.9),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    'Conexão Segura & Encriptada',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
