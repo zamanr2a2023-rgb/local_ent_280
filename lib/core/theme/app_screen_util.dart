@@ -10,7 +10,6 @@ abstract final class AppScreenUtil {
       designSize: designSize,
       minTextAdapt: true,
       splitScreenMode: true,
-      useInheritedMediaQuery: true,
       builder: (context, appChild) => appChild ?? const SizedBox.shrink(),
       child: child,
     );

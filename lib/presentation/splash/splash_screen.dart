@@ -4,15 +4,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
-    static double get _cardRadius => 28.r;
+  static double get _cardRadius => 28.r;
   static double get _buttonRadius => 16.r;
 
   @override
@@ -23,34 +23,37 @@ class SplashScreen extends StatelessWidget {
         children: [
           const _BackgroundGradient(),
           SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      AppLayout.marginMobile,
-                      16,
-                      AppLayout.marginMobile,
-                      24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _Header(),
-                        SizedBox(height: 24.h),
-                        const _HeroCard(),
-                        SizedBox(height: 20.h),
-                        const _InstantBookingCard(),
-                        SizedBox(height: 16.h),
-                        const _DriverCard(),
-                      ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    AppLayout.marginMobile,
+                    16.h,
+                    AppLayout.marginMobile,
+                    16.h,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const _Header(),
+                          SizedBox(height: 24.h),
+                          const _HeroCard(),
+                          SizedBox(height: 20.h),
+                          const _InstantBookingCard(),
+                          SizedBox(height: 16.h),
+                          const _DriverCard(),
+                          const Spacer(),
+                          const _FooterPanel(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const _FooterPanel(),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -148,7 +151,7 @@ class _Header extends StatelessWidget {
             'Mobilidade Premium',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
+            style: AppTypography.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w800,
               height: 1.2,
@@ -232,7 +235,7 @@ class _HeroCard extends StatelessWidget {
                           children: [
                             Text(
                               'O seu tempo,\nvalorizado.',
-                              style: GoogleFonts.manrope(
+                              style: AppTypography.manrope(
                                 fontSize: 30.sp,
                                 fontWeight: FontWeight.w800,
                                 height: 1.15,
@@ -243,7 +246,7 @@ class _HeroCard extends StatelessWidget {
                             SizedBox(height: 10.h),
                             Text(
                               'Transporte personalizado com conforto e pontualidade.',
-                              style: GoogleFonts.inter(
+                              style: AppTypography.inter(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w400,
                                 height: 1.45,
@@ -293,7 +296,7 @@ class _GlassBadge extends StatelessWidget {
               ],
               Text(
                 label,
-                style: GoogleFonts.inter(
+                style: AppTypography.inter(
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -319,6 +322,7 @@ class _InstantBookingCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(_cardRadius),
       child: Container(
         width: double.infinity,
+        constraints: BoxConstraints(minHeight: 140.h),
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
           color: AppColors.secondaryContainer,
@@ -365,7 +369,7 @@ class _InstantBookingCard extends StatelessWidget {
                 SizedBox(height: 16.h),
                 Text(
                   'Reservas Instantâneas',
-                  style: GoogleFonts.manrope(
+                  style: AppTypography.manrope(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w700,
                     height: 28 / 20,
@@ -375,7 +379,7 @@ class _InstantBookingCard extends StatelessWidget {
                 SizedBox(height: 8.h),
                 Text(
                   'Planeie a sua viagem em segundos com a nossa rede exclusiva.',
-                  style: GoogleFonts.inter(
+                  style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     height: 20 / 14,
@@ -412,7 +416,7 @@ class _VerifiedBadge extends StatelessWidget {
           SizedBox(width: 4.w),
           Text(
             'Verificado',
-            style: GoogleFonts.inter(
+            style: AppTypography.inter(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
               color: AppColors.secondary,
@@ -430,6 +434,7 @@ class _DriverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(minHeight: 100.h),
       padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -481,7 +486,7 @@ class _DriverCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'MOTORISTA DE HOJE',
-                        style: GoogleFonts.inter(
+                        style: AppTypography.inter(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.4,
@@ -496,7 +501,7 @@ class _DriverCard extends StatelessWidget {
                 Text(
                   'Ricardo Santos',
                   maxLines: 1,
-                  style: GoogleFonts.manrope(
+                  style: AppTypography.manrope(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primary,
@@ -516,7 +521,7 @@ class _DriverCard extends StatelessWidget {
                     SizedBox(width: 6.w),
                     Text(
                       '4.98',
-                      style: GoogleFonts.inter(
+                      style: AppTypography.inter(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         color: AppColors.secondary,
@@ -542,25 +547,27 @@ class _FooterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 24.r,
-            offset: Offset(0, -8.h),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppLayout.marginMobile,
-          20,
-          AppLayout.marginMobile,
-          16,
+    return Padding(
+      padding: EdgeInsets.only(top: 8.h),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              blurRadius: 24.r,
+              offset: Offset(0, -8.h),
+            ),
+          ],
         ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            0,
+            20.h,
+            0,
+            16.h,
+          ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -600,7 +607,7 @@ class _FooterPanel extends StatelessWidget {
                     children: [
                       Text(
                         'Entrar',
-                        style: GoogleFonts.inter(
+                        style: AppTypography.inter(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.2,
@@ -633,7 +640,7 @@ class _FooterPanel extends StatelessWidget {
                 ),
                 child: Text(
                   'Criar conta',
-                  style: GoogleFonts.inter(
+                  style: AppTypography.inter(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                   ),
@@ -658,7 +665,7 @@ class _FooterPanel extends StatelessWidget {
                   SizedBox(width: 6.w),
                   Text(
                     'Conexão Segura & Encriptada',
-                    style: GoogleFonts.inter(
+                    style: AppTypography.inter(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w600,
                       color: AppColors.onSurfaceVariant,
@@ -668,6 +675,7 @@ class _FooterPanel extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
