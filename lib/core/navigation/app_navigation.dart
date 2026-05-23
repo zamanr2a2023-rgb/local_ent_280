@@ -7,6 +7,16 @@ import 'package:local_ent_280/presentation/delivery/delivery_screen.dart';
 import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/presentation/reservation/reservation_review_screen.dart';
+import 'package:local_ent_280/presentation/rental/vehicle_detail_screen.dart';
+import 'package:local_ent_280/presentation/rental/vehicle_rental_screen.dart';
+import 'package:local_ent_280/presentation/rental/vehicle_search_results_screen.dart';
+import 'package:local_ent_280/presentation/trip/driver_en_route_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_completed_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_in_progress_screen.dart';
+import 'package:local_ent_280/presentation/trip/driver_found_screen.dart';
+import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
 
 /// Bottom navigation indices (Fluxo do Utilizador).
 abstract final class AppNavIndex {
@@ -49,6 +59,79 @@ abstract final class AppNavigation {
   static void toEventBooking(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
+    );
+  }
+
+  /// Tab Reservas → pesquisa de aluguer de veículos.
+  static void toVehicleRental(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const VehicleRentalScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Pesquisa → resultados de veículos disponíveis.
+  static void toVehicleSearchResults(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const VehicleSearchResultsScreen(),
+      ),
+    );
+  }
+
+  /// Ver Detalhes (frota) → destino da viagem.
+  static void toTripDestination(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const TripDestinationScreen()),
+    );
+  }
+
+  /// Ver Mapa Completo → confirmação de viagem.
+  static void toTripConfirm(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const TripConfirmScreen()),
+    );
+  }
+
+  /// Confirmar viagem → a procurar motorista.
+  static void toDriverSearch(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const DriverSearchScreen()),
+    );
+  }
+
+  /// Motorista encontrado → a aguardar confirmação.
+  static void toDriverFound(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const DriverFoundScreen()),
+    );
+  }
+
+  /// Motorista confirmado → a caminho.
+  static void toDriverEnRoute(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const DriverEnRouteScreen()),
+    );
+  }
+
+  /// Viagem iniciada → em curso.
+  static void toTripInProgress(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const TripInProgressScreen()),
+    );
+  }
+
+  /// Terminar viagem → viagem concluída.
+  static void toTripCompleted(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const TripCompletedScreen()),
+    );
+  }
+
+  /// Lista → detalhes do veículo (Porsche Taycan 4S).
+  static void toVehicleDetail(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const VehicleDetailScreen()),
     );
   }
 
@@ -97,7 +180,7 @@ abstract final class AppNavigation {
       case AppNavIndex.viagens:
         _goDelivery(context);
       case AppNavIndex.reservas:
-        _goEvent(context);
+        _goVehicleRental(context);
       case AppNavIndex.perfil:
         _goHome(context);
     }
@@ -118,9 +201,9 @@ abstract final class AppNavigation {
     );
   }
 
-  static void _goEvent(BuildContext context) {
+  static void _goVehicleRental(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
+      MaterialPageRoute<void>(builder: (_) => const VehicleRentalScreen()),
       (_) => false,
     );
   }

@@ -18,6 +18,7 @@ abstract final class AppColors {
   static const Color onSecondaryContainer = Color(0xFFFEFCFF);
   static const Color secondaryFixed = Color(0xFFDBE1FF);
   static const Color tertiary = Color(0xFF07182B);
+  static const Color tertiaryContainer = Color(0xFF1D2D41);
   static const Color onTertiary = Color(0xFFFFFFFF);
   static const Color onTertiaryContainer = Color(0xFF8495AD);
   static const Color onBackground = Color(0xFF191C1E);
@@ -37,4 +38,7 @@ abstract final class AppColors {
   static const Color onPrimaryContainer = Color(0xFF7594CA);
   static const Color primaryFixed = Color(0xFFD6E3FF);
   static const Color error = Color(0xFFBA1A1A);
+  static const Color onError = Color(0xFFFFFFFF);
+  static const Color errorContainer = Color(0xFFFFDAD6);
+  static const Color onErrorContainer = Color(0xFF93000A);
 }

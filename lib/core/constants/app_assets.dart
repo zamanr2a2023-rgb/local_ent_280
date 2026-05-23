@@ -100,4 +100,65 @@ abstract final class AppAssets {
 
   static const String reservationProfileAvatarImage =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuCur2vBKigrqN5nIfIJ6cppRv3gGe8zRJkSA2RsbcgGDOy33Tf-rgtRbRheKwRImT4ygWhO3eTrlG6OSSiE4neL_Un3CDd2QqssSJloUjCW9KryI-VywbhRrr3ABvftKvfQmHYormtjQW4Tv6Jjore08BrXaV5IwbHZq66_AsIx7Er__fVi5e91Mds4fZ_2kBWHfYUHGWQFRHS7SdGzorvz2B0X1PmOoZQLHJKk2KVtp54ViQrggD7Z6WgorwyPHl7OZo2H1vT5GY4';
+
+  static const String vehicleRentalProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBfuw0im3HJUJLHsQf1RfU8MOAJZalSJNBJPSOXPotm5daL7xWvzoXYMEAjPvUWztxfk2ltreic9sfOfKvHUP6bi_WzWQzwFxroy-crdOE0lc4FqWTzuEWuJk0s79x9LDjZnjCb9JygCdoVCuFGwVvZDBfRJu8BjvAqvQTgao0UbgTCOUdOXGxgsGC3Mx2fGOOugGJdJvsL9KgfNZz7z_cUwiK29M07hneFLJj637ITQyVyOaGV7L8RU-5vEwWWAGE2PiEhUFCNi7M';
+
+  static const String vehicleRentalMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBEh40-zXiXCSR626nJ2spt-QauSNcF62AN-Aj3M4sc2hrEVvWRgZz_qTMQvAkgBMFaTKr3ufTI20Bb5BoVkcewx8pWZDF3SWeeX5J8GL3G7azCUzro9nGi4sF-j2zrFFwM_WV-qsiAYKsIfOr6Jt4MmtwYRR1KBq0N3Y35_fBdc3mgNJcnqdecfJ_T8F--5z_tk-WxT11wesWI-QK1I0nTWQpaNTBrEXmd967yO7iShKRRno8bLvXKiruWgAbuTZvs65nF6jdCCU4';
+
+  static const String vehicleDetailProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBybt8CwYOg2Na1nsU6d3CHZqbj2rsYu3NsU8WY9JdL-oUq0TvCOw0efw6u8EHOMdsnVQKSAYP8FiPrRipiiHjgirJJjn8QEK5uyjJpU9ogcxkiZbLTu0UPPOod9me58Ocnl_k9TGmH-nOOjK1TUmkh4XcouqadTH3InvNJ3EaI9DKkggslBv7y_cTm42n0Ie5KieeN_g6-WAcuEt81d6hF0fx7x4JAMgRQkhP9BdQN5W4TBIInB9bKqE-sUghl_mwmvqGhkeipWvo';
+
+  static const String vehicleDetailExteriorImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCC8RyfWfREOMmunvpnHi7IVXmEfTOYL4nBEcV7kFYTH9dFEcqUocWplrEyQhqyNqsTwO0XtuO8Z4afptLtYKTcep-fImHQqQeIPKqL67Px5w0nEquy2F7N9Y-CWMsKkRb10fASzttSOWm1DHLmCI5LyI0eMRdRqs8B-aLll6WUvPy1sfy9RZDA1eWhX1bYIKMkqDO5emgWs6npLefd0WK68kJ9WQrWd7PDV1v9ri9R6hkq-9y4j1EQLDVlQbRTgtrlTWjV49jxIQs';
+
+  static const String vehicleDetailInteriorImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuA9oD5zOs8Dx3oFTpXsXlQE7k9WqmaPUlTZG3NThrAUqmDjsui5DGe9JRTAIl5kku2f2V4ItWlJifNEJTFb-g8YAq3T8GOEVMOS3kcKLMu2eo5_o81ZAhrSqXat99TkZrHfNF5XV9MTZPUem7KIacakFSR-Ulfc42aDs-3Dck27wr2pxyJvmES_H_xaV0lG6NwzZDsuyyGXS6JMWOYzIgq7X63eJ5aZUvoLAO0azXyIV9BLYarY3SBr3UyZcIfUL7_ctNyDFYzTJGg';
+
+  static const String vehicleDetailWheelImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDctpHnGtN-rYEsGfF_hFOIfoQYw8MmeUF8tL2OGBvURdqVuljc-sILeOT4WLJ1Obf19R6v4UlBiNzbK4mK4mURj9hkrOxcUthzjXQvPK1r_eY_7Swj7W5gN0WnzfovOji5X727F4WRVs2RRGtZXzt_Eot2xmz2JdR3YGRAPRSV-C_Vl_6HhOZWP7Hw0jEIoRjXZZIWlP6VcanojGIiMa8mBFfJq0Fs01tzhMgwNZM8puAMWLylAk3tM4HCVxzHtBzcwRpkiKRMzwE';
+
+  /// Mapa de Lisboa com rota — confirmação de viagem (`roles/details.md`).
+  static const String tripConfirmMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBOuT1H0P-X7KV8Feq2lB3UHP-6ZKN5VAoV0EpTLoiAyyMTdETuthkyJ9hGSFkT4PJLT8Ck6ITyfcpDQ6YiRUjlOsiVVhPZuC2tsGn4GIYtejLfv0U3uReHqwDUFR5bZ4lgw0N2r8O654VnKRHLbYWgL-GIFTguyEwk2Rmf2jNFlaNbcHEtNwGTkV-M4if3uvQ4TiNKf0RkB7PZYbZrE_Uu29tF4e2if37LTZqBnh77br607m2YEH6cVmn3Jr3nhab6o7H70Eugw2E';
+
+  /// Mapa Lisboa — a procurar motorista (`roles/details.md`).
+  static const String driverSearchMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDn2bbhSakajVjUXXkCp7a7ASfNn5BLRpLiMBXV-VgX_-6YEMi-L7a0KevLN5DpWd29HRldh31ch1q4pFsbMbblds9VEGOjIJO19XgHSizGWkLfbeL-CKeXIPzVv9rN2CSgEAqUSOc51wkEgQrgW-gYwJ7_rVfxgSuXcPaHsUOSbUtcYp2R3jT_BAezSwSoeEiG4ihItoX8dXGINd5lIVrQgkxKioCPbbSN_bLqmEww7bzK1cghmqkb6Wryxjji_5Xm7YxEoE10sbw';
+
+  /// Mapa Lisboa — motorista encontrado (`roles/details.md`).
+  static const String driverFoundMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD8gY-jWi4dZTPkpJvuxi3sXGxRgGjHUxRxJnCOc3Ms5QhR63nHuGKJQ24JZOvJzuUzogArmObthXxUqOzujTMxi9Y8h8hKF2FZUye--eJkcwk0_0jTzrT_XAxevG2XlzS8GXHMXJwqbXyTXy_ejFgfmH_6ru_rAMmxaSeJGXVXgnFhb-AD1sqXGw_mE7WGM3UBGkHzT7yax0ILyxvRNgvf1T1Cv6F73pdkSOZm28G0K4gcQnYFin5oldbIxLBqrDm0oVdUwTCht50';
+
+  static const String driverFoundProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDN56OPQasu3lz1TM0-wmmGJ_X-ojTRhxYoUxjQNP9-qAG0X-YVpodxPdbi2nwb5qJPH0IwJ_K2IkOQyVT-fI6FeSV7RPO6EjrlJlxrqSerrNjoMOu9UFPV4T1MxxyfpkPBhz6-_HeSrjda0A9IWKB4P7HZIelq0bmqusihl2VXXElKt_YiSqw2lA0HkpUXemv4jC7uqVb90ORZOTqofaFx-q7rlulfP9ojt4VVKR3Z7Cbyvgz_AiXekc-wiF_MgkH2I-W7Kc7r2GM';
+
+  static const String driverFoundDriverImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAHot1s7_Qqp-uY_ypsjMvKw7kvigaQjy3vdZ26meKwT6fBVDQ9mAn4FWm2SvmY8mBfGbQjqj5P23tPW-YzFwjXqxZQajV6pFvMsGJIgJL2q4nJ1c_OaymBmgd7AnSyVYlbUQ7Fq8hqzndFD83-gJPNEUtUHGOdAhyTTlZdhS2i4GEv3mAus9BHNGW7_cfsbAmjsK_JrXvGgKo2tfY5mLNB6U4ay0QqyVSi069IIi234ep26XZN7TxUiEoaXAuy8wlL31pX7wByoKM';
+
+  /// Mapa Lisboa — motorista a caminho (`roles/details.md`).
+  static const String driverEnRouteMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAMYnwMuajB4Ex_Yvn2P7M2zHRd4sJYz1fPo13jCRPW25V9ctlrkEWApExCVo0FTs223XjKKtB9qpa5qvdAa1iKDdW4dBGV7LSkzb6dYF9oNrJoa4vjFk3sAVvpiOgX5jU8FCXDSlhx6Tou1k2TrDJB3uuo2RQIzAPAEW1QVG8-X4j_s2vN_txh3oyHCZkKHR9vsvO1aBpCh_lmtmTfsgJx0ncdzS6WpYQN024bJqeMg8L846uWyFsxOor7soC4gghUkafTEGEw7Uc';
+
+  static const String driverEnRouteProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCg0Ze9MkfdowmPv-n1VZVmdY9yW2UquRUpY2eDEo7ylAjpiKP0gjz_wkfQIzKufCxbOfjxvtM8ClNPYW5MxTgvAD_RD40XkJo1Bix0K54RZbEgpfacPSCWB7SJ_NG7pOcqSjxzBF7MBGDZQQnMOp-Lt5iO6kbErKFpz4THjigOOfaAA2LUSLyApCuPhcECqFflXn_jT6OHFPWXmuutAGXsAeDedOjR0dRmvOlBadS2TcICMcfCIFSK0Fb82QgwSHfWECUp52sIbE0';
+
+  static const String driverEnRouteDriverImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuC18HvWhxiya6jP34_iBD6Mad8n9NpPb0jgG7uxOsZjKcueO6KA3RWAVufbYq7PPb6N-Oi49GQP9UGgFnQBHnDI8M0dJ59A5gF9pK2xiw9r3sbNLhQZQdBx3kmuDUpP4Qxv0hPjJYOlhRBDbm9DcAi2U9DGscT1A9YPERGlOoZ1V1SnJ13IYcQaErlbkG-SPPk7gTBi9i9y3WXD02QtmwyuSOvOQooJbnPs0rtLtuaCnqB0l342CVHFgYdKBO2wOz8ujiCRNUFcDxk';
+
+  /// Mapa Lisboa com rota — viagem em curso (`roles/details.md`).
+  static const String tripInProgressMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDEl18mZoZmo1EuTiik-3Lin9N81xkcfGi6zIJZpOanGfTNwIUWHGPLjTHdpL9ZRcchBlbqZ3exARwWfigKWE98B5gONGRJETmbzlWiCpTI4dvNAtRuyC4T2nyHebFWDQH7bnHdZLBmtkXDShi6HtXBHM8kstWOwRRnLQ2N3Q83BLYe64p9qmeIDU_8Ihv-igQPtxS7JbDsQng7DE9IRm46Mof2pS8A1v9YNQWD01iY2eoNd43B0sxx3ku6fH2H2DmVsQ4JOLJpZ_c';
+
+  static const String tripInProgressProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCvAQbZ7zzWs4Sv9lbjGnr6TKJp2v9KB-N0cVdM-9LfumN7UG8XMSrPFMkNZxa1SbaJ5ZBzg1elcLR9gwPYkaD494Eetfti1KUhalnnLjsp2psOw2UJyOmsYH-VhrhmzwEIgzE_uRYkuRai2hQN878mTHUMm6GVSeD7q-FGClDcGU1aXZ22byJjtTr154n8yAVaSXGSnj3sDXOpp754R_FqPagzOElfichAI_HLBz9s83aNWQcsUZ4LHEmKUMjFxyr6WaqmloXjCzc';
+
+  /// Viagem concluída — foto de perfil (`roles/details.md`).
+  static const String tripCompletedProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuACTKkExMfq4ODyTbTGrxQquONkIm-LRQwhzTgFdk27RymxVuYHqzvOuZ7MmReRedn0xqaLC1iZecnP81CfK2e0954yUoCy-nFQ0401gFnn3hynMD08bd7JKumWq2J98gouHN9-D4T_MURPxgCbZCjQ4_HH276pfVNrM1pe1TKEmX7vktZmMnlkuOcwmsydi5Y2DLxFcZxP0_Y6I0dZhjVHkQIsNnRtN9OUxtl8P5rbcqmUEKhWkvGUMhyqkmlrKtPkV0Cszfny2RU';
+
+  /// Viagem concluída — pré-visualização do trajeto (`roles/details.md`).
+  static const String tripCompletedRouteImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCft7yamMQSNX6cFwnXfHACDZHgPRzUz5JAjCMlBrfK4OgsAlPpGUDqbwWaPdverwm-EIGyN2xYL_MHLYatS0XpcwcoC0d5IfD0EdpZ3tY6v-9fzQVuN0pD8NjnackJRnJimMXR2sW1Xa7BUz1T3DJQWNX5Sjrkw5Qh5JS3BIbMuEPhz8_biwEF95XV4PoQG4jKO7G0KiuD9HAauGfFlZCPwuar496YEobXZx-bGJDiyQGWojQHHIuh1gsTgRm5yw3YEPGY-2ogrYQ';
 }

@@ -53,9 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   horizontal: AppLayout.marginMobile,
                 ),
                 child: _QuickActionsRow(
+                  onPedir: () => AppNavigation.toTripDestination(context),
                   onReservar: () => AppNavigation.toEventBooking(context),
-                  onAluguel: () => AppNavigation.toJetskiRental(context),
-                  onExplorarIlhas: () => AppNavigation.toDiscover(context),
+                  onAlugar: () => AppNavigation.toVehicleRental(context),
+                  onHistorico: () => AppNavigation.toDelivery(context),
+                  onSaldo: () {},
                 ),
               ),
               const Spacer(),
@@ -72,7 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 _TripBottomSheet(destinationController: _destinationController),
                 AppBottomNav(
                   selectedIndex: AppNavIndex.inicio,
-                  onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
+                  onItemTap: (index) =>
+                      AppNavigation.onBottomNavTap(context, index),
                 ),
               ],
             ),
@@ -140,9 +143,7 @@ class _HomeAppBar extends StatelessWidget {
       bottom: false,
       child: Container(
         height: 56.h,
-        padding: EdgeInsets.symmetric(
-          horizontal: AppLayout.marginMobile,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
         color: AppColors.background,
         child: Row(
           children: [
@@ -151,9 +152,14 @@ class _HomeAppBar extends StatelessWidget {
               child: InkWell(
                 onTap: () {},
                 borderRadius: BorderRadius.circular(999.r),
-                child: SizedBox(width: 40.w,
+                child: SizedBox(
+                  width: 40.w,
                   height: 40.h,
-                  child: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
+                  child: Icon(
+                    Icons.menu,
+                    color: AppColors.primary,
+                    size: 24.sp,
+                  ),
                 ),
               ),
             ),
@@ -280,28 +286,33 @@ class _BalanceCard extends StatelessWidget {
 
 class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow({
+    required this.onPedir,
     required this.onReservar,
-    required this.onAluguel,
-    required this.onExplorarIlhas,
+    required this.onAlugar,
+    required this.onHistorico,
+    required this.onSaldo,
   });
 
+  final VoidCallback onPedir;
   final VoidCallback onReservar;
-  final VoidCallback onAluguel;
-  final VoidCallback onExplorarIlhas;
+  final VoidCallback onAlugar;
+  final VoidCallback onHistorico;
+  final VoidCallback onSaldo;
 
   static const _actions = [
+    (Icons.directions_car, 'Pedir'),
     (Icons.calendar_today, 'Reservar'),
-    (Icons.directions_boat, 'Aluguel'),
-    (Icons.travel_explore, 'Explorar Ilhas'),
+    (Icons.car_rental, 'Alugar'),
     (Icons.history, 'Histórico'),
+    (Icons.account_balance_wallet, 'Saldo'),
   ];
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const gap = 8.0;
-        final tileWidth = (constraints.maxWidth - gap * 3) / 4;
+        final gap = 8.w;
+        final tileWidth = (constraints.maxWidth - gap * 4) / 5;
 
         return Row(
           children: [
@@ -314,9 +325,11 @@ class _QuickActionsRow extends StatelessWidget {
                   icon: _actions[i].$1,
                   label: _actions[i].$2,
                   onTap: switch (_actions[i].$2) {
+                    'Pedir' => onPedir,
                     'Reservar' => onReservar,
-                    'Aluguel' => onAluguel,
-                    'Explorar Ilhas' => onExplorarIlhas,
+                    'Alugar' => onAlugar,
+                    'Histórico' => onHistorico,
+                    'Saldo' => onSaldo,
                     _ => () {},
                   },
                 ),
@@ -490,7 +503,8 @@ class _TripBottomSheet extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          SizedBox(height: 48.h,
+          SizedBox(
+            height: 48.h,
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
