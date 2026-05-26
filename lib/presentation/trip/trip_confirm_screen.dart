@@ -95,14 +95,18 @@ class _ConfirmAppBar extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onBack,
-              icon: Icon(Icons.arrow_back, color: AppColors.primary, size: 24.sp),
+              icon: Icon(
+                Icons.arrow_back,
+                color: AppColors.primary,
+                size: 24.sp,
+              ),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
             ),
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Mobilidade Premium',
+                'Local Transport',
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -126,11 +130,8 @@ class _ConfirmAppBar extends StatelessWidget {
                 child: Image.network(
                   TripConfirmData.profileAvatarImage,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.person,
-                    size: 20.sp,
-                    color: AppColors.primary,
-                  ),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.person, size: 20.sp, color: AppColors.primary),
                 ),
               ),
             ),
@@ -143,10 +144,7 @@ class _ConfirmAppBar extends StatelessWidget {
 
 /// Mapa Lisboa com rota e pins já desenhados no asset — sem overlays extra.
 class _MapLayer extends StatelessWidget {
-  const _MapLayer({
-    required this.mapTop,
-    required this.mapBottom,
-  });
+  const _MapLayer({required this.mapTop, required this.mapBottom});
 
   final double mapTop;
   final double mapBottom;
@@ -287,112 +285,116 @@ class _TripDetailsSheet extends StatelessWidget {
       ),
       child: SingleChildScrollView(
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 48.w,
-              height: 6.h,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(999.r),
-              ),
-            ),
-          ),
-          SizedBox(height: 24.h),
-          const _RouteSection(),
-          SizedBox(height: 24.h),
-          const _TripStatsRow(),
-          SizedBox(height: 24.h),
-          Text(
-            'Tipo de Transporte',
-            style: GoogleFonts.inter(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              height: 20 / 14,
-              letterSpacing: 0.1,
-              color: AppColors.primary,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          SizedBox(
-            height: 108.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: TripConfirmData.transportOptions.length,
-              separatorBuilder: (context, index) => SizedBox(width: 16.w),
-              itemBuilder: (context, index) {
-                final option = TripConfirmData.transportOptions[index];
-                return _TransportOptionCard(
-                  option: option,
-                  selected: option.id == selectedTransportId,
-                  onTap: () => onTransportSelected(option.id),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Divider(color: AppColors.surfaceVariant),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              Icon(Icons.credit_card, size: 22.sp, color: AppColors.onSurfaceVariant),
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  TripConfirmData.cardMask,
-                  style: GoogleFonts.inter(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
-                  ),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 48.w,
+                height: 6.h,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(999.r),
                 ),
               ),
-              SizedBox(width: 8.w),
-              Text(
-                'Total: $totalFormatted',
-                style: GoogleFonts.manrope(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 24 / 18,
-                  color: AppColors.primary,
-                ),
+            ),
+            SizedBox(height: 24.h),
+            const _RouteSection(),
+            SizedBox(height: 24.h),
+            const _TripStatsRow(),
+            SizedBox(height: 24.h),
+            Text(
+              'Tipo de Transporte',
+              style: GoogleFonts.inter(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                height: 20 / 14,
+                letterSpacing: 0.1,
+                color: AppColors.primary,
               ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          SizedBox(
-            height: 56.h,
-            child: FilledButton(
-              onPressed: onConfirm,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: AppColors.onSecondary,
-                elevation: 6,
-                shadowColor: AppColors.secondary.withValues(alpha: 0.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
+            ),
+            SizedBox(height: 12.h),
+            SizedBox(
+              height: 108.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: TripConfirmData.transportOptions.length,
+                separatorBuilder: (context, index) => SizedBox(width: 16.w),
+                itemBuilder: (context, index) {
+                  final option = TripConfirmData.transportOptions[index];
+                  return _TransportOptionCard(
+                    option: option,
+                    selected: option.id == selectedTransportId,
+                    onTap: () => onTransportSelected(option.id),
+                  );
+                },
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Confirmar viagem',
+            ),
+            SizedBox(height: 16.h),
+            Divider(color: AppColors.surfaceVariant),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.credit_card,
+                  size: 22.sp,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                SizedBox(width: 8.w),
+                Flexible(
+                  child: Text(
+                    TripConfirmData.cardMask,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.1,
+                      color: AppColors.primary,
                     ),
                   ),
-                  SizedBox(width: 8.w),
-                  Icon(Icons.chevron_right, size: 24.sp),
-                ],
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Total: $totalFormatted',
+                  style: GoogleFonts.manrope(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 24 / 18,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16.h),
+            SizedBox(
+              height: 56.h,
+              child: FilledButton(
+                onPressed: onConfirm,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: AppColors.onSecondary,
+                  elevation: 6,
+                  shadowColor: AppColors.secondary.withValues(alpha: 0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Confirmar viagem',
+                      style: GoogleFonts.inter(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Icon(Icons.chevron_right, size: 24.sp),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -458,11 +460,7 @@ class _RouteSection extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.location_on,
-              color: AppColors.secondary,
-              size: 22.sp,
-            ),
+            Icon(Icons.location_on, color: AppColors.secondary, size: 22.sp),
             SizedBox(width: 16.w),
             Expanded(
               child: Column(
@@ -630,7 +628,9 @@ class _TransportOptionCard extends StatelessWidget {
             Icon(
               option.icon,
               size: 24.sp,
-              color: selected ? AppColors.secondary : AppColors.onSurfaceVariant,
+              color: selected
+                  ? AppColors.secondary
+                  : AppColors.onSurfaceVariant,
             ),
             SizedBox(height: 6.h),
             Text(

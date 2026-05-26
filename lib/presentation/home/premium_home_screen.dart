@@ -10,7 +10,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 
-/// Mobilidade Premium — Início (app_details/details.md).
+/// Local Transport — Início (app_details/details.md).
 class PremiumHomeScreen extends StatefulWidget {
   const PremiumHomeScreen({super.key});
 
@@ -139,7 +139,7 @@ class _PremiumHomeAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Mobilidade Premium',
+                'Local Transport',
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,

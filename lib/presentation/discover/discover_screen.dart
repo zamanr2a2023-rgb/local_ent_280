@@ -110,7 +110,7 @@ class _DiscoverAppBar extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Mobilidade Premium',
+                    'Local Transport',
                     maxLines: 1,
                     style: GoogleFonts.manrope(
                       fontSize: 20.sp,

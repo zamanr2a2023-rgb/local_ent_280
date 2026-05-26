@@ -161,4 +161,32 @@ abstract final class AppAssets {
   /// Viagem concluída — pré-visualização do trajeto (`roles/details.md`).
   static const String tripCompletedRouteImage =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuCft7yamMQSNX6cFwnXfHACDZHgPRzUz5JAjCMlBrfK4OgsAlPpGUDqbwWaPdverwm-EIGyN2xYL_MHLYatS0XpcwcoC0d5IfD0EdpZ3tY6v-9fzQVuN0pD8NjnackJRnJimMXR2sW1Xa7BUz1T3DJQWNX5Sjrkw5Qh5JS3BIbMuEPhz8_biwEF95XV4PoQG4jKO7G0KiuD9HAauGfFlZCPwuar496YEobXZx-bGJDiyQGWojQHHIuh1gsTgRm5yw3YEPGY-2ogrYQ';
+
+  /// Histórico de viagens — foto de perfil (`roles/details.md`).
+  static const String tripHistoryProfileAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCLhWU_XVox7yXPxDsvIpDDQG_COwUcc7twzIIJFT6nIR7PSN9mmb60IBQ_hGmKP75E1_mpN-WvY8U9yCSuIiElTDg1oV3GUGj0rBUPA1RsL36ZQFfD1SgvAC3bgZ4ee8xNnJuiMnQZBu2S78-uWmtqmI6-KsYBS2yruWdIhAaIxF4Tg6vcVGWeYNUdPZ2fvohYSZ-Jt_YDkdPknxz_6lUO0RysuJJIspJvjmRhqC4estLvFZ4oPYsWEtc-U1_RyJQ1aSR4M_4imsg';
+
+  /// Histórico de viagens — Marina Hotel (`roles/details.md`).
+  static const String tripHistoryMarinaImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuASi6AMkEKmaJoFDqS7FuTA8Q3o__X6ukjKbblI7oMbRUiV7U8MFJBNX3aLL21q66R5nRlB5nSEt9kSKqiwE6NmLR3Z6WCp5uphsCWp-E8QjZ1-iDMvGPKpDPzX4e5RHpXBq85iFORUtyi98dqsjEsohhJ7phMWFSdKwkmX6RI3nmW2d5VdTQ3Jizrj_GinPy0nA5qVsi5NETDYsWiM4GARNKhWn9YluahlG-5pT6X_IHFnFeJMXXF80poP94DEfo9y-MBydgAAS28';
+
+  /// Histórico de viagens — Aeroporto (`roles/details.md`).
+  static const String tripHistoryAirportImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAQ5SsPZTKYVukGDjVjJ_4ksBnd17VyY3ib39KOELQziZwl01eZXbfCbKkzD68A8slnqe6EjlLR7-clb7Mh2uqMucwOIbenIjwkj5-z_X6mB4yqhRSgwMZ5zKaEIEer87Fi6EJInzbGHsHsIcQYgGSAsttTka9Lj7PY9pdlN-DqhF2bubuJ3RuMfMIrdWY68U7DmZO-Q748wlc0gS04Undf2KS-TowP6aWh2pwVFH1eFNdGrPREttbciOWnXLrpj_eP4qV3zST9fug';
+
+  /// Histórico de viagens — Torre Vasco da Gama (`roles/details.md`).
+  static const String tripHistoryTorreImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDj2udfvM_bn1NcceA7WWHbc7NqizjcyUepmN0kKMOjq6N9gGWNmWLwjTV9b8g1wuHr_zmkKFfxekwd-9ndXBLa2wLoVg4ULnwVzU6QYm1vZpPGQIe176_WhP7xXJ-OVipdf4M_GGmgtEWZ7DXFaCUY83Vw-cTTPSyd0XabZMX9CWNiC8yUQzBqopWUybR6p2AYPgVhAo1EscZ-ZRRpkO5przeQCc_ScWPuWHlCQ4t_pXAS0kK_2vfESYs_m3h80InM9M9HdviBVWQ';
+
+  /// Reservas — ilustração do estado vazio (`roles/details.md`).
+  static const String reservationsEmptyImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCYqAev1_IhIwIFFFLXuqGtQpjB8sMz-2X1tslEWmOEegjn53nXW2nvaFz2ChOBkmafWFw2I4xVdXWBTyTgLjT806bqVtZtORsGGCe6pFzYGF32VZyfHgDM0gGu_dnKCajRPKJLFdAoRQVrdAQ6v--wP2I9FquhBfJdKQww3iKkXWyVtKx_gHaBejEChWLfTl4hNhaRoafbd2mnqleddqeqcKKZ0kjEnIvNqPLY4LtDseQ0LFvKJXvwLRpmUbnQpJSfX9-3VvVC57w';
+
+  /// Detalhes da viagem — mapa Lisboa (`roles/details.md`).
+  static const String tripDetailsMapImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBBnN-KGtFYMXh7zxMZXZFT9drU4aNWJerQKv6JV5ABP2aUXW6ZyehaQbjiPR9atQdUs3KYzzpAHM-QOK8ulLN2kve5xn2bxyJ6XBy5D_1Zu3aBh_BDLliZwJU8O4Ez87wVQKmJQWOH4Hc6ifptJsFZ13unRYykw1NfY10gicXYE3GspzYyauh8kYnB4fXXp4HKGf_NBn9K3Qn9BHIuZ2_ZdSN9rx-deawIsFOLkVgqaVvMJ86-t4wbspW48wWS8B__PYzk-mkx4hk';
+
+  /// Detalhes da viagem — foto do motorista Ricardo Santos (`roles/details.md`).
+  static const String tripDetailsDriverAvatarImage =
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCXlihrW5Db1arRHJt09rshKogObdFEVnTfZlPzdYWK2139TFPJXMC8v8l1dhEQD4nIsiC96t8ujPdTLrs8xkyEH8cRSBM2AWd6aO-hFOIlIS6hU-dDAlLY9l8UPPEi28Fz6umOR2XX0nQGDtto6FQX0rsYTSFbc7aRQ56G4sJX1VifRL-RC9ds9xeWQY06VRABSaq4O3L7-Zw9Vy-updxVLmogXbpSARtQBMpIXBsklOn-Leeq0kwpKUkdq90IkFVGvht2Eoq9DCs';
 }

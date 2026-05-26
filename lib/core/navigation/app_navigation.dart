@@ -7,6 +7,7 @@ import 'package:local_ent_280/presentation/delivery/delivery_screen.dart';
 import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/presentation/reservation/reservation_review_screen.dart';
+import 'package:local_ent_280/presentation/reservations/reservations_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_detail_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_rental_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_search_results_screen.dart';
@@ -17,6 +18,8 @@ import 'package:local_ent_280/presentation/trip/driver_found_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
 
 /// Bottom navigation indices (Fluxo do Utilizador).
 abstract final class AppNavIndex {
@@ -86,6 +89,14 @@ abstract final class AppNavigation {
     );
   }
 
+  /// Cancelar viagem → volta ao ecrã de destino, limpando o fluxo em curso.
+  static void cancelToTripDestination(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const TripDestinationScreen()),
+      (route) => route.isFirst,
+    );
+  }
+
   /// Ver Mapa Completo → confirmação de viagem.
   static void toTripConfirm(BuildContext context) {
     Navigator.of(context).push(
@@ -125,6 +136,29 @@ abstract final class AppNavigation {
   static void toTripCompleted(BuildContext context) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const TripCompletedScreen()),
+    );
+  }
+
+  /// Histórico de viagens → detalhes da viagem.
+  static void toTripDetails(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const TripDetailsScreen()),
+    );
+  }
+
+  /// Tab Viagens → histórico de viagens.
+  static void toTripHistory(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Tab Reservas → lista de reservas do utilizador.
+  static void toReservations(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const ReservationsScreen()),
+      (_) => false,
     );
   }
 
@@ -178,9 +212,9 @@ abstract final class AppNavigation {
       case AppNavIndex.inicio:
         _goHome(context);
       case AppNavIndex.viagens:
-        _goDelivery(context);
+        _goTripHistory(context);
       case AppNavIndex.reservas:
-        _goVehicleRental(context);
+        _goReservations(context);
       case AppNavIndex.perfil:
         _goHome(context);
     }
@@ -194,16 +228,16 @@ abstract final class AppNavigation {
     );
   }
 
-  static void _goDelivery(BuildContext context) {
+  static void _goTripHistory(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const DeliveryScreen()),
+      MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen()),
       (_) => false,
     );
   }
 
-  static void _goVehicleRental(BuildContext context) {
+  static void _goReservations(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const VehicleRentalScreen()),
+      MaterialPageRoute<void>(builder: (_) => const ReservationsScreen()),
       (_) => false,
     );
   }

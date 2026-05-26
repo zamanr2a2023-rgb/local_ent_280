@@ -72,7 +72,10 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
             right: 0,
             bottom: 0,
             child: _SearchBottomSheet(
-              onCancel: () => AppNavigation.back(context),
+              onCancel: () {
+                _foundNavigationTimer?.cancel();
+                AppNavigation.cancelToTripDestination(context);
+              },
             ),
           ),
         ],
@@ -252,7 +255,7 @@ class _FloatingHeader extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  'Mobilidade Premium',
+                  'Local Transport',
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,

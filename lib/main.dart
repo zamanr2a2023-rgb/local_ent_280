@@ -18,18 +18,18 @@ Future<void> main() async {
   await AppFonts.ensureLoaded();
   runApp(
     AppScreenUtil.init(
-      child: const MobilidadePremiumApp(),
+      child: const LocalTransportApp(),
     ),
   );
 }
 
-class MobilidadePremiumApp extends StatelessWidget {
-  const MobilidadePremiumApp({super.key});
+class LocalTransportApp extends StatelessWidget {
+  const LocalTransportApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mobilidade Premium',
+      title: 'Local Transport',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

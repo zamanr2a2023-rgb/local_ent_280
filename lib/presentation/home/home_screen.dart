@@ -12,7 +12,6 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   static double get _sheetTopRadius => 30.r;
-  static double get _gapBalanceToActions => 210.h;
   static double get _gapActionsToSheet => 20.h;
 
   @override
@@ -47,19 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: _BalanceCard(),
               ),
-              SizedBox(height: HomeScreen._gapBalanceToActions),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppLayout.marginMobile,
-                ),
-                child: _QuickActionsRow(
-                  onPedir: () => AppNavigation.toTripDestination(context),
-                  onReservar: () => AppNavigation.toEventBooking(context),
-                  onAlugar: () => AppNavigation.toVehicleRental(context),
-                  onHistorico: () => AppNavigation.toDelivery(context),
-                  onSaldo: () {},
-                ),
-              ),
               const Spacer(),
             ],
           ),
@@ -69,7 +55,20 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 0,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppLayout.marginMobile,
+                  ),
+                  child: _QuickActionsRow(
+                    onPedir: () => AppNavigation.toTripDestination(context),
+                    onReservar: () => AppNavigation.toEventBooking(context),
+                    onAlugar: () => AppNavigation.toVehicleRental(context),
+                    onHistorico: () => AppNavigation.toDelivery(context),
+                    onSaldo: () {},
+                  ),
+                ),
                 SizedBox(height: HomeScreen._gapActionsToSheet),
                 _TripBottomSheet(destinationController: _destinationController),
                 AppBottomNav(
@@ -144,7 +143,7 @@ class _HomeAppBar extends StatelessWidget {
       child: Container(
         height: 56.h,
         padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
-        color: AppColors.background,
+        color: AppColors.surfaceContainerLowest,
         child: Row(
           children: [
             Material(
@@ -168,7 +167,7 @@ class _HomeAppBar extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Mobilidade Premium',
+                    'Local Transport',
                     maxLines: 1,
                     style: GoogleFonts.manrope(
                       fontSize: 24.sp,
@@ -422,10 +421,46 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _TripBottomSheet extends StatelessWidget {
+class _TripBottomSheet extends StatefulWidget {
   const _TripBottomSheet({required this.destinationController});
 
   final TextEditingController destinationController;
+
+  @override
+  State<_TripBottomSheet> createState() => _TripBottomSheetState();
+}
+
+class _TripBottomSheetState extends State<_TripBottomSheet> {
+  bool _expanded = true;
+  double _dragDelta = 0;
+
+  static const _animDuration = Duration(milliseconds: 280);
+  static const _animCurve = Curves.easeOutCubic;
+  static const _dragThreshold = 40.0;
+  static const _velocityThreshold = 250.0;
+
+  void _toggle() => setState(() => _expanded = !_expanded);
+
+  void _onVerticalDragStart(DragStartDetails _) {
+    _dragDelta = 0;
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    _dragDelta += details.delta.dy;
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    setState(() {
+      if (velocity > _velocityThreshold || _dragDelta > _dragThreshold) {
+        _expanded = false;
+      } else if (velocity < -_velocityThreshold ||
+          _dragDelta < -_dragThreshold) {
+        _expanded = true;
+      }
+      _dragDelta = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -443,91 +478,151 @@ class _TripBottomSheet extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 12.h),
+      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(999.r),
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Para onde vamos hoje?',
-            style: GoogleFonts.manrope(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w600,
-              height: 28 / 20,
-              color: AppColors.primary,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Stack(
-            children: [
-              Positioned(
-                left: 19,
-                top: 42,
-                child: Container(
-                  width: 2.w,
-                  height: 32.h,
-                  color: AppColors.outlineVariant.withValues(alpha: 0.35),
-                ),
-              ),
-              Column(
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _toggle,
+            onVerticalDragStart: _onVerticalDragStart,
+            onVerticalDragUpdate: _onVerticalDragUpdate,
+            onVerticalDragEnd: _onVerticalDragEnd,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _LocationField(
-                    icon: Icons.my_location,
-                    iconColor: AppColors.accent,
-                    label: 'Localização Atual',
-                    labelColor: AppColors.accent,
-                    value: 'Av. da Liberdade, Lisboa',
-                    readOnly: true,
+                  Center(
+                    child: Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 12.h),
-                  _LocationField(
-                    icon: Icons.location_on,
-                    iconColor: AppColors.outline,
-                    label: 'Destino',
-                    hint: 'Para onde deseja ir?',
-                    controller: destinationController,
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Para onde vamos hoje?',
+                          style: GoogleFonts.manrope(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w600,
+                            height: 28 / 20,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        duration: _animDuration,
+                        curve: _animCurve,
+                        turns: _expanded ? 0 : 0.5,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.labelMuted,
+                          size: 24.sp,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-          SizedBox(height: 12.h),
-          SizedBox(
-            height: 48.h,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: AppColors.onAccent,
-                elevation: 4,
-                shadowColor: AppColors.accent.withValues(alpha: 0.25),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-              child: Text(
-                'Confirmar Trajeto',
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
+          AnimatedSize(
+            duration: _animDuration,
+            curve: _animCurve,
+            alignment: Alignment.topCenter,
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: _expanded ? 1.0 : 0.0,
+                child: _ExpandedSheetContent(
+                  destinationController: widget.destinationController,
                 ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExpandedSheetContent extends StatelessWidget {
+  const _ExpandedSheetContent({required this.destinationController});
+
+  final TextEditingController destinationController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(height: 8.h),
+        Stack(
+          children: [
+            Positioned(
+              left: 19,
+              top: 42,
+              child: Container(
+                width: 2.w,
+                height: 32.h,
+                color: AppColors.outlineVariant.withValues(alpha: 0.35),
+              ),
+            ),
+            Column(
+              children: [
+                _LocationField(
+                  icon: Icons.my_location,
+                  iconColor: AppColors.accent,
+                  label: 'Localização Atual',
+                  labelColor: AppColors.accent,
+                  value: 'Av. da Liberdade, Lisboa',
+                  readOnly: true,
+                ),
+                SizedBox(height: 12.h),
+                _LocationField(
+                  icon: Icons.location_on,
+                  iconColor: AppColors.outline,
+                  label: 'Destino',
+                  hint: 'Para onde deseja ir?',
+                  controller: destinationController,
+                ),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        SizedBox(
+          height: 48.h,
+          child: ElevatedButton(
+            onPressed: () => AppNavigation.toTripConfirm(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              foregroundColor: AppColors.onAccent,
+              elevation: 4,
+              shadowColor: AppColors.accent.withValues(alpha: 0.25),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            ),
+            child: Text(
+              'Confirmar Trajeto',
+              style: GoogleFonts.inter(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

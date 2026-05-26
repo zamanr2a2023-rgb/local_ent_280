@@ -6,11 +6,7 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
 /// Shared bottom navigation — same layout on every tab/screen.
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({
-    super.key,
-    required this.selectedIndex,
-    this.onItemTap,
-  });
+  const AppBottomNav({super.key, required this.selectedIndex, this.onItemTap});
 
   final int selectedIndex;
   final ValueChanged<int>? onItemTap;
@@ -29,12 +25,18 @@ class AppBottomNav extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 16.r,
-            offset: Offset(0, -4.h),
+            blurRadius: 12.r,
+            spreadRadius: 0,
+            offset: Offset(0, -2.h),
+          ),
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 24.r,
+            spreadRadius: 0,
+            offset: Offset(0, -8.h),
           ),
         ],
       ),

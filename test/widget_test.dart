@@ -18,6 +18,9 @@ import 'package:local_ent_280/presentation/trip/driver_found_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
+import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
+import 'package:local_ent_280/presentation/reservations/reservations_screen.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
@@ -34,10 +37,10 @@ void main() {
   testWidgets('Splash screen shows app title', (WidgetTester tester) async {
     _setPhoneSize(tester);
     await tester.pumpWidget(
-      AppScreenUtil.init(child: const MobilidadePremiumApp()),
+      AppScreenUtil.init(child: const LocalTransportApp()),
     );
 
-    expect(find.text('Mobilidade Premium'), findsOneWidget);
+    expect(find.text('Local Transport'), findsOneWidget);
     expect(find.text('Entrar'), findsOneWidget);
     expect(find.text('Criar conta'), findsOneWidget);
   });
@@ -107,7 +110,7 @@ void main() {
 
     await tester.pumpWidget(AppScreenUtil.testWrap(const PremiumHomeScreen()));
 
-    expect(find.text('Mobilidade Premium'), findsOneWidget);
+    expect(find.text('Local Transport'), findsOneWidget);
     expect(find.text('Para onde vamos hoje?'), findsOneWidget);
     expect(find.text('Procure destino ou serviço...'), findsOneWidget);
     expect(find.text('Entregas Rápidas'), findsOneWidget);
@@ -136,7 +139,7 @@ void main() {
     expect(find.text('Aluguel'), findsNothing);
   });
 
-  testWidgets('Home Reservas tab opens vehicle rental', (
+  testWidgets('Home Reservas tab opens reservations screen', (
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
@@ -144,10 +147,9 @@ void main() {
     await tester.tap(find.text('Reservas'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aluguer de Veículos'), findsOneWidget);
-    expect(find.text('Pesquisar Veículos Disponíveis'), findsOneWidget);
-    expect(find.text('Ver frota no mapa'), findsOneWidget);
-    expect(find.text('Premium Only'), findsOneWidget);
+    expect(find.text('Gerencie as suas próximas viagens'), findsOneWidget);
+    expect(find.text('Nova reserva'), findsOneWidget);
+    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
   });
 
   testWidgets('Vehicle rental screen shows search UI', (
@@ -272,7 +274,7 @@ void main() {
     expect(find.text('ESTIMATIVA'), findsOneWidget);
     expect(find.text('3-5 minutos'), findsOneWidget);
     expect(find.text('ORIGEM'), findsOneWidget);
-    expect(find.text('Mobilidade Premium'), findsOneWidget);
+    expect(find.text('Local Transport'), findsOneWidget);
   });
 
   testWidgets('Driver search navigates to driver found', (
@@ -510,5 +512,133 @@ void main() {
     expect(find.text('Market Gourmet'), findsOneWidget);
     expect(find.text('Aspargos Biológicos'), findsOneWidget);
     expect(find.text('Viagens'), findsOneWidget);
+  });
+
+  testWidgets('Trip history screen shows trip list and stats', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const TripHistoryScreen()));
+    await tester.pump();
+
+    expect(find.text('Histórico de Viagens'), findsOneWidget);
+    expect(find.text('24'), findsOneWidget);
+    expect(find.text('128€'), findsOneWidget);
+    expect(find.text('Todos'), findsOneWidget);
+    expect(find.text('Lisboa Marina Hotel'), findsOneWidget);
+    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Torre Vasco da Gama'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Torre Vasco da Gama'), findsOneWidget);
+    expect(find.text('Cancelada'), findsOneWidget);
+  });
+
+  testWidgets('Home Viagens tab opens trip history', (WidgetTester tester) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    await tester.tap(find.text('Viagens'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Histórico de Viagens'), findsOneWidget);
+    expect(find.text('A MINHA ATIVIDADE'), findsOneWidget);
+  });
+
+  testWidgets('Reservations screen shows confirmed and pending cards', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const ReservationsScreen()));
+    await tester.pump();
+
+    expect(find.text('Gerencie as suas próximas viagens'), findsOneWidget);
+    expect(find.text('Nova reserva'), findsOneWidget);
+    expect(find.text('15 de Outubro, 2023'), findsOneWidget);
+    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
+    expect(find.text('Avenida da Liberdade, 120'), findsOneWidget);
+    expect(find.text('Confirmada'), findsOneWidget);
+    expect(find.text('Executivo · Tesla Model S'), findsOneWidget);
+    expect(find.text('Detalhes'), findsOneWidget);
+    expect(find.text('18 de Outubro, 2023'), findsOneWidget);
+    expect(find.text('Hotel Altis Grand'), findsOneWidget);
+    expect(find.text('Pendente'), findsOneWidget);
+    expect(find.text('Cancelar'), findsOneWidget);
+  });
+
+  testWidgets('Reservations empty state shows explore button', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const ReservationsScreen()));
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('Explorar destinos'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Ainda não tem mais reservas'), findsOneWidget);
+    expect(find.text('Explorar destinos'), findsOneWidget);
+  });
+
+  testWidgets('Trip details screen shows summary invoice and driver', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const TripDetailsScreen()));
+    await tester.pump();
+
+    expect(find.text('Resumo da Viagem'), findsOneWidget);
+    expect(find.text('14 de Outubro, 2023 • 18:42'), findsOneWidget);
+    expect(find.text('Concluída'), findsOneWidget);
+    expect(find.text('Avenida da Liberdade, 110'), findsOneWidget);
+    expect(find.text('Aeroporto Humberto Delgado'), findsOneWidget);
+    expect(find.text('Avalie a sua experiência'), findsOneWidget);
+    expect(find.text('Editar'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Apoio ao cliente'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Fatura Digital'), findsOneWidget);
+    expect(find.text('Tarifa Base'), findsOneWidget);
+    expect(find.text('20,05 €'), findsOneWidget);
+    expect(find.text('Descarregar PDF'), findsOneWidget);
+    expect(find.text('Ricardo Santos'), findsOneWidget);
+    expect(find.text('Tesla Model 3 • 42-XG-99'), findsOneWidget);
+    expect(find.text('Algo correu mal?'), findsOneWidget);
+    expect(find.text('Reportar objeto perdido'), findsOneWidget);
+  });
+
+  testWidgets('Trip history card opens trip details', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const TripHistoryScreen()));
+    await tester.pump();
+
+    await tester.tap(find.text('Lisboa Marina Hotel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resumo da Viagem'), findsOneWidget);
+    expect(find.text('Fatura Digital'), findsOneWidget);
+  });
+
+  testWidgets('Driver search Cancelar Viagem opens trip destination', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const DriverSearchScreen()));
+    await tester.pump();
+
+    await tester.tap(find.text('Cancelar Viagem'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Para onde vamos hoje?'), findsOneWidget);
   });
 }
