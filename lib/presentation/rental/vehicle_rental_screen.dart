@@ -6,6 +6,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Pesquisa de Aluguer de Veículos — `roles/details.md` mockup.
 class VehicleRentalScreen extends StatefulWidget {
@@ -150,7 +151,7 @@ class _RentalAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -195,7 +196,7 @@ class _HeroHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Aluguer de Veículos',
+          context.l10n.rentalTitle,
           style: GoogleFonts.manrope(
             fontSize: 28.sp,
             fontWeight: FontWeight.w700,
@@ -205,7 +206,7 @@ class _HeroHeader extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          'Encontre o parceiro perfeito para a sua próxima viagem.',
+          context.l10n.rentalSubtitle,
           style: GoogleFonts.inter(
             fontSize: 16.sp,
             fontWeight: FontWeight.w400,
@@ -264,17 +265,17 @@ class _SearchFormCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _LocationField(
-            label: 'Local de Recolha',
+            label: context.l10n.rentalPickupLocation,
             icon: Icons.location_on_outlined,
             controller: pickupController,
             hint: 'Aeroporto de Lisboa, PT',
           ),
           SizedBox(height: 16.h),
           _LocationField(
-            label: 'Local de Entrega',
+            label: context.l10n.rentalDropoffLocation,
             icon: Icons.trip_origin,
             controller: dropoffController,
-            hint: 'Mesmo local de recolha',
+            hint: context.l10n.rentalSamePickupHint,
           ),
           SizedBox(height: 16.h),
           _DateCalendarSection(
@@ -301,7 +302,7 @@ class _SearchFormCard extends StatelessWidget {
               onPressed: () => AppNavigation.toVehicleSearchResults(context),
               icon: Icon(Icons.search, size: 22.sp, color: AppColors.onSecondary),
               label: Text(
-                'Pesquisar Veículos Disponíveis',
+                context.l10n.rentalSearchAvailable,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -427,7 +428,7 @@ class _DateCalendarSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Seleção de Datas',
+                  context.l10n.rentalDateSelection,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -665,7 +666,7 @@ class _DriverAgeSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Idade do Condutor',
+            context.l10n.rentalDriverAge,
             style: GoogleFonts.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -704,7 +705,7 @@ class _DriverAgeSection extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Taxas adicionais podem ser aplicadas para condutores fora do intervalo padrão.',
+            context.l10n.rentalDriverAgeNote,
             style: GoogleFonts.inter(
               fontSize: 10.sp,
               fontWeight: FontWeight.w400,
@@ -742,7 +743,7 @@ class _PremiumToggleRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Premium Only',
+                  context.l10n.rentalPremiumOnly,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -751,7 +752,7 @@ class _PremiumToggleRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Mostrar apenas frota de luxo',
+                  context.l10n.rentalLuxuryFleetOnly,
                   style: GoogleFonts.inter(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w400,
@@ -828,7 +829,7 @@ class _FleetMapPreview extends StatelessWidget {
                         Icon(Icons.map, color: AppColors.secondary, size: 22.sp),
                         SizedBox(width: 8.w),
                         Text(
-                          'Ver frota no mapa',
+                          context.l10n.rentalViewFleetOnMap,
                           style: GoogleFonts.inter(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,

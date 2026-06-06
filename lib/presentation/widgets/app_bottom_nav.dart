@@ -1,25 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
+/// Client: Home, Trips, Reservations, Profile. Driver: Home, Profile only.
+enum AppBottomNavMode { full, driver }
+
 /// Shared bottom navigation — same layout on every tab/screen.
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({super.key, required this.selectedIndex, this.onItemTap});
+  const AppBottomNav({
+    super.key,
+    required this.selectedIndex,
+    this.onItemTap,
+    this.mode = AppBottomNavMode.full,
+  });
 
+  /// For [AppBottomNavMode.full], uses [AppNavIndex]. For driver mode, 0 = Home, 1 = Profile.
   final int selectedIndex;
   final ValueChanged<int>? onItemTap;
+  final AppBottomNavMode mode;
 
-  static const _items = [
-    (Icons.home, 'Início'),
-    (Icons.directions_car, 'Viagens'),
-    (Icons.calendar_today, 'Reservas'),
-    (Icons.person, 'Perfil'),
+  static const _fullIcons = [
+    Icons.home,
+    Icons.directions_car,
+    Icons.calendar_today,
+    Icons.person,
+  ];
+
+  static const _driverIcons = [
+    Icons.home,
+    Icons.person,
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isDriver = mode == AppBottomNavMode.driver;
+    final icons = isDriver ? _driverIcons : _fullIcons;
+    final labels = isDriver
+        ? [l10n.navHome, l10n.navProfile]
+        : [
+            l10n.navHome,
+            l10n.navTrips,
+            l10n.navReservations,
+            l10n.navProfile,
+          ];
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Container(
@@ -47,8 +74,7 @@ class AppBottomNav extends StatelessWidget {
         6.h + bottomPadding,
       ),
       child: Row(
-        children: List.generate(_items.length, (index) {
-          final item = _items[index];
+        children: List.generate(icons.length, (index) {
           final isSelected = index == selectedIndex;
           return Expanded(
             child: GestureDetector(
@@ -69,7 +95,7 @@ class AppBottomNav extends StatelessWidget {
                           )
                         : null,
                     child: Icon(
-                      item.$1,
+                      icons[index],
                       size: 22.sp,
                       color: isSelected
                           ? AppColors.onAccent
@@ -78,7 +104,7 @@ class AppBottomNav extends StatelessWidget {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    item.$2,
+                    labels[index],
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

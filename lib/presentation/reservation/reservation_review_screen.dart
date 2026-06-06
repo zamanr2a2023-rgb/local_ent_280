@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Revisão da Reserva — app_details/details.md.
 class ReservationReviewScreen extends StatefulWidget {
@@ -98,7 +99,7 @@ class _ReservationAppBar extends StatelessWidget {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Revisão da Reserva',
+                context.l10n.reservationReviewTitle,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -196,7 +197,7 @@ class _VehicleCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
-                  'Premium',
+                  context.l10n.premium,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -222,7 +223,7 @@ class _VehicleCard extends StatelessWidget {
               SizedBox(width: 8.w),
               Expanded(
                 child: Text(
-                'Seguro Total Incluído',
+                context.l10n.reservationFullInsurance,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -254,7 +255,7 @@ class _ItineraryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Itinerário',
+            context.l10n.reservationItinerary,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -263,18 +264,18 @@ class _ItineraryCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
-          const _ItineraryStop(
+          _ItineraryStop(
             icon: Icons.location_on,
             iconColor: AppColors.secondary,
-            label: 'LEVANTAMENTO',
+            label: context.l10n.reservationPickupLabel,
             place: 'Aeroporto de Lisboa (LIS)',
             dateTime: '15 Out, 2023 às 10:00',
             showConnector: true,
           ),
-          const _ItineraryStop(
+          _ItineraryStop(
             icon: Icons.flag,
             iconColor: AppColors.primary,
-            label: 'DEVOLUÇÃO',
+            label: context.l10n.reservationReturnLabel,
             place: 'Aeroporto de Lisboa (LIS)',
             dateTime: '20 Out, 2023 às 18:00',
             showConnector: false,
@@ -399,7 +400,7 @@ class _SecurityBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pagamento 100% Seguro',
+                  context.l10n.reservationSecurePayment,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -410,7 +411,7 @@ class _SecurityBanner extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Utilizamos encriptação SSL de 256 bits para proteger os seus dados.',
+                  context.l10n.reservationSecurePaymentDesc,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -467,7 +468,7 @@ class _CostAndPaymentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Resumo de Custos',
+            context.l10n.reservationCostSummary,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -509,7 +510,7 @@ class _CostAndPaymentCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Total',
+                  context.l10n.total,
                   style: GoogleFonts.manrope(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
@@ -537,7 +538,7 @@ class _CostAndPaymentCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Sem custos ocultos',
+                    context.l10n.reservationNoHiddenFees,
                     style: GoogleFonts.inter(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -551,7 +552,7 @@ class _CostAndPaymentCard extends StatelessWidget {
           ),
           SizedBox(height: 32.h),
           Text(
-            'Método de Pagamento',
+            context.l10n.reservationPaymentMethod,
             style: GoogleFonts.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -591,7 +592,7 @@ class _CostAndPaymentCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cartão de Crédito',
+                            context.l10n.reservationCreditCard,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -647,7 +648,7 @@ class _CostAndPaymentCard extends StatelessWidget {
                       const Icon(Symbols.ios, color: AppColors.primary),
                       SizedBox(width: 16.w),
                       Text(
-                        'Pagar com Apple Pay',
+                        context.l10n.reservationPayWithApplePay,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -678,7 +679,7 @@ class _CostAndPaymentCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Confirmar e Pagar',
+                        context.l10n.reservationConfirmAndPay,
                         style: GoogleFonts.manrope(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w600,
@@ -707,12 +708,11 @@ class _CostAndPaymentCard extends StatelessWidget {
                 color: AppColors.onSurfaceVariant,
               ),
               children: [
-                const TextSpan(
-                  text:
-                      'Ao clicar em "Confirmar e Pagar", aceita os nossos ',
+                TextSpan(
+                  text: context.l10n.reservationTermsPrefix,
                 ),
                 TextSpan(
-                  text: 'Termos e Condições',
+                  text: context.l10n.reservationTermsLink,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,

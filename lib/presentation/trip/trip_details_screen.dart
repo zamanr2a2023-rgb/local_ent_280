@@ -5,10 +5,31 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Detalhes da Viagem — `roles/details.md`.
 class TripDetailsScreen extends StatelessWidget {
   const TripDetailsScreen({super.key});
+
+  static String _fareLineLabel(AppLocalizations l10n, int index) {
+    return switch (index) {
+      0 => l10n.tripDetailsFareBase,
+      1 => l10n.tripDetailsFareDistance,
+      2 => l10n.tripDetailsFareTime,
+      3 => l10n.tripDetailsFareDiscount,
+      _ => '',
+    };
+  }
+
+  static String _supportActionLabel(AppLocalizations l10n, String id) {
+    return switch (id) {
+      'lost-item' => l10n.tripDetailsSupportLostItem,
+      'safety' => l10n.tripDetailsSupportSafety,
+      'support' => l10n.tripDetailsSupportCustomer,
+      _ => '',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +95,7 @@ class _DetailsAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              'Mobilidade Premium',
+              context.l10n.premiumMobility,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -254,7 +275,7 @@ class _SummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      TripDetailsData.summaryTitle,
+                      context.l10n.tripDetailsSummary,
                       style: AppTypography.manrope(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w600,
@@ -286,7 +307,7 @@ class _SummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999.r),
                 ),
                 child: Text(
-                  TripDetailsData.summaryStatus,
+                  context.l10n.tripDetailsStatusCompleted,
                   style: AppTypography.inter(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
@@ -411,7 +432,7 @@ class _RatingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            TripDetailsData.ratingTitle,
+            context.l10n.tripDetailsRateExperience,
             style: AppTypography.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -444,7 +465,7 @@ class _RatingCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  TripDetailsData.ratingEditCta,
+                  context.l10n.edit,
                   style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -476,7 +497,7 @@ class _InvoiceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  TripDetailsData.invoiceTitle,
+                  context.l10n.tripDetailsDigitalInvoice,
                   style: AppTypography.manrope(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -493,8 +514,11 @@ class _InvoiceCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 14.h),
-          for (final line in TripDetailsData.invoiceLines) ...[
-            _FareLineRow(line: line),
+          for (var i = 0; i < TripDetailsData.invoiceLines.length; i++) ...[
+            _FareLineRow(
+              line: TripDetailsData.invoiceLines[i],
+              label: TripDetailsScreen._fareLineLabel(context.l10n, i),
+            ),
             SizedBox(height: 8.h),
           ],
           SizedBox(height: 4.h),
@@ -508,7 +532,7 @@ class _InvoiceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      TripDetailsData.totalLabel,
+                      context.l10n.tripDetailsTotalPaid,
                       style: AppTypography.inter(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
@@ -539,7 +563,7 @@ class _InvoiceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    TripDetailsData.methodLabel,
+                    context.l10n.tripDetailsMethod,
                     style: AppTypography.inter(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -593,7 +617,7 @@ class _InvoiceCard extends StatelessWidget {
                 color: AppColors.primary,
               ),
               label: Text(
-                TripDetailsData.downloadCta,
+                context.l10n.tripDetailsDownloadPdf,
                 style: AppTypography.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -611,9 +635,10 @@ class _InvoiceCard extends StatelessWidget {
 }
 
 class _FareLineRow extends StatelessWidget {
-  const _FareLineRow({required this.line});
+  const _FareLineRow({required this.line, required this.label});
 
   final FareLine line;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -628,7 +653,7 @@ class _FareLineRow extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            line.label,
+            label,
             style: AppTypography.inter(
               fontSize: 13.sp,
               fontWeight: line.isDiscount ? FontWeight.w500 : FontWeight.w400,
@@ -788,7 +813,7 @@ class _SupportCard extends StatelessWidget {
               ),
               SizedBox(width: 10.w),
               Text(
-                TripDetailsData.supportTitle,
+                context.l10n.tripDetailsSupportTitle,
                 style: AppTypography.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
@@ -801,7 +826,13 @@ class _SupportCard extends StatelessWidget {
           ),
           SizedBox(height: 6.h),
           for (final action in TripDetailsData.supportActions)
-            _SupportActionRow(action: action, onTap: () {}),
+            _SupportActionRow(
+              label: TripDetailsScreen._supportActionLabel(
+                context.l10n,
+                action.id,
+              ),
+              onTap: () {},
+            ),
         ],
       ),
     );
@@ -809,9 +840,9 @@ class _SupportCard extends StatelessWidget {
 }
 
 class _SupportActionRow extends StatelessWidget {
-  const _SupportActionRow({required this.action, required this.onTap});
+  const _SupportActionRow({required this.label, required this.onTap});
 
-  final SupportAction action;
+  final String label;
   final VoidCallback onTap;
 
   @override
@@ -827,7 +858,7 @@ class _SupportActionRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  action.label,
+                  label,
                   style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,

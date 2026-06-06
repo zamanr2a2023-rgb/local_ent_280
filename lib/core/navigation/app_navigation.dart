@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
+import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/presentation/admin/admin_home_screen.dart';
+import 'package:local_ent_280/presentation/admin/admin_reports_screen.dart';
 import 'package:local_ent_280/presentation/discover/discover_screen.dart';
 import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
 import 'package:local_ent_280/presentation/home/home_screen.dart';
@@ -11,6 +16,11 @@ import 'package:local_ent_280/presentation/reservations/reservations_screen.dart
 import 'package:local_ent_280/presentation/rental/vehicle_detail_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_rental_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_search_results_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_active_trip_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_home_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_request_expired_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_trip_accepted_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_trip_request_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_en_route_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_completed_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_in_progress_screen.dart';
@@ -19,6 +29,8 @@ import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
+import 'package:local_ent_280/presentation/profile/profile_screen.dart';
+import 'package:local_ent_280/presentation/settings/settings_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
 
 /// Bottom navigation indices (Fluxo do Utilizador).
@@ -37,10 +49,94 @@ abstract final class AppNavigation {
     );
   }
 
+  /// Termina sessão e volta ao ecrã de login (limpa a pilha de navegação).
+  static void signOutToLogin(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Definições da aplicação (idioma, moeda, conta).
+  static void toSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+    );
+  }
+
+  /// Tab Perfil → ecrã de perfil do utilizador.
+  static void toProfile(BuildContext context) {
+    final profile = UserSession.instance.profile;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => ProfileScreen(initialProfile: profile),
+      ),
+      (_) => false,
+    );
+  }
+
+  /// Post-authentication routing by Firestore `users/{uid}.role`.
+  static void afterAuthenticatedLogin(
+    BuildContext context,
+    AppUserProfile profile,
+  ) {
+    UserSession.instance.setProfile(profile);
+    final Widget home = switch (profile.role) {
+      AppUserRole.client => const HomeScreen(),
+      AppUserRole.driver => const DriverHomeScreen(),
+      AppUserRole.admin => const AdminHomeScreen(),
+    };
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => home),
+    );
+  }
+
   /// Login → mapa / planeamento de viagem (Página Inicial).
   static void toHomeAfterLogin(BuildContext context) {
-    Navigator.of(context).pushReplacement(
+    final profile = UserSession.instance.profile;
+    if (profile != null) {
+      afterAuthenticatedLogin(context, profile);
+      return;
+    }
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Login (admin) → painel admin Mobilidade Premium.
+  static void toAdminHome(BuildContext context) {
+    final profile = UserSession.instance.profile;
+    if (profile != null) {
+      afterAuthenticatedLogin(context, profile);
+      return;
+    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const AdminHomeScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Admin → relatórios detalhados (`roles/details.md`).
+  static void toAdminReports(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminReportsScreen()),
+    );
+  }
+
+  /// Admin drawer → painel principal (limpa a pilha).
+  static void goAdminDashboard(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const AdminHomeScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Admin drawer / bottom nav → relatórios detalhados (limpa a pilha).
+  static void goAdminReports(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const AdminReportsScreen()),
+      (_) => false,
     );
   }
 
@@ -202,6 +298,81 @@ abstract final class AppNavigation {
 
   static void openEventBooking(BuildContext context) => toEventBooking(context);
 
+  /// Motorista — dashboard principal.
+  static void toDriverHome(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const DriverHomeScreen()),
+      (_) => false,
+    );
+  }
+
+  /// Motorista — novo pedido de viagem.
+  static void toDriverTripRequest(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const DriverTripRequestScreen(),
+      ),
+    );
+  }
+
+  /// Motorista — pedido aceite.
+  static void toDriverTripAccepted(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const DriverTripAcceptedScreen(),
+      ),
+    );
+  }
+
+  /// Motorista — pedido expirado.
+  static void toDriverRequestExpired(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const DriverRequestExpiredScreen(),
+      ),
+    );
+  }
+
+  /// Motorista — viagem ativa.
+  static void toDriverActiveTrip(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const DriverActiveTripScreen(),
+      ),
+    );
+  }
+
+  /// Tab Viagens (motorista) → histórico de viagens.
+  static void toDriverTripHistory(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen()),
+      (_) => false,
+    );
+  }
+
+  static void onDriverBottomNavTap(BuildContext context, int index) {
+    switch (index) {
+      case AppNavIndex.inicio:
+        toDriverHome(context);
+      case AppNavIndex.viagens:
+        toDriverTripHistory(context);
+      case AppNavIndex.reservas:
+        _goReservations(context);
+      case AppNavIndex.perfil:
+        _goProfile(context);
+    }
+  }
+
+  /// Driver bottom nav (Home + Profile only): local index 0 = Home, 1 = Profile.
+  static void onDriverBottomNavLocalTap(BuildContext context, int localIndex) {
+    switch (localIndex) {
+      case 0:
+        onDriverBottomNavTap(context, AppNavIndex.inicio);
+      case 1:
+        onDriverBottomNavTap(context, AppNavIndex.perfil);
+    }
+  }
+
   /// Voltar — returns to the previous screen (e.g. Home).
   static void back(BuildContext context) {
     Navigator.of(context).maybePop();
@@ -216,7 +387,7 @@ abstract final class AppNavigation {
       case AppNavIndex.reservas:
         _goReservations(context);
       case AppNavIndex.perfil:
-        _goHome(context);
+        _goProfile(context);
     }
   }
 
@@ -238,6 +409,13 @@ abstract final class AppNavigation {
   static void _goReservations(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const ReservationsScreen()),
+      (_) => false,
+    );
+  }
+
+  static void _goProfile(BuildContext context) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
       (_) => false,
     );
   }

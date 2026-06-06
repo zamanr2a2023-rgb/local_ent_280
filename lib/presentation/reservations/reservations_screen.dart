@@ -6,10 +6,22 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Reservas — `roles/details.md`.
 class ReservationsScreen extends StatelessWidget {
   const ReservationsScreen({super.key});
+
+  static String _reservationStatusLabel(
+    AppLocalizations l10n,
+    ReservationStatus status,
+  ) {
+    return switch (status) {
+      ReservationStatus.confirmada => l10n.reservationsStatusConfirmed,
+      ReservationStatus.pendente => l10n.reservationsStatusPending,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +97,7 @@ class _ReservationsAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              'Mobilidade Premium',
+              context.l10n.premiumMobility,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -128,7 +140,7 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          ReservationsData.screenTitle,
+          context.l10n.reservationsTitle,
           style: AppTypography.manrope(
             fontSize: 28.sp,
             fontWeight: FontWeight.w700,
@@ -138,7 +150,7 @@ class _Header extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          ReservationsData.screenSubtitle,
+          context.l10n.reservationsSubtitle,
           style: AppTypography.inter(
             fontSize: 14.sp,
             fontWeight: FontWeight.w400,
@@ -173,7 +185,7 @@ class _NewReservationButton extends StatelessWidget {
         ),
         icon: Icon(Icons.add, size: 22.sp, color: AppColors.onSecondary),
         label: Text(
-          ReservationsData.newReservationCta,
+          context.l10n.reservationsNew,
           style: AppTypography.inter(
             fontSize: 15.sp,
             fontWeight: FontWeight.w600,
@@ -328,7 +340,10 @@ class _CardHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(999.r),
           ),
           child: Text(
-            reservation.status.label,
+            ReservationsScreen._reservationStatusLabel(
+              context.l10n,
+              reservation.status,
+            ),
             style: AppTypography.inter(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
@@ -370,14 +385,14 @@ class _RouteTimeline extends StatelessWidget {
             _TimelineRow(
               icon: Icons.radio_button_checked,
               iconColor: isConfirmed ? AppColors.secondary : AppColors.outline,
-              label: ReservationsData.pickupLabel,
+              label: context.l10n.reservationsPickup,
               value: reservation.pickup,
             ),
             SizedBox(height: 14.h),
             _TimelineRow(
               icon: Icons.location_on,
               iconColor: isConfirmed ? AppColors.error : AppColors.outline,
-              label: ReservationsData.destinationLabel,
+              label: context.l10n.reservationsDestination,
               value: reservation.destination,
             ),
           ],
@@ -490,7 +505,7 @@ class _CardFooter extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
               child: Text(
-                ReservationsData.detailsCta,
+                context.l10n.reservationsDetails,
                 style: AppTypography.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -513,7 +528,7 @@ class _CardFooter extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           child: Text(
-            ReservationsData.cancelCta,
+            context.l10n.reservationsCancel,
             style: AppTypography.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -568,7 +583,7 @@ class _EmptyState extends StatelessWidget {
         ),
         SizedBox(height: 16.h),
         Text(
-          ReservationsData.emptyTitle,
+          context.l10n.reservationsEmptyTitle,
           style: AppTypography.manrope(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -581,7 +596,7 @@ class _EmptyState extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Text(
-            ReservationsData.emptyBody,
+            context.l10n.reservationsEmptyBody,
             style: AppTypography.inter(
               fontSize: 13.sp,
               fontWeight: FontWeight.w400,
@@ -605,7 +620,7 @@ class _EmptyState extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 28.w),
             ),
             child: Text(
-              ReservationsData.exploreCta,
+              context.l10n.reservationsExploreDestinations,
               style: AppTypography.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,

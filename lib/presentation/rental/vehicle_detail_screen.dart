@@ -5,6 +5,8 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Detalhes do Veículo — `roles/details.md` mockup (Porsche Taycan 4S).
 class VehicleDetailScreen extends StatelessWidget {
@@ -91,7 +93,7 @@ class _DetailAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Detalhes do Veículo',
+                context.l10n.rentalVehicleDetails,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -101,21 +103,10 @@ class _DetailAppBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Container(
-              width: 32.w,
-              height: 32.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  AppAssets.vehicleDetailProfileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.person, size: 18.sp, color: AppColors.primary),
-                ),
-              ),
+            SessionProfileAvatar(
+              size: 32.w,
+              fontSize: 11.sp,
+              onTap: () => AppNavigation.toProfile(context),
             ),
           ],
         ),
@@ -333,7 +324,7 @@ class _MainInfoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Classificação',
+                    context.l10n.rentalRating,
                     style: GoogleFonts.inter(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -363,18 +354,18 @@ class _MainInfoCard extends StatelessWidget {
             color: AppColors.surfaceVariant.withValues(alpha: 0.3),
           ),
           Row(
-            children: const [
+            children: [
               Expanded(
                 child: _SpecItem(
                   icon: Icons.ev_station,
-                  label: 'Motorização',
+                  label: context.l10n.rentalPowertrain,
                   value: 'Elétrico',
                 ),
               ),
               Expanded(
                 child: _SpecItem(
                   icon: Icons.settings_input_component,
-                  label: 'Transmissão',
+                  label: context.l10n.rentalTransmission,
                   value: 'Automática',
                 ),
               ),
@@ -382,18 +373,18 @@ class _MainInfoCard extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           Row(
-            children: const [
+            children: [
               Expanded(
                 child: _SpecItem(
                   icon: Icons.person_outline,
-                  label: 'Capacidade',
+                  label: context.l10n.rentalCapacity,
                   value: '4 Lugares',
                 ),
               ),
               Expanded(
                 child: _SpecItem(
                   icon: Icons.speed,
-                  label: 'Aceleração',
+                  label: context.l10n.rentalAcceleration,
                   value: '4.0s (0-100)',
                 ),
               ),
@@ -477,7 +468,7 @@ class _InsuranceCard extends StatelessWidget {
               SizedBox(width: 12.w),
               Expanded(
                 child: Text(
-                  'Seguro Incluído',
+                  context.l10n.rentalInsuranceIncluded,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
@@ -543,7 +534,7 @@ class _FuelCard extends StatelessWidget {
               SizedBox(width: 12.w),
               Expanded(
                 child: Text(
-                  'Combustível',
+                  context.l10n.rentalFuelPolicy,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
@@ -576,7 +567,7 @@ class _FuelCard extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Bateria Atual',
+                  context.l10n.rentalCurrentBattery,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -655,7 +646,7 @@ class _BookingSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Resumo da Reserva',
+            context.l10n.rentalBookingSummary,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -700,7 +691,7 @@ class _BookingSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Custo Total',
+                      context.l10n.rentalTotalCost,
                       style: GoogleFonts.inter(
                         fontSize: 12.sp,
                         color: AppColors.onSurfaceVariant,
@@ -800,7 +791,7 @@ class _TechnicalSpecsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'ESPECIFICAÇÕES TÉCNICAS',
+            context.l10n.rentalTechnicalSpecs,
             style: GoogleFonts.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
@@ -883,7 +874,7 @@ class _BottomActionBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Total da reserva',
+                  context.l10n.rentalReservationTotal,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     color: AppColors.onSurfaceVariant,
@@ -921,7 +912,7 @@ class _BottomActionBar extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Continuar para Pagamento',
+                        context.l10n.rentalContinueToPayment,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(

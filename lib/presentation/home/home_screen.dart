@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      drawer: const ClientDrawer(selected: ClientDrawerSection.home),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -138,6 +142,7 @@ class _HomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SafeArea(
       bottom: false,
       child: Container(
@@ -146,18 +151,20 @@ class _HomeAppBar extends StatelessWidget {
         color: AppColors.surfaceContainerLowest,
         child: Row(
           children: [
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(999.r),
-                child: SizedBox(
-                  width: 40.w,
-                  height: 40.h,
-                  child: Icon(
-                    Icons.menu,
-                    color: AppColors.primary,
-                    size: 24.sp,
+            Builder(
+              builder: (context) => Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Scaffold.of(context).openDrawer(),
+                  borderRadius: BorderRadius.circular(999.r),
+                  child: SizedBox(
+                    width: 40.w,
+                    height: 40.h,
+                    child: Icon(
+                      Icons.menu,
+                      color: AppColors.primary,
+                      size: 24.sp,
+                    ),
                   ),
                 ),
               ),
@@ -167,7 +174,7 @@ class _HomeAppBar extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Local Transport',
+                    l10n.appNameLocalTransport,
                     maxLines: 1,
                     style: GoogleFonts.manrope(
                       fontSize: 24.sp,
@@ -179,29 +186,9 @@ class _HomeAppBar extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              width: 40.w,
-              height: 40.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2.w),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4.r,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  AppAssets.profileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => ColoredBox(
-                    color: AppColors.surfaceContainerHigh,
-                    child: const Icon(Icons.person, color: AppColors.primary),
-                  ),
-                ),
-              ),
+            SessionProfileAvatar(
+              size: 40.w,
+              onTap: () => AppNavigation.toProfile(context),
             ),
           ],
         ),
@@ -215,6 +202,7 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -238,7 +226,7 @@ class _BalanceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Saldo Disponível',
+                  l10n.homeAvailableBalance,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -269,7 +257,7 @@ class _BalanceCard extends StatelessWidget {
               elevation: 0,
             ),
             child: Text(
-              'Carregar',
+              l10n.homeTopUp,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -298,16 +286,25 @@ class _QuickActionsRow extends StatelessWidget {
   final VoidCallback onHistorico;
   final VoidCallback onSaldo;
 
-  static const _actions = [
-    (Icons.directions_car, 'Pedir'),
-    (Icons.calendar_today, 'Reservar'),
-    (Icons.car_rental, 'Alugar'),
-    (Icons.history, 'Histórico'),
-    (Icons.account_balance_wallet, 'Saldo'),
+  static const _icons = [
+    Icons.directions_car,
+    Icons.calendar_today,
+    Icons.car_rental,
+    Icons.history,
+    Icons.account_balance_wallet,
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final actions = [
+      (l10n.homeActionRequest, onPedir),
+      (l10n.homeActionBook, onReservar),
+      (l10n.homeActionRent, onAlugar),
+      (l10n.homeActionHistory, onHistorico),
+      (l10n.homeActionBalance, onSaldo),
+    ];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final gap = 8.w;
@@ -315,22 +312,15 @@ class _QuickActionsRow extends StatelessWidget {
 
         return Row(
           children: [
-            for (var i = 0; i < _actions.length; i++) ...[
+            for (var i = 0; i < actions.length; i++) ...[
               if (i > 0) SizedBox(width: gap),
               SizedBox(
                 width: tileWidth,
                 height: tileWidth,
                 child: _QuickActionButton(
-                  icon: _actions[i].$1,
-                  label: _actions[i].$2,
-                  onTap: switch (_actions[i].$2) {
-                    'Pedir' => onPedir,
-                    'Reservar' => onReservar,
-                    'Alugar' => onAlugar,
-                    'Histórico' => onHistorico,
-                    'Saldo' => onSaldo,
-                    _ => () {},
-                  },
+                  icon: _icons[i],
+                  label: actions[i].$1,
+                  onTap: actions[i].$2,
                 ),
               ),
             ],
@@ -464,6 +454,7 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -509,7 +500,7 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Para onde vamos hoje?',
+                          l10n.homeWhereToday,
                           style: GoogleFonts.manrope(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w600,
@@ -561,6 +552,7 @@ class _ExpandedSheetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -581,7 +573,7 @@ class _ExpandedSheetContent extends StatelessWidget {
                 _LocationField(
                   icon: Icons.my_location,
                   iconColor: AppColors.accent,
-                  label: 'Localização Atual',
+                  label: l10n.homeCurrentLocation,
                   labelColor: AppColors.accent,
                   value: 'Av. da Liberdade, Lisboa',
                   readOnly: true,
@@ -590,8 +582,8 @@ class _ExpandedSheetContent extends StatelessWidget {
                 _LocationField(
                   icon: Icons.location_on,
                   iconColor: AppColors.outline,
-                  label: 'Destino',
-                  hint: 'Para onde deseja ir?',
+                  label: l10n.homeDestination,
+                  hint: l10n.homeDestinationHint,
                   controller: destinationController,
                 ),
               ],
@@ -613,7 +605,7 @@ class _ExpandedSheetContent extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Confirmar Trajeto',
+              l10n.homeConfirmRoute,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,

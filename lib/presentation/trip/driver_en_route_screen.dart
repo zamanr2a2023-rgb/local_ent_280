@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/data/driver_en_route_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Motorista a caminho — viagem ativa (`roles/details.md`).
 class DriverEnRouteScreen extends StatefulWidget {
@@ -101,7 +102,7 @@ class _EnRouteAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -222,7 +223,7 @@ class _StatusPill extends StatelessWidget {
             ),
             SizedBox(width: 8.w),
             Text(
-              DriverEnRouteData.statusLabel,
+              context.l10n.driverEnRouteStatus,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -287,7 +288,7 @@ class _PickupMarker extends StatelessWidget {
             ],
           ),
           child: Text(
-            DriverEnRouteData.pickupLabel,
+            context.l10n.driverEnRouteYourLocation,
             style: GoogleFonts.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
@@ -508,7 +509,7 @@ class _TripBottomSheet extends StatelessWidget {
                           Icon(Icons.chat_bubble_outline, size: 20.sp),
                           SizedBox(width: 8.w),
                           Text(
-                            'Mensagem',
+                            context.l10n.driverEnRouteMessage,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -543,7 +544,7 @@ class _TripBottomSheet extends StatelessWidget {
                           Icon(Icons.call, size: 20.sp),
                           SizedBox(width: 8.w),
                           Text(
-                            'Ligar',
+                            context.l10n.driverEnRouteCall,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,

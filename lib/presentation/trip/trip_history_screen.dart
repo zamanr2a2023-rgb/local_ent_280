@@ -6,10 +6,25 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Histórico de Viagens — `roles/details.md`.
 class TripHistoryScreen extends StatefulWidget {
   const TripHistoryScreen({super.key});
+
+  static String _filterLabel(
+    AppLocalizations l10n,
+    TripHistoryFilter filter,
+  ) {
+    return switch (filter) {
+      TripHistoryFilter.todos => l10n.tripHistoryFilterAll,
+      TripHistoryFilter.recentes => l10n.tripHistoryFilterRecent,
+      TripHistoryFilter.concluidas => l10n.tripHistoryFilterCompleted,
+      TripHistoryFilter.canceladas => l10n.tripHistoryFilterCancelled,
+      TripHistoryFilter.esteAno => l10n.tripHistoryFilterThisYear,
+    };
+  }
 
   @override
   State<TripHistoryScreen> createState() => _TripHistoryScreenState();
@@ -112,7 +127,7 @@ class _HistoryAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              'Mobilidade Premium',
+              context.l10n.premiumMobility,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -155,7 +170,7 @@ class _HeaderStats extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          TripHistoryData.activityLabel.toUpperCase(),
+          context.l10n.tripHistoryActivity.toUpperCase(),
           style: AppTypography.inter(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -166,7 +181,7 @@ class _HeaderStats extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          TripHistoryData.screenTitle,
+          context.l10n.tripHistoryTitle,
           style: AppTypography.manrope(
             fontSize: 28.sp,
             fontWeight: FontWeight.w700,
@@ -180,14 +195,14 @@ class _HeaderStats extends StatelessWidget {
             Expanded(
               child: _StatBox(
                 value: TripHistoryData.totalTrips,
-                label: TripHistoryData.totalTripsLabel,
+                label: context.l10n.tripHistoryTrips,
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: _StatBox(
                 value: TripHistoryData.monthSpend,
-                label: TripHistoryData.monthSpendLabel,
+                label: context.l10n.tripHistoryThisMonth,
               ),
             ),
           ],
@@ -287,7 +302,7 @@ class _FilterChips extends StatelessWidget {
                     SizedBox(width: 4.w),
                   ],
                   Text(
-                    filter.label,
+                    TripHistoryScreen._filterLabel(context.l10n, filter),
                     style: AppTypography.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -520,7 +535,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999.r),
       ),
       child: Text(
-        isCancelled ? 'Cancelada' : 'Concluída',
+        isCancelled ? context.l10n.tripHistoryStatusCancelled : context.l10n.tripDetailsStatusCompleted,
         style: AppTypography.inter(
           fontSize: 11.sp,
           fontWeight: FontWeight.w600,
@@ -589,7 +604,7 @@ class _TripMetaRow extends StatelessWidget {
         SizedBox(width: 8.w),
         if (trip.isCancelled)
           Text(
-            'Sem detalhes',
+            context.l10n.tripHistoryNoDetails,
             style: AppTypography.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
@@ -603,7 +618,7 @@ class _TripMetaRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Detalhes',
+                context.l10n.details,
                 style: AppTypography.inter(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,

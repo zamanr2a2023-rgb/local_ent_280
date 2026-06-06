@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:local_ent_280/main.dart';
+import 'package:local_ent_280/presentation/splash/splash_screen.dart';
 import 'package:local_ent_280/presentation/discover/discover_screen.dart';
 import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
 import 'package:local_ent_280/presentation/delivery/delivery_screen.dart';
@@ -11,6 +11,13 @@ import 'package:local_ent_280/presentation/reservation/reservation_review_screen
 import 'package:local_ent_280/presentation/rental/vehicle_detail_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_rental_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_search_results_screen.dart';
+import 'package:local_ent_280/presentation/admin/admin_home_screen.dart';
+import 'package:local_ent_280/presentation/admin/admin_reports_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_active_trip_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_home_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_request_expired_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_trip_accepted_screen.dart';
+import 'package:local_ent_280/presentation/driver/driver_trip_request_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_en_route_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_completed_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_in_progress_screen.dart';
@@ -20,9 +27,29 @@ import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
+import 'package:local_ent_280/presentation/profile/profile_screen.dart';
+import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/presentation/reservations/reservations_screen.dart';
+import 'package:local_ent_280/features/auth/data/auth_signing.dart';
+import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
+import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
+import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+
+class _FakeAuthRepository implements AuthSigning {
+  _FakeAuthRepository(this._profile);
+
+  final AppUserProfile _profile;
+
+  @override
+  Future<AppUserProfile> signIn({
+    required String email,
+    required String password,
+    required LoginSelectedRole selectedRole,
+  }) async =>
+      _profile;
+}
 
 void _setPhoneSize(WidgetTester tester) {
   tester.view.physicalSize = const Size(390, 844);
@@ -37,7 +64,7 @@ void main() {
   testWidgets('Splash screen shows app title', (WidgetTester tester) async {
     _setPhoneSize(tester);
     await tester.pumpWidget(
-      AppScreenUtil.init(child: const LocalTransportApp()),
+      AppScreenUtil.testWrap(const SplashScreen()),
     );
 
     expect(find.text('Local Transport'), findsOneWidget);
@@ -64,12 +91,316 @@ void main() {
 
   testWidgets('Login Entrar opens trip map home', (WidgetTester tester) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const LoginScreen()));
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        LoginScreen(
+          authRepository: _FakeAuthRepository(
+            const AppUserProfile(
+              uid: 'test-client',
+              email: 'client@test.com',
+              name: 'Test Client',
+              phone: '',
+              role: AppUserRole.client,
+              isActive: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).first, 'client@test.com');
+    await tester.enterText(find.byType(TextField).last, 'password');
     await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Saldo Disponível'), findsOneWidget);
     expect(find.text('Confirmar Trajeto'), findsOneWidget);
+  });
+
+  testWidgets('Login Entrar opens driver home for driver role', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        LoginScreen(
+          authRepository: _FakeAuthRepository(
+            const AppUserProfile(
+              uid: 'test-driver',
+              email: 'driver@test.com',
+              name: 'Test Driver',
+              phone: '',
+              role: AppUserRole.driver,
+              isActive: true,
+            ),
+          ),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).first, 'driver@test.com');
+    await tester.enterText(find.byType(TextField).last, 'password');
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text("Today's Earnings"), findsOneWidget);
+    expect(find.text('Available'), findsOneWidget);
+    expect(find.text('Mercedes-Benz EQE'), findsOneWidget);
+  });
+
+  testWidgets('Admin reports screen shows metrics and activities', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminReportsScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Detailed Reports'), findsOneWidget);
+    expect(find.text('Total Trips'), findsOneWidget);
+    expect(find.text('1,284'), findsOneWidget);
+    expect(find.text('Pending Debt'), findsOneWidget);
+    expect(find.text('Export'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Regional Delivery Porto'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Regional Delivery Porto'), findsOneWidget);
+  });
+
+  testWidgets('Admin home hides bottom navigation bar', (WidgetTester tester) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Home'), findsNothing);
+    expect(find.text('Trips'), findsNothing);
+    expect(find.text('Reservations'), findsNothing);
+    expect(find.text('Profile'), findsNothing);
+  });
+
+  testWidgets('Admin menu opens navigation drawer', (WidgetTester tester) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('User'), findsOneWidget);
+    expect(find.text('Detailed Reports'), findsOneWidget);
+    expect(find.text('Sign out'), findsOneWidget);
+  });
+
+  testWidgets('Admin drawer detailed reports opens reports screen', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Detailed Reports'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Total Trips'), findsOneWidget);
+    expect(find.text('Export'), findsOneWidget);
+  });
+
+  testWidgets('Admin reports back returns to dashboard', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminReportsScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Premium Mobility'), findsOneWidget);
+    expect(find.text('Fleet Status'), findsOneWidget);
+  });
+
+  testWidgets('Admin monthly reports row opens detailed reports', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const AdminHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Monthly Reports'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detailed Reports'), findsOneWidget);
+  });
+
+  testWidgets('Driver home hides trips and reservations nav', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    final bottomNav = find.byType(AppBottomNav);
+    expect(
+      find.descendant(of: bottomNav, matching: find.text('Home')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: bottomNav, matching: find.text('Profile')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: bottomNav, matching: find.text('Reservations')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Driver drawer hides trips and reservations', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reservations'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text('Trips'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Driver home shows earnings and recent trips', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverHomeScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text("Today's Earnings"), findsOneWidget);
+    expect(find.text('€142.50'), findsOneWidget);
+    expect(find.text('Recent Trips'), findsOneWidget);
+    expect(find.text('Ana Martins'), findsOneWidget);
+  });
+
+  testWidgets('Driver trip request shows accept and decline actions', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverTripRequestScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Premium Trip'), findsOneWidget);
+    expect(find.text('ACCEPT TRIP'), findsOneWidget);
+    expect(find.text('DECLINE'), findsOneWidget);
+    expect(find.text('€14.50'), findsOneWidget);
+  });
+
+  testWidgets('Driver trip accepted shows start navigation', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverTripAcceptedScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Trip Accepted!'), findsOneWidget);
+    expect(find.text('Start Navigation Now'), findsOneWidget);
+  });
+
+  testWidgets('Driver request expired shows dashboard action', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverRequestExpiredScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Request Expired'), findsOneWidget);
+    expect(find.text('Back to Dashboard'), findsOneWidget);
+  });
+
+  testWidgets('Driver active trip shows workflow buttons', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const DriverActiveTripScreen(),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('On the way'), findsOneWidget);
+    expect(find.text("I've arrived"), findsOneWidget);
+    expect(find.text('Start trip'), findsOneWidget);
+    expect(find.text('Finish trip'), findsOneWidget);
   });
 
   testWidgets('Premium home search opens reservation review', (
@@ -121,6 +452,19 @@ void main() {
     expect(find.text('Experiências Premium'), findsOneWidget);
     expect(find.text('Aluguer de Motas de Água'), findsOneWidget);
     expect(find.text('Início'), findsOneWidget);
+  });
+
+  testWidgets('Home menu opens navigation drawer', (WidgetTester tester) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Local Transport'), findsWidgets);
+    expect(find.text('Início'), findsWidgets);
+    expect(find.text('Sair'), findsOneWidget);
   });
 
   testWidgets('Trip map screen shows planning UI', (WidgetTester tester) async {
@@ -185,21 +529,21 @@ void main() {
     expect(find.text('Audi A3 Sedan'), findsOneWidget);
   });
 
-  testWidgets('Results Ver Detalhes opens trip destination', (
+  testWidgets('Results Ver Detalhes opens vehicle detail', (
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
     await tester.pumpWidget(
       AppScreenUtil.testWrap(const VehicleSearchResultsScreen()),
     );
-    await tester.ensureVisible(find.text('Ver Detalhes').first);
-    await tester.tap(find.text('Ver Detalhes').first);
+    await tester.ensureVisible(find.text('Detalhes').first);
+    await tester.tap(find.text('Detalhes').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Para onde vamos hoje?'), findsWidgets);
-    expect(find.text('Locais Recentes'), findsOneWidget);
-    expect(find.text('Belém & Monumentos'), findsOneWidget);
-    expect(find.text('Ver Mapa Completo'), findsOneWidget);
+    expect(find.text('Detalhes do Veículo'), findsOneWidget);
+    expect(find.text('Porsche Taycan 4S'), findsOneWidget);
+    expect(find.text('DESPORTIVO PREMIUM'), findsOneWidget);
+    expect(find.text('Resumo da Reserva'), findsOneWidget);
   });
 
   testWidgets('Trip destination screen shows search UI', (
@@ -626,6 +970,38 @@ void main() {
 
     expect(find.text('Resumo da Viagem'), findsOneWidget);
     expect(find.text('Fatura Digital'), findsOneWidget);
+  });
+
+  testWidgets('Profile screen shows account info and logout', (
+    WidgetTester tester,
+  ) async {
+    _setPhoneSize(tester);
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        const ProfileScreen(
+          initialProfile: AppUserProfile(
+            uid: 'test-uid',
+            email: 'cliente@example.com',
+            name: 'João Silva',
+            phone: '+351 912 345 678',
+            role: AppUserRole.client,
+            isActive: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('João Silva'), findsOneWidget);
+    expect(find.text('cliente@example.com'), findsOneWidget);
+    expect(find.text('Utilizador'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Terminar sessão'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Terminar sessão'), findsOneWidget);
   });
 
   testWidgets('Driver search Cancelar Viagem opens trip destination', (

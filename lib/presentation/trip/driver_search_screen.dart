@@ -8,6 +8,7 @@ import 'package:local_ent_280/core/data/driver_search_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// A procurar motorista disponível — `roles/details.md`.
 class DriverSearchScreen extends StatefulWidget {
@@ -255,7 +256,7 @@ class _FloatingHeader extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  'Local Transport',
+                  context.l10n.appNameLocalTransport,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -357,7 +358,7 @@ class _StatusToastState extends State<_StatusToast>
             ),
             SizedBox(width: 8.w),
                 Text(
-                  DriverSearchData.statusMessage,
+                  context.l10n.driverSearchOptimizing,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -411,7 +412,7 @@ class _SearchBottomSheet extends StatelessWidget {
             ),
           ),
           Text(
-            'A procurar motorista disponível',
+            context.l10n.driverSearchTitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               fontSize: 24.sp,
@@ -422,7 +423,7 @@ class _SearchBottomSheet extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Estamos a ligar-te aos veículos mais próximos em Lisboa Central.',
+            context.l10n.driverSearchSubtitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
@@ -438,14 +439,14 @@ class _SearchBottomSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: _InfoBox(
-                  label: 'ORIGEM',
+                  label: context.l10n.driverSearchOrigin,
                   value: DriverSearchData.originShort,
                 ),
               ),
               SizedBox(width: 16.w),
               Expanded(
                 child: _InfoBox(
-                  label: 'ESTIMATIVA',
+                  label: context.l10n.driverSearchEstimate,
                   value: DriverSearchData.estimate,
                 ),
               ),
@@ -459,7 +460,7 @@ class _SearchBottomSheet extends StatelessWidget {
               onPressed: onCancel,
               icon: Icon(Icons.close, size: 20.sp, color: AppColors.primary),
               label: Text(
-                'Cancelar Viagem',
+                context.l10n.driverSearchCancelTrip,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,

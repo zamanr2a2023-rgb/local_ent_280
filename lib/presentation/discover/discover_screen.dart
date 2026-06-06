@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -110,7 +111,7 @@ class _DiscoverAppBar extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Local Transport',
+                    context.l10n.appNameLocalTransport,
                     maxLines: 1,
                     style: GoogleFonts.manrope(
                       fontSize: 20.sp,
@@ -203,7 +204,7 @@ class _DiscoverHero extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999.r),
                     ),
                     child: Text(
-                      'DESTAQUE DE VERÃO',
+                      context.l10n.discoverSummerHighlight,
                       style: GoogleFonts.inter(
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
@@ -214,7 +215,7 @@ class _DiscoverHero extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
                   Text(
-                    'A Essência do Mediterrâneo',
+                    context.l10n.discoverHeroTitle,
                     style: GoogleFonts.manrope(
                       fontSize: 26.sp,
                       fontWeight: FontWeight.w800,
@@ -224,7 +225,7 @@ class _DiscoverHero extends StatelessWidget {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    'Descubra refúgios secretos e experiências de luxo desenhadas para o viajante exigente.',
+                    context.l10n.discoverHeroSubtitle,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w400,
@@ -280,7 +281,7 @@ class _SearchFilterBar extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Procurar restaurantes, festas ou praias...',
+                      hintText: context.l10n.discoverSearchHint,
                       hintStyle: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w400,
@@ -309,7 +310,7 @@ class _SearchFilterBar extends StatelessWidget {
                     onPressed: () {},
                     icon: Icon(Icons.tune_rounded, size: 20.sp),
                     label: Text(
-                      'Filtros',
+                      context.l10n.discoverFilters,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -341,7 +342,7 @@ class _SearchFilterBar extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Explorar Mapa',
+                      context.l10n.discoverExploreMap,
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.fade,
@@ -375,7 +376,7 @@ class _ExperiencesSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Experiências Exclusivas',
+                context.l10n.discoverExperiencesTitle,
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
@@ -390,7 +391,7 @@ class _ExperiencesSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Ver tudo',
+                    context.l10n.seeAll,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -411,15 +412,15 @@ class _ExperiencesSection extends StatelessWidget {
         SizedBox(height: 24.h),
         _ExperienceCard(
           imageUrl: AppAssets.discoverRestaurantImage,
-          category: 'Gastronomia',
-          title: 'Restaurantes de Autor',
+          category: context.l10n.discoverCategoryGastronomy,
+          title: context.l10n.discoverExperienceRestaurants,
           height: 200.h,
         ),
         SizedBox(height: 16.h),
         _ExperienceCard(
           imageUrl: AppAssets.discoverPlacesImage,
-          category: 'Exploração',
-          title: 'Recantos Secretos',
+          category: context.l10n.discoverCategoryExploration,
+          title: context.l10n.discoverExperienceSecretSpots,
           height: 160.h,
         ),
       ],
@@ -530,7 +531,7 @@ class _EventsSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Próximos Eventos',
+                  context.l10n.discoverUpcomingEvents,
                   style: GoogleFonts.manrope(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
@@ -774,7 +775,7 @@ class _EventCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                'Bilhetes',
+                                context.l10n.discoverTickets,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
                                   fontSize: 12.sp,
@@ -809,7 +810,7 @@ class _InteractiveMapSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mapa Interativo',
+          context.l10n.discoverInteractiveMapTitle,
           style: GoogleFonts.manrope(
             fontSize: 20.sp,
             fontWeight: FontWeight.w600,
@@ -819,7 +820,7 @@ class _InteractiveMapSection extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          'Explore os pontos de interesse perto de si.',
+          context.l10n.discoverInteractiveMapSubtitle,
           style: GoogleFonts.inter(
             fontSize: 13.sp,
             color: AppColors.onSurfaceVariant,
@@ -896,7 +897,7 @@ class _InteractiveMapSection extends StatelessWidget {
                     onPressed: () {},
                     icon: Icon(Icons.my_location, size: 20.sp),
                     label: Text(
-                      'Localização Atual',
+                      context.l10n.discoverCurrentLocation,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,

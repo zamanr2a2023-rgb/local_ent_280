@@ -9,6 +9,8 @@ import 'package:local_ent_280/core/data/premium_search_items.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Local Transport — Início (app_details/details.md).
 class PremiumHomeScreen extends StatefulWidget {
@@ -55,6 +57,7 @@ class _PremiumHomeScreenState extends State<PremiumHomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      drawer: const ClientDrawer(selected: ClientDrawerSection.home),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 72.h + bottomInset),
         child: FloatingActionButton(
@@ -130,16 +133,18 @@ class _PremiumHomeAppBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.menu, color: AppColors.primary),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
+            Builder(
+              builder: (context) => IconButton(
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                icon: const Icon(Icons.menu, color: AppColors.primary),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
+              ),
             ),
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
@@ -205,7 +210,7 @@ class _HeroSearchSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Para onde vamos hoje?',
+          context.l10n.homeWhereToday,
           style: GoogleFonts.manrope(
             fontSize: 32.sp,
             fontWeight: FontWeight.w700,
@@ -239,7 +244,7 @@ class _HeroSearchSection extends StatelessWidget {
                   decoration: InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
-                    hintText: 'Procure destino ou serviço...',
+                    hintText: context.l10n.premiumHomeSearchHint,
                     hintStyle: GoogleFonts.inter(
                       fontSize: 16.sp,
                       color: AppColors.outline,
@@ -279,7 +284,7 @@ class _HeroSearchSection extends StatelessWidget {
                   ? Padding(
                       padding: EdgeInsets.all(16.w),
                       child: Text(
-                        'Nenhum resultado encontrado',
+                        context.l10n.premiumHomeNoResults,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
                           color: AppColors.onSurfaceVariant,
@@ -352,7 +357,7 @@ class _BentoServicesSection extends StatelessWidget {
             Expanded(
               child: _ServiceTileCard(
                 icon: Symbols.explore,
-                label: 'Guia de Ilhas',
+                label: context.l10n.premiumHomeIslandGuide,
                 onTap: onIslandGuide,
               ),
             ),
@@ -360,7 +365,7 @@ class _BentoServicesSection extends StatelessWidget {
             Expanded(
               child: _ServiceTileCard(
                 icon: Symbols.water_ec,
-                label: 'Mota de Água',
+                label: context.l10n.premiumHomeJetski,
                 onTap: onJetski,
               ),
             ),
@@ -407,7 +412,7 @@ class _DeliveryPromoCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Entregas Rápidas',
+                            context.l10n.premiumHomeFastDelivery,
                             style: GoogleFonts.manrope(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w600,
@@ -417,7 +422,7 @@ class _DeliveryPromoCard extends StatelessWidget {
                           ),
                           SizedBox(height: 4.h),
                           Text(
-                            'Mercearia e Farmácia',
+                            context.l10n.premiumHomeGroceryPharmacy,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -441,7 +446,7 @@ class _DeliveryPromoCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             child: Text(
-                              'Pedir agora',
+                              context.l10n.premiumHomeOrderNow,
                               style: GoogleFonts.inter(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -551,15 +556,16 @@ class _TransportSection extends StatelessWidget {
 
   final VoidCallback onTrip;
 
-  static const _modes = [
-    (Icons.directions_car, 'Viagem'),
-    (Icons.two_wheeler, 'Moto'),
-    (Icons.electric_scooter, 'Trotinete'),
-    (Icons.pedal_bike, 'Bicicleta'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final modes = [
+      (Icons.directions_car, l10n.premiumHomeTransportTrip),
+      (Icons.two_wheeler, l10n.premiumHomeTransportMoto),
+      (Icons.electric_scooter, l10n.premiumHomeTransportScooter),
+      (Icons.pedal_bike, l10n.premiumHomeTransportBike),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -567,7 +573,7 @@ class _TransportSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Transporte e Mobilidade',
+                l10n.premiumHomeTransportTitle,
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
@@ -577,7 +583,7 @@ class _TransportSection extends StatelessWidget {
               ),
             ),
             Text(
-              'Ver todos',
+              context.l10n.seeAll,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -591,7 +597,7 @@ class _TransportSection extends StatelessWidget {
         SizedBox(height: 16.h),
         Row(
           children: [
-            for (var index = 0; index < _modes.length; index++) ...[
+            for (var index = 0; index < modes.length; index++) ...[
               if (index > 0) SizedBox(width: 16.w),
               Expanded(
                 child: Column(
@@ -619,7 +625,7 @@ class _TransportSection extends StatelessWidget {
                             ),
                             child: Center(
                               child: Icon(
-                                _modes[index].$1,
+                                modes[index].$1,
                                 size: 28.sp,
                                 color: AppColors.secondary,
                               ),
@@ -630,7 +636,7 @@ class _TransportSection extends StatelessWidget {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      _modes[index].$2,
+                      modes[index].$2,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 12.sp,
@@ -665,7 +671,7 @@ class _ExperiencesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Experiências Premium',
+          context.l10n.premiumHomeExperiencesTitle,
           style: GoogleFonts.manrope(
             fontSize: 20.sp,
             fontWeight: FontWeight.w600,
@@ -681,20 +687,18 @@ class _ExperiencesSection extends StatelessWidget {
             children: [
               _ExperienceCard(
                 imageUrl: AppAssets.premiumHomeJetskiExperienceImage,
-                badge: 'Novo',
-                title: 'Aluguer de Motas de Água',
-                description:
-                    'Explore as águas cristalinas com o nosso novo serviço de aluguer premium.',
-                footer: 'Desde 45€',
+                badge: context.l10n.newBadge,
+                title: context.l10n.premiumHomeJetskiRentalTitle,
+                description: context.l10n.premiumHomeJetskiRentalDesc,
+                footer: context.l10n.premiumHomeFromPrice,
                 onTap: onJetskiCard,
               ),
               SizedBox(width: 16.w),
               _ExperienceCard(
                 imageUrl: AppAssets.premiumHomeIslandExperienceImage,
-                title: 'Guia Exclusivo de Ilhas',
-                description:
-                    'Descubra os segredos das ilhas com roteiros personalizados pelos locais.',
-                footer: 'Explorar',
+                title: context.l10n.premiumHomeIslandGuideTitle,
+                description: context.l10n.premiumHomeIslandGuideDesc,
+                footer: context.l10n.discoverExploreMap,
                 onTap: onIslandCard,
               ),
             ],

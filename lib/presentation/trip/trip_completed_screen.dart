@@ -5,6 +5,7 @@ import 'package:local_ent_280/core/data/trip_completed_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Viagem concluída — resumo e avaliação (`roles/details.md`).
 class TripCompletedScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                       onRatingChanged: (value) => setState(() => _rating = value),
                       onSubmit: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Avaliação enviada')),
+                          SnackBar(content: Text(context.l10n.tripCompletedRatingSent)),
                         );
                       },
                     ),
@@ -95,7 +96,7 @@ class _CompletedAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              'Local Transport',
+              context.l10n.appNameLocalTransport,
               style: GoogleFonts.manrope(
                 fontSize: 24.sp,
                 fontWeight: FontWeight.w700,
@@ -159,7 +160,7 @@ class _SuccessHeader extends StatelessWidget {
         ),
         SizedBox(height: 16.h),
         Text(
-          TripCompletedData.title,
+          context.l10n.tripCompletedTitle,
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
             fontSize: 28.sp,
@@ -170,7 +171,7 @@ class _SuccessHeader extends StatelessWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          TripCompletedData.subtitle,
+          context.l10n.tripCompletedThanks,
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 18.sp,
@@ -192,7 +193,7 @@ class _TripSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            TripCompletedData.summaryTitle,
+            context.l10n.tripDetailsSummary,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -219,7 +220,7 @@ class _TripSummaryCard extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: Text(
-                  TripCompletedData.finalPriceLabel,
+                  context.l10n.tripCompletedFinalPrice,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -245,14 +246,14 @@ class _TripSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatBox(
-                  label: 'Distância',
+                  label: context.l10n.distance,
                   value: TripCompletedData.distance,
                 ),
               ),
               SizedBox(width: 16.w),
               Expanded(
                 child: _StatBox(
-                  label: 'Duração',
+                  label: context.l10n.duration,
                   value: TripCompletedData.duration,
                 ),
               ),
@@ -305,7 +306,7 @@ class _TripSummaryCard extends StatelessWidget {
                             ),
                             SizedBox(width: 8.w),
                             Text(
-                              TripCompletedData.routeBadge,
+                              context.l10n.tripCompletedOptimizedRoute,
                               style: GoogleFonts.inter(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -392,7 +393,7 @@ class _RatingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            TripCompletedData.ratingTitle,
+            context.l10n.tripCompletedRateTrip,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -402,7 +403,7 @@ class _RatingCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            TripCompletedData.ratingHint,
+            context.l10n.tripCompletedRateHint,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
               fontWeight: FontWeight.w400,
@@ -428,7 +429,7 @@ class _RatingCard extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           Text(
-            TripCompletedData.commentLabel,
+            context.l10n.tripCompletedCommentOptional,
             style: GoogleFonts.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -448,7 +449,7 @@ class _RatingCard extends StatelessWidget {
               color: AppColors.onSurface,
             ),
             decoration: InputDecoration(
-              hintText: TripCompletedData.commentHint,
+              hintText: context.l10n.tripCompletedCommentHint,
               hintStyle: GoogleFonts.inter(
                 fontSize: 16.sp,
                 color: AppColors.onSurfaceVariant,
@@ -484,7 +485,7 @@ class _RatingCard extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'Enviar avaliação',
+                context.l10n.tripCompletedSubmitRating,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -532,7 +533,7 @@ class _FooterActions extends StatelessWidget {
                 Icon(Icons.report_problem_outlined, size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'Reportar problema',
+                  context.l10n.tripCompletedReportIssue,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -563,7 +564,7 @@ class _FooterActions extends StatelessWidget {
                 Icon(Icons.home, size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
-                  'Voltar ao início',
+                  context.l10n.tripCompletedBackHome,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,

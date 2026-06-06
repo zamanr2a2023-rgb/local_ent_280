@@ -5,6 +5,7 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
 import 'package:flutter/material.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
@@ -148,7 +149,7 @@ class _Header extends StatelessWidget {
         SizedBox(width: 12.w),
         Expanded(
           child: Text(
-            'Local Transport',
+            context.l10n.appNameLocalTransport,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.manrope(
@@ -220,7 +221,7 @@ class _HeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _GlassBadge(
-                      label: 'EXECUTIVO',
+                      label: context.l10n.splashExecutiveBadge,
                       icon: Icons.workspace_premium_rounded,
                     ),
                     const Spacer(),
@@ -234,7 +235,7 @@ class _HeroCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'O seu tempo,\nvalorizado.',
+                              context.l10n.splashHeroTitle,
                               style: AppTypography.manrope(
                                 fontSize: 30.sp,
                                 fontWeight: FontWeight.w800,
@@ -245,7 +246,7 @@ class _HeroCard extends StatelessWidget {
                             ),
                             SizedBox(height: 10.h),
                             Text(
-                              'Transporte personalizado com conforto e pontualidade.',
+                              context.l10n.splashHeroSubtitle,
                               style: AppTypography.inter(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w400,
@@ -368,7 +369,7 @@ class _InstantBookingCard extends StatelessWidget {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Reservas Instantâneas',
+                  context.l10n.splashInstantBookingTitle,
                   style: AppTypography.manrope(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w700,
@@ -378,7 +379,7 @@ class _InstantBookingCard extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'Planeie a sua viagem em segundos com a nossa rede exclusiva.',
+                  context.l10n.splashInstantBookingSubtitle,
                   style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -415,7 +416,7 @@ class _VerifiedBadge extends StatelessWidget {
           Icon(Icons.verified_rounded, size: 14.sp, color: AppColors.secondary),
           SizedBox(width: 4.w),
           Text(
-            'Verificado',
+            context.l10n.verified,
             style: AppTypography.inter(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
@@ -485,7 +486,7 @@ class _DriverCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'MOTORISTA DE HOJE',
+                        context.l10n.splashDriverOfToday,
                         style: AppTypography.inter(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w600,
@@ -606,7 +607,7 @@ class _FooterPanel extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Entrar',
+                        context.l10n.signIn,
                         style: AppTypography.inter(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
@@ -639,7 +640,7 @@ class _FooterPanel extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Criar conta',
+                  context.l10n.createAccount,
                   style: AppTypography.inter(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -664,7 +665,7 @@ class _FooterPanel extends StatelessWidget {
                   ),
                   SizedBox(width: 6.w),
                   Text(
-                    'Conexão Segura & Encriptada',
+                    context.l10n.splashSecureConnection,
                     style: AppTypography.inter(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w600,

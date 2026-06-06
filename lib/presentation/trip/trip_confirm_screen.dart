@@ -6,6 +6,7 @@ import 'package:local_ent_280/core/data/trip_confirm_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Confirmação de viagem com mapa — `roles/details.md`.
 class TripConfirmScreen extends StatefulWidget {
@@ -106,7 +107,7 @@ class _ConfirmAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -304,7 +305,7 @@ class _TripDetailsSheet extends StatelessWidget {
             const _TripStatsRow(),
             SizedBox(height: 24.h),
             Text(
-              'Tipo de Transporte',
+              context.l10n.tripConfirmTransportType,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -381,7 +382,7 @@ class _TripDetailsSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Confirmar viagem',
+                      context.l10n.tripConfirmTrip,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -432,7 +433,7 @@ class _RouteSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'PONTO DE RECOLHA',
+                    context.l10n.tripConfirmPickupPoint,
                     style: GoogleFonts.inter(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -467,7 +468,7 @@ class _RouteSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'DESTINO FINAL',
+                    context.l10n.tripConfirmFinalDestination,
                     style: GoogleFonts.inter(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
@@ -507,7 +508,7 @@ class _TripStatsRow extends StatelessWidget {
             icon: Icons.straighten,
             iconColor: AppColors.primaryContainer,
             iconBgColor: AppColors.primaryContainer.withValues(alpha: 0.1),
-            label: 'Distância',
+            label: context.l10n.distance,
             value: TripConfirmData.distance,
           ),
         ),
@@ -517,7 +518,7 @@ class _TripStatsRow extends StatelessWidget {
             icon: Icons.schedule,
             iconColor: AppColors.secondary,
             iconBgColor: AppColors.secondaryContainer.withValues(alpha: 0.1),
-            label: 'Duração',
+            label: context.l10n.duration,
             value: TripConfirmData.duration,
           ),
         ),
@@ -605,6 +606,12 @@ class _TransportOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final priceText =
         '${option.price.toStringAsFixed(2).replaceAll('.', ',')}€';
+    final label = switch (option.id) {
+      'premium' => context.l10n.tripConfirmTransportPremium,
+      'eco' => context.l10n.tripConfirmTransportEco,
+      'shared' => context.l10n.tripConfirmTransportShared,
+      _ => option.label,
+    };
 
     return GestureDetector(
       onTap: onTap,
@@ -634,7 +641,7 @@ class _TransportOptionCard extends StatelessWidget {
             ),
             SizedBox(height: 6.h),
             Text(
-              option.label,
+              label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(

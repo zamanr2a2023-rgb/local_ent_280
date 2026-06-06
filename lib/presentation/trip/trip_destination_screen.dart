@@ -6,6 +6,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Destino da viagem — `roles/details.md` (Para onde vamos hoje?).
 class TripDestinationScreen extends StatelessWidget {
@@ -35,14 +36,14 @@ class TripDestinationScreen extends StatelessWidget {
                   SizedBox(height: 16.h),
                   const _CurrentLocationCard(),
                   SizedBox(height: 24.h),
-                  _SectionTitle(title: 'Locais Recentes'),
+                  _SectionTitle(title: context.l10n.tripDestinationRecentPlaces),
                   SizedBox(height: 8.h),
                   for (final place in TripDestinationData.recentPlaces) ...[
                     _PlaceCard(place: place),
                     SizedBox(height: 8.h),
                   ],
                   SizedBox(height: 16.h),
-                  _SectionTitle(title: 'Sugestões e Favoritos'),
+                  _SectionTitle(title: context.l10n.tripDestinationSuggestions),
                   SizedBox(height: 8.h),
                   for (final place in TripDestinationData.favorites) ...[
                     _PlaceCard(place: place),
@@ -51,7 +52,7 @@ class TripDestinationScreen extends StatelessWidget {
                   SizedBox(height: 8.h),
                   const _SuggestionBanner(),
                   SizedBox(height: 32.h),
-                  _SectionTitle(title: 'Explorar Mapa'),
+                  _SectionTitle(title: context.l10n.tripDestinationExploreMap),
                   SizedBox(height: 12.h),
                   const _ExploreMapCard(),
                 ],
@@ -90,7 +91,7 @@ class _DestinationAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -136,7 +137,7 @@ class _HeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Para onde vamos hoje?',
+          context.l10n.homeWhereToday,
           style: GoogleFonts.manrope(
             fontSize: 32.sp,
             fontWeight: FontWeight.w700,
@@ -146,7 +147,7 @@ class _HeaderSection extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         Text(
-          'Procure um destino ou escolha um dos seus locais frequentes.',
+          context.l10n.tripDestinationSubtitle,
           style: GoogleFonts.inter(
             fontSize: 16.sp,
             fontWeight: FontWeight.w400,
@@ -188,7 +189,7 @@ class _SearchBar extends StatelessWidget {
           Expanded(
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Pesquisar endereço ou ponto de interesse',
+                hintText: context.l10n.tripDestinationSearchHint,
                 hintStyle: GoogleFonts.inter(
                   fontSize: 16.sp,
                   color: AppColors.outline,
@@ -272,7 +273,7 @@ class _CurrentLocationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Localização Atual',
+                      context.l10n.discoverCurrentLocation,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -431,7 +432,7 @@ class _SuggestionBanner extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'SUGESTÃO DE HOJE',
+                    context.l10n.tripDestinationTodaySuggestion,
                     style: GoogleFonts.inter(
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w500,
@@ -517,7 +518,7 @@ class _ExploreMapCard extends StatelessWidget {
                           Icon(Icons.map, color: Colors.white, size: 20.sp),
                           SizedBox(width: 8.w),
                           Text(
-                            'Ver Mapa Completo',
+                            context.l10n.tripDestinationViewFullMap,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,

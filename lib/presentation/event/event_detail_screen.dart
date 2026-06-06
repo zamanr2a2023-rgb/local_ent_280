@@ -9,6 +9,7 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class EventDetailScreen extends StatefulWidget {
   const EventDetailScreen({super.key});
@@ -115,7 +116,7 @@ class _EventAppBar extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Local Transport',
+                    context.l10n.appNameLocalTransport,
                     maxLines: 1,
                     style: GoogleFonts.manrope(
                       fontSize: 20.sp,
@@ -252,18 +253,18 @@ class _EventInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Wrap(
+          Wrap(
             spacing: 32,
             runSpacing: 16,
             children: [
               _InfoRow(
                 icon: Icons.calendar_today,
-                label: 'Data e Hora',
+                label: context.l10n.eventDateTimeLabel,
                 value: '15 de Julho, 18:00',
               ),
               _InfoRow(
                 icon: Icons.location_on,
-                label: 'Localização',
+                label: context.l10n.eventLocationLabel,
                 value: 'Alfândega do Porto',
               ),
             ],
@@ -272,7 +273,7 @@ class _EventInfoCard extends StatelessWidget {
           Divider(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           SizedBox(height: 16.h),
           Text(
-            'Sobre o Evento',
+            context.l10n.eventAboutTitle,
             style: GoogleFonts.manrope(
               fontSize: 20.sp,
               fontWeight: FontWeight.w600,
@@ -365,7 +366,7 @@ class _MapCard extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(24.w, 24.h, 24.w, 8.h),
             child: Text(
-              'Como chegar',
+              context.l10n.eventDirectionsTitle,
               style: GoogleFonts.manrope(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
@@ -453,7 +454,7 @@ class _MapCard extends StatelessWidget {
                             ),
                             SizedBox(width: 8.w),
                             Text(
-                              'Abrir no GPS',
+                              context.l10n.eventOpenGps,
                               style: GoogleFonts.inter(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -507,7 +508,7 @@ class _TicketCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bilhete Normal',
+                      context.l10n.eventStandardTicket,
                       style: GoogleFonts.manrope(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
@@ -516,7 +517,7 @@ class _TicketCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Acesso geral + 1 bebida',
+                      context.l10n.eventStandardTicketDesc,
                       style: GoogleFonts.inter(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
@@ -540,7 +541,7 @@ class _TicketCard extends StatelessWidget {
           ),
           SizedBox(height: 24.h),
           Text(
-            'Quantidade',
+            context.l10n.quantity,
             style: GoogleFonts.inter(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -583,15 +584,15 @@ class _TicketCard extends StatelessWidget {
           SizedBox(height: 16.h),
           Divider(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
           SizedBox(height: 16.h),
-          _PriceRow(label: 'Subtotal', value: formatPrice(subtotal)),
+          _PriceRow(label: context.l10n.subtotal, value: formatPrice(subtotal)),
           SizedBox(height: 4.h),
           _PriceRow(
-            label: 'Taxa de Serviço',
+            label: context.l10n.eventServiceFee,
             value: formatPrice(EventDetailScreen._serviceFee),
           ),
           SizedBox(height: 8.h),
           _PriceRow(
-            label: 'Total',
+            label: context.l10n.total,
             value: formatPrice(total),
             isBold: true,
             valueColor: AppColors.secondary,
@@ -614,7 +615,7 @@ class _TicketCard extends StatelessWidget {
                   Icon(Icons.shopping_cart_checkout, size: 22.sp),
                   SizedBox(width: 8.w),
                   Text(
-                    'Pagar Agora',
+                    context.l10n.eventPayNow,
                     style: GoogleFonts.manrope(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w600,
@@ -749,7 +750,7 @@ class _VipCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Experiência VIP',
+                  context.l10n.eventVipExperience,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -766,7 +767,7 @@ class _VipCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
-                  'LIMITADO',
+                  context.l10n.eventLimited,
                   style: GoogleFonts.inter(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w700,
@@ -778,7 +779,7 @@ class _VipCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Mesa reservada, garrafa incluída e acesso ao backstage.',
+            context.l10n.eventVipDescription,
             style: GoogleFonts.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
@@ -790,7 +791,7 @@ class _VipCard extends StatelessWidget {
           GestureDetector(
             onTap: () {},
             child: Text(
-              'Ver disponibilidade →',
+              context.l10n.eventCheckAvailability,
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,

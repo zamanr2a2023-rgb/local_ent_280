@@ -6,6 +6,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Viagem em curso — `roles/details.md`.
 class TripInProgressScreen extends StatefulWidget {
@@ -104,7 +105,7 @@ class _TripAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -282,7 +283,7 @@ class _InTripBottomSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        TripInProgressData.statusLabel.toUpperCase(),
+                        context.l10n.tripInProgressStatusLabel.toUpperCase(),
                         style: GoogleFonts.inter(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
@@ -305,7 +306,7 @@ class _InTripBottomSheet extends StatelessWidget {
                           SizedBox(width: 8.w),
                           Flexible(
                             child: Text(
-                              TripInProgressData.statusValue,
+                              context.l10n.tripInProgressStatusValue,
                               style: GoogleFonts.manrope(
                                 fontSize: 20.sp,
                                 fontWeight: FontWeight.w600,
@@ -331,7 +332,7 @@ class _InTripBottomSheet extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          TripInProgressData.arrivalLabel,
+                          context.l10n.tripInProgressArrivalLabel,
                           textAlign: TextAlign.end,
                           style: GoogleFonts.inter(
                             fontSize: 12.sp,
@@ -360,7 +361,7 @@ class _InTripBottomSheet extends StatelessWidget {
               icon: Icons.location_on,
               iconBackground: AppColors.secondaryContainer,
               iconColor: AppColors.onSecondaryContainer,
-              label: TripInProgressData.destinationLabel,
+              label: context.l10n.destination,
               value: TripInProgressData.destinationAddress,
             ),
             SizedBox(height: 12.h),
@@ -368,7 +369,7 @@ class _InTripBottomSheet extends StatelessWidget {
               icon: Icons.payments,
               iconBackground: AppColors.tertiaryContainer,
               iconColor: AppColors.onTertiaryContainer,
-              label: TripInProgressData.costLabel,
+              label: context.l10n.tripInProgressCostLabel,
               value: TripInProgressData.estimatedCost,
             ),
             SizedBox(height: 16.h),
@@ -391,7 +392,7 @@ class _InTripBottomSheet extends StatelessWidget {
                     Icon(Icons.close, size: 20.sp),
                     SizedBox(width: 8.w),
                     Text(
-                      'Terminar Viagem',
+                      context.l10n.tripInProgressEndTrip,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -423,7 +424,7 @@ class _InTripBottomSheet extends StatelessWidget {
                     Icon(Icons.help_center, size: 20.sp),
                     SizedBox(width: 8.w),
                     Text(
-                      'Suporte',
+                      context.l10n.support,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,

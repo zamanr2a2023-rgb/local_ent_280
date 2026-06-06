@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class DeliveryScreen extends StatelessWidget {
   const DeliveryScreen({super.key});
@@ -124,7 +125,7 @@ class _DeliveryAppBar extends StatelessWidget {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -173,7 +174,7 @@ class _LocationAndSearch extends StatelessWidget {
             SizedBox(width: 4.w),
             Expanded(
               child: Text(
-                'Entregar em: Av. da Liberdade, Lisboa',
+                context.l10n.deliveryDeliverTo,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -200,7 +201,7 @@ class _LocationAndSearch extends StatelessWidget {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'O que procura hoje?',
+                    hintText: context.l10n.deliverySearchHint,
                     hintStyle: GoogleFonts.inter(
                       fontSize: 16.sp,
                       color: AppColors.onSurfaceVariant,
@@ -231,7 +232,7 @@ class _CategoriesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Explorar Categorias',
+          context.l10n.deliveryExploreCategories,
           style: GoogleFonts.manrope(
             fontSize: 20.sp,
             fontWeight: FontWeight.w600,
@@ -242,8 +243,8 @@ class _CategoriesSection extends StatelessWidget {
         SizedBox(height: 16.h),
         _CategoryCard(
           imageUrl: AppAssets.deliverySupermarketImage,
-          title: 'Supermercado',
-          subtitle: 'Essenciais frescos à sua porta',
+          title: context.l10n.deliveryCategorySupermarket,
+          subtitle: context.l10n.deliveryCategorySupermarketSubtitle,
           height: 180.h,
           titleSize: 24,
           onTap: () => AppNavigation.toPremiumHome(context),
@@ -254,7 +255,7 @@ class _CategoriesSection extends StatelessWidget {
             Expanded(
               child: _CategoryCard(
                 imageUrl: AppAssets.deliveryPharmacyImage,
-                title: 'Farmácia',
+                title: context.l10n.deliveryCategoryPharmacy,
                 height: 140.h,
                 onTap: () => AppNavigation.toPremiumHome(context),
               ),
@@ -263,7 +264,7 @@ class _CategoriesSection extends StatelessWidget {
             Expanded(
               child: _CategoryCard(
                 imageUrl: AppAssets.deliveryBeveragesImage,
-                title: 'Bebidas',
+                title: context.l10n.deliveryCategoryBeverages,
                 height: 140.h,
                 onTap: () => AppNavigation.toPremiumHome(context),
               ),
@@ -273,7 +274,7 @@ class _CategoriesSection extends StatelessWidget {
         SizedBox(height: 16.h),
         _CategoryCard(
           imageUrl: AppAssets.deliveryHealthImage,
-          title: 'Saúde & Bem-estar',
+          title: context.l10n.deliveryCategoryHealth,
           height: 120.h,
           onTap: () => AppNavigation.toPremiumHome(context),
         ),
@@ -381,6 +382,7 @@ class _PartnersSection extends StatelessWidget {
       time: '15-25 min',
       fee: '€2.50 entrega',
       premium: true,
+      feeIsFree: false,
     ),
     (
       image: AppAssets.deliveryPartnerPharmaImage,
@@ -389,6 +391,7 @@ class _PartnersSection extends StatelessWidget {
       time: '20-35 min',
       fee: 'Grátis',
       premium: false,
+      feeIsFree: true,
     ),
     (
       image: AppAssets.deliveryPartnerAdegaImage,
@@ -397,6 +400,7 @@ class _PartnersSection extends StatelessWidget {
       time: '10-20 min',
       fee: '€1.90 entrega',
       premium: false,
+      feeIsFree: false,
     ),
   ];
 
@@ -413,7 +417,7 @@ class _PartnersSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Parceiros Premium',
+                    context.l10n.deliveryPartnersTitle,
                     style: GoogleFonts.manrope(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w600,
@@ -422,7 +426,7 @@ class _PartnersSection extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Qualidade garantida e entregas rápidas',
+                    context.l10n.deliveryPartnersSubtitle,
                     style: GoogleFonts.inter(
                       fontSize: 16.sp,
                       color: AppColors.onSurfaceVariant,
@@ -434,7 +438,7 @@ class _PartnersSection extends StatelessWidget {
             GestureDetector(
               onTap: () {},
               child: Text(
-                'Ver todos',
+                context.l10n.seeAll,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -461,9 +465,9 @@ class _PartnersSection extends StatelessWidget {
                       name: p.name,
                       rating: p.rating,
                       time: p.time,
-                      fee: p.fee,
+                      fee: p.feeIsFree ? context.l10n.free : p.fee,
                       showPremiumBadge: p.premium,
-                      feeIsFree: p.fee == 'Grátis',
+                      feeIsFree: p.feeIsFree,
                     );
                   },
                 ),
@@ -536,7 +540,7 @@ class _PartnerCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999.r),
                       ),
                       child: Text(
-                        'Premium',
+                        context.l10n.premium,
                         style: GoogleFonts.inter(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
@@ -650,11 +654,11 @@ class _HighlightsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Destaques da Semana', style: _sectionTitleStyle),
+        Text(context.l10n.deliveryHighlightsTitle, style: _sectionTitleStyle),
         SizedBox(height: 16.h),
         _HighlightCard(
           imageUrl: AppAssets.deliveryAsparagusImage,
-          tag: 'Promoção',
+          tag: context.l10n.promotion,
           tagColor: AppColors.secondary,
           tagBackground: AppColors.secondaryContainer.withValues(alpha: 0.1),
           title: 'Aspargos Biológicos',
@@ -665,7 +669,7 @@ class _HighlightsSection extends StatelessWidget {
         SizedBox(height: 16.h),
         _HighlightCard(
           imageUrl: AppAssets.deliveryChocolateImage,
-          tag: 'Novo',
+          tag: context.l10n.newBadge,
           tagColor: AppColors.onPrimaryContainer,
           tagBackground: AppColors.primaryFixed.withValues(alpha: 0.3),
           title: 'Chocolate Negro 85%',

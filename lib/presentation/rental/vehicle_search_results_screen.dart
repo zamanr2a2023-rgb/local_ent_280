@@ -6,6 +6,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Resultados da pesquisa de veículos — `roles/details.md`.
 class VehicleSearchResultsScreen extends StatefulWidget {
@@ -77,7 +78,7 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                     child: _PremiumSection(
                       vehicles: VehicleListings.premium,
                       onViewDetails: () =>
-                          AppNavigation.toTripDestination(context),
+                          AppNavigation.toVehicleDetail(context),
                     ),
                   ),
                   SizedBox(height: 32.h),
@@ -88,7 +89,7 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                     child: _StandardSection(
                       vehicles: VehicleListings.standard,
                       onViewDetails: () =>
-                          AppNavigation.toTripDestination(context),
+                          AppNavigation.toVehicleDetail(context),
                     ),
                   ),
                   SizedBox(height: 32.h),
@@ -107,7 +108,7 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                         ),
                       ),
                       child: Text(
-                        'Carregar mais veículos',
+                        context.l10n.rentalLoadMore,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -152,7 +153,7 @@ class _ResultsAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -230,21 +231,21 @@ class _FilterCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _FilterDropdown(
-            label: 'Tipo de Carro',
+            label: context.l10n.rentalCarType,
             value: carType,
             items: carTypes,
             onChanged: onCarTypeChanged,
           ),
           SizedBox(height: 16.h),
           _FilterDropdown(
-            label: 'Preço Máximo',
+            label: context.l10n.rentalMaxPrice,
             value: maxPrice,
             items: maxPrices,
             onChanged: onMaxPriceChanged,
           ),
           SizedBox(height: 16.h),
           _FilterDropdown(
-            label: 'Transmissão',
+            label: context.l10n.rentalTransmission,
             value: transmission,
             items: transmissions,
             onChanged: onTransmissionChanged,
@@ -256,7 +257,7 @@ class _FilterCard extends StatelessWidget {
               onPressed: () {},
               icon: Icon(Icons.filter_list, size: 22.sp),
               label: Text(
-                'Filtrar',
+                context.l10n.rentalFilter,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -356,7 +357,7 @@ class _PremiumSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Destaques Premium',
+                context.l10n.rentalPremiumHighlights,
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
@@ -366,7 +367,7 @@ class _PremiumSection extends StatelessWidget {
               ),
             ),
             Text(
-              '2 resultados encontrados',
+              context.l10n.rentalResultsFound('2'),
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -450,7 +451,7 @@ class _PremiumVehicleCard extends StatelessWidget {
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        'Premium Choice',
+                        context.l10n.rentalPremiumChoice,
                         style: GoogleFonts.inter(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -521,7 +522,7 @@ class _PremiumVehicleCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Ver Detalhes',
+                      context.l10n.details,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -554,7 +555,7 @@ class _StandardSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Todos os Carros',
+          context.l10n.rentalAllCars,
           style: GoogleFonts.manrope(
             fontSize: 20.sp,
             fontWeight: FontWeight.w600,
@@ -672,7 +673,7 @@ class _StandardVehicleCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Ver Detalhes',
+                      context.l10n.details,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,

@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/data/driver_found_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Motorista encontrado — a aguardar confirmação (`roles/details.md`).
 class DriverFoundScreen extends StatefulWidget {
@@ -113,7 +114,7 @@ class _DriverFoundAppBar extends StatelessWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -258,7 +259,7 @@ class _WaitingStatusCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    DriverFoundData.statusTitle,
+                    context.l10n.driverFoundTitle,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -268,7 +269,7 @@ class _WaitingStatusCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    DriverFoundData.statusSubtitle,
+                    context.l10n.driverFoundWaiting,
                     style: GoogleFonts.inter(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w400,
@@ -427,7 +428,7 @@ class _DriverAssignmentSheet extends StatelessWidget {
                     Icon(Icons.close, size: 20.sp),
                     SizedBox(width: 16.w),
                     Text(
-                      'Cancelar Viagem',
+                      context.l10n.driverSearchCancelTrip,
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
@@ -443,7 +444,7 @@ class _DriverAssignmentSheet extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 32.w),
               child: Text(
-                DriverFoundData.cancelHint,
+                context.l10n.driverFoundCancelHint,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 12.sp,
@@ -531,14 +532,14 @@ class _RideSummaryCard extends StatelessWidget {
         children: [
           Expanded(
             child: _SummaryStat(
-              label: 'Tempo estimado',
+              label: context.l10n.driverFoundEstimatedTime,
               icon: Icons.timer_outlined,
               value: DriverFoundData.estimatedTime,
             ),
           ),
           Expanded(
             child: _SummaryStat(
-              label: 'Tarifa',
+              label: context.l10n.driverFoundFare,
               icon: Icons.payments_outlined,
               value: DriverFoundData.fare,
             ),

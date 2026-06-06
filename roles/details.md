@@ -1,10 +1,11 @@
-<!DOCTYPE html><html class="light" lang="pt-PT"><head>
-<meta charset="utf-8">
-<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -103,155 +104,256 @@
       }
     </script>
 <style>
-        .map-gradient-overlay {
-            background: linear-gradient(to bottom, rgba(247, 249, 251, 0) 0%, rgba(247, 249, 251, 1) 100%);
-        }
-        .custom-shadow {
-            box-shadow: 0 2px 8px rgba(0, 23, 54, 0.04);
-        }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #f7f9fb;
+        color: #191c1e;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e0e3e5;
+        border-radius: 10px;
+      }
     </style>
 <style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
-  </head>
-<body class="bg-surface font-body-md text-on-surface selection:bg-secondary-container selection:text-on-secondary-container">
-<header class="bg-surface dark:bg-surface fixed top-0 w-full z-50 h-14 flex justify-between items-center px-margin-mobile">
-<div class="flex items-center gap-md">
-<button class="text-primary hover:bg-surface-container-low p-sm rounded-full transition-transform active:scale-95 duration-150">
-<span class="material-symbols-outlined">arrow_back</span>
-</button>
-<h1 class="font-headline-md text-headline-md font-bold text-primary">Mobilidade Premium</h1>
+</head>
+<body class="flex min-h-screen">
+<!-- NavigationDrawer (Sidebar) -->
+<aside class="hidden md:flex flex-col h-full w-80 bg-surface border-r border-outline-variant py-xl fixed left-0 top-0 z-40">
+<div class="px-md mb-xl">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Premium Mobility</h1>
 </div>
-<div class="h-8 w-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
-<img alt="Foto de Perfil" class="h-full w-full object-cover" data-alt="A professional headshot of a middle-aged man with a friendly expression, set against a blurred corporate office background. The lighting is soft and professional, emphasizing a modern light-mode aesthetic. The color palette is clean with neutral tones and soft blue accents, conveying reliability and executive quality in a premium mobility service context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABzCif6cxQWIO1_nOOZZBSF8eBxDyedY24paDCOmNzqqzkhVcmgOWXsBScRA2kdIjm9Si5E7F4FLGpXfsxSwo1mQSj3KIq4Q3qaXmMb9KgcsbLEwGMVq_bV5NALuD6eqmxSQ8fFt7_V-l0l9EO6gPc28eF5WJmVlxGUTkFOeMBZL1qPrrQue5D68TWgMPs0Y35Cxu4V6bgrw_ndQ_rX1QV3KzsGPMCbqyeBi2utrjTpObmlpv10LDvqbMeKqkutD5IfMV-MRXzu4Q">
+<div class="flex flex-col px-md mb-lg">
+<div class="flex items-center gap-md p-md bg-surface-container-low rounded-xl">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5B2j7iPJhUcDf5U2fxhXVTI0uMSmeQiNtfbI_OtQhjq07gDpdU54Kyv8WgEcC6OUX1JWx-q2czFYYkuwfhHfRF6aSElsWIiQqzwNaV-e6GbiWHnRuIo3pnjbeLp_JxAHMewis9MB5_WY7Otkf80IlV3KLgrejIeGTyG4G04bgPZGiMQqQegQgWgmnq_c2cY367ktoTv7QUWWvovMFRDJtkKCYNCbqgHZro3rqXZEodQz7zLIPeKlHQzA9BaiT1RRWhN1mmJKy1g4"/>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Fleet Manager</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Central Lisbon Fleet</p>
+<span class="text-[10px] font-bold uppercase tracking-wider text-secondary px-2 py-0.5 bg-secondary-fixed rounded-full">Admin</span>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-xs px-md overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high mx-md my-xs px-md py-sm rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container mx-md my-xs px-md py-sm rounded-full transition-transform duration-200 translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-lg text-label-lg">Trips</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high mx-md my-xs px-md py-sm rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-lg text-label-lg">Bookings</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high mx-md my-xs px-md py-sm rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:bg-surface-container-high mx-md my-xs px-md py-sm rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-lg">
+<a class="flex items-center gap-md text-error hover:bg-error-container/10 mx-md my-xs px-md py-sm rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-lg text-label-lg">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-80 pb-24 md:pb-lg">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-margin-mobile h-14 w-full bg-surface sticky top-0 z-30">
+<div class="flex items-center gap-sm">
+<button class="md:hidden p-sm text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Detailed Reports</h2>
+</div>
+<div class="flex items-center gap-md">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-xs">
+                    GP
+                </div>
 </div>
 </header>
-<main class="pt-14 pb-xxl max-w-5xl mx-auto px-gutter md:px-margin-mobile">
-<div class="grid grid-cols-1 md:grid-cols-12 gap-lg mt-md">
-<div class="md:col-span-7 space-y-md">
-<div class="relative h-64 md:h-80 w-full rounded-xl overflow-hidden custom-shadow">
-<img class="w-full h-full object-cover" data-alt="A detailed digital map of Lisbon's central district showcasing a highlighted premium transport route with smooth blue lines. The map uses a minimalist, light-themed aesthetic with soft grays and blues to ensure high legibility. The surrounding city blocks are rendered in a clean, professional architectural style, reflecting a sense of precision and urban mobility." data-location="Lisbon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBnN-KGtFYMXh7zxMZXZFT9drU4aNWJerQKv6JV5ABP2aUXW6ZyehaQbjiPR9atQdUs3KYzzpAHM-QOK8ulLN2kve5xn2bxyJ6XBy5D_1Zu3aBh_BDLliZwJU8O4Ez87wVQKmJQWOH4Hc6ifptJsFZ13unRYykw1NfY10gicXYE3GspzYyauh8kYnB4fXXp4HKGf_NBn9K3Qn9BHIuZ2_ZdSN9rx-deawIsFOLkVgqaVvMJ86-t4wbspW48wWS8B__PYzk-mkx4hk">
-<div class="absolute inset-0 map-gradient-overlay pointer-events-none"></div>
-<div class="absolute bottom-md left-md bg-surface-container-lowest px-md py-sm rounded-lg custom-shadow flex items-center gap-sm">
-<span class="material-symbols-outlined text-secondary text-sm">schedule</span>
-<span class="font-label-lg text-label-lg">24 min • 12.5 km</span>
-</div>
-</div>
-<div class="bg-surface-container-lowest p-lg rounded-xl custom-shadow space-y-md">
-<div class="flex justify-between items-start">
-<div>
-<h2 class="font-headline-sm text-headline-sm text-primary">Resumo da Viagem</h2>
-<p class="font-label-sm text-label-sm text-on-surface-variant">14 de Outubro, 2023 • 18:42</p>
-</div>
-<span class="bg-secondary-container text-on-secondary-container px-md py-xs rounded-full font-label-sm text-label-sm">Concluída</span>
-</div>
-<div class="space-y-sm relative pl-8">
-<div class="absolute left-3 top-2 bottom-2 w-0.5 bg-outline-variant"></div>
+<div class="p-margin-mobile md:p-lg space-y-lg">
+<!-- Filters Section -->
+<section class="bg-surface-container-lowest p-md md:p-lg rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)]">
+<div class="flex flex-col md:flex-row md:items-end gap-md">
+<div class="flex-1 space-y-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-xs">Date Range</label>
 <div class="relative">
-<span class="material-symbols-outlined absolute -left-8 text-secondary bg-surface-container-lowest" style="font-variation-settings: 'FILL' 1;">location_on</span>
-<p class="font-label-lg text-label-lg text-on-surface">Avenida da Liberdade, 110</p>
-<p class="font-label-sm text-label-sm text-on-surface-variant">Lisboa, Portugal</p>
-</div>
-<div class="relative pt-md">
-<span class="material-symbols-outlined absolute -left-8 text-primary bg-surface-container-lowest" style="font-variation-settings: 'FILL' 1;">trip_origin</span>
-<p class="font-label-lg text-label-lg text-on-surface">Aeroporto Humberto Delgado</p>
-<p class="font-label-sm text-label-sm text-on-surface-variant">Terminal 1, Partidas</p>
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">calendar_today</span>
+<input class="w-full pl-xl pr-md py-sm bg-surface-container-low border-2 border-transparent focus:border-secondary rounded-lg font-body-md text-body-md outline-none transition-all" type="text" value="01 Jan 2024 - 31 Jan 2024"/>
 </div>
 </div>
-</div>
-<div class="bg-surface-container-lowest p-lg rounded-xl custom-shadow">
-<h3 class="font-label-lg text-label-lg text-primary mb-md">Avalie a sua experiência</h3>
-<div class="flex justify-between items-center bg-surface-container-low p-md rounded-lg">
-<div class="flex gap-xs text-secondary">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined">star</span>
-</div>
-<button class="text-secondary font-label-lg text-label-lg hover:underline transition-all">Editar</button>
+<div class="flex-1 space-y-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant px-xs">Vehicle / Fleet</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">directions_car</span>
+<select class="w-full pl-xl pr-md py-sm bg-surface-container-low border-2 border-transparent focus:border-secondary rounded-lg font-body-md text-body-md outline-none appearance-none transition-all">
+<option>All Vehicles</option>
+<option>Light Fleet</option>
+<option>Heavy Fleet</option>
+<option>Executive</option>
+</select>
 </div>
 </div>
-</div>
-<div class="md:col-span-5 space-y-md">
-<div class="bg-surface-container-lowest p-lg rounded-xl custom-shadow border-t-4 border-secondary">
-<div class="flex justify-between items-center mb-lg">
-<h2 class="font-headline-sm text-headline-sm text-primary">Fatura Digital</h2>
-<span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
-</div>
-<div class="space-y-sm">
-<div class="flex justify-between">
-<span class="text-on-surface-variant font-body-md text-body-md">Tarifa Base</span>
-<span class="font-label-lg text-label-lg">3,50 €</span>
-</div>
-<div class="flex justify-between">
-<span class="text-on-surface-variant font-body-md text-body-md">Distância (12.5 km)</span>
-<span class="font-label-lg text-label-lg">14,25 €</span>
-</div>
-<div class="flex justify-between">
-<span class="text-on-surface-variant font-body-md text-body-md">Tempo (24 min)</span>
-<span class="font-label-lg text-label-lg">4,80 €</span>
-</div>
-<div class="flex justify-between text-secondary">
-<span class="font-body-md text-body-md">Desconto Promocional</span>
-<span class="font-label-lg text-label-lg">- 2,50 €</span>
-</div>
-<div class="border-t border-outline-variant my-md pt-md flex justify-between items-end">
-<div>
-<p class="font-label-sm text-label-sm text-on-surface-variant">Total Pago</p>
-<p class="font-display-lg text-display-lg text-primary">20,05 €</p>
-</div>
-<div class="text-right">
-<p class="font-label-sm text-label-sm text-on-surface-variant">Método</p>
-<div class="flex items-center gap-xs">
-<span class="material-symbols-outlined text-sm">credit_card</span>
-<span class="font-label-lg text-label-lg">Visa •••• 4242</span>
-</div>
-</div>
-</div>
-</div>
-<button class="w-full mt-lg bg-surface-container-low text-primary py-md rounded-xl font-label-lg text-label-lg hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-sm">
-<span class="material-symbols-outlined text-lg">download</span>
-                        Descarregar PDF
+<button class="h-[56px] px-lg bg-secondary text-on-secondary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined">file_download</span>
+                        Export
                     </button>
 </div>
-<div class="bg-surface-container-lowest p-lg rounded-xl custom-shadow flex items-center gap-lg">
-<div class="relative">
-<div class="h-16 w-16 rounded-full bg-surface-variant overflow-hidden border-2 border-secondary">
-<img alt="Motorista" class="h-full w-full object-cover" data-alt="A high-quality portrait of a professional driver wearing a clean dark uniform, smiling warmly. The image is crisp and clear, set against a soft bokeh of city lights at dusk. The overall aesthetic is professional, secure, and premium, using a color palette of deep blues and warm highlights to evoke trust and high-end service." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXlihrW5Db1arRHJt09rshKogObdFEVnTfZlPzdYWK2139TFPJXMC8v8l1dhEQD4nIsiC96t8ujPdTLrs8xkyEH8cRSBM2AWd6aO-hFOIlIS6hU-dDAlLY9l8UPPEi28Fz6umOR2XX0nQGDtto6FQX0rsYTSFbc7aRQ56G4sJX1VifRL-RC9ds9xeWQY06VRABSaq4O3L7-Zw9Vy-updxVLmogXbpSARtQBMpIXBsklOn-Leeq0kwpKUkdq90IkFVGvht2Eoq9DCs">
-</div>
-<div class="absolute -bottom-1 -right-1 bg-secondary text-on-secondary h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold">4.9</div>
-</div>
-<div class="flex-1">
-<h3 class="font-headline-sm text-headline-sm text-primary">Ricardo Santos</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Tesla Model 3 • 42-XG-99</p>
-<p class="font-label-sm text-label-sm text-secondary">Premium Electric</p>
+</section>
+<!-- Summary Bento Grid -->
+<section class="grid grid-cols-2 md:grid-cols-5 gap-md">
+<!-- Total Viagens -->
+<div class="col-span-1 bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)] border-l-4 border-secondary">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Total Trips</p>
+<div class="flex items-end justify-between">
+<h3 class="font-headline-md text-headline-md text-primary">1,284</h3>
+<span class="text-[10px] text-secondary font-bold bg-secondary-fixed px-1.5 py-0.5 rounded">+12%</span>
 </div>
 </div>
-<div class="bg-surface-container-lowest p-lg rounded-xl custom-shadow border border-error-container">
-<div class="flex items-center gap-md mb-md">
-<span class="material-symbols-outlined text-error">report</span>
-<h3 class="font-label-lg text-label-lg text-primary">Algo correu mal?</h3>
-</div>
-<button class="w-full text-left text-on-surface-variant font-body-md text-body-md hover:text-error transition-colors flex justify-between items-center py-sm">
-<span class="">Reportar objeto perdido</span>
-<span class="material-symbols-outlined text-sm">chevron_right</span>
-</button>
-<button class="w-full text-left text-on-surface-variant font-body-md text-body-md hover:text-error transition-colors flex justify-between items-center py-sm">
-<span class="">Reclamação de segurança</span>
-<span class="material-symbols-outlined text-sm">chevron_right</span>
-</button>
-<button class="w-full text-left text-on-surface-variant font-body-md text-body-md hover:text-error transition-colors flex justify-between items-center py-sm">
-<span class="">Apoio ao cliente</span>
-<span class="material-symbols-outlined text-sm">chevron_right</span>
-</button>
+<!-- Distância -->
+<div class="col-span-1 bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)]">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Total Distance</p>
+<div class="flex items-end justify-between">
+<h3 class="font-headline-md text-headline-md text-primary">14.2k <span class="text-label-sm font-normal">km</span></h3>
 </div>
 </div>
+<!-- Tempo -->
+<div class="col-span-1 bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)]">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Time en Route</p>
+<div class="flex items-end justify-between">
+<h3 class="font-headline-md text-headline-md text-primary">842 <span class="text-label-sm font-normal">h</span></h3>
+</div>
+</div>
+<!-- Custo -->
+<div class="col-span-1 bg-surface-container-lowest p-md rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)]">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-xs">Total Cost</p>
+<div class="flex items-end justify-between">
+<h3 class="font-headline-md text-headline-md text-primary">42.1k <span class="text-label-sm font-normal">€</span></h3>
+</div>
+</div>
+<!-- Dívida -->
+<div class="col-span-2 md:col-span-1 bg-error-container/10 border border-error/20 p-md rounded-xl shadow-[0_2px_8px_rgba(0,23,54,0.04)]">
+<div class="flex flex-col h-full justify-between">
+<div>
+<p class="font-label-sm text-label-sm text-error mb-xs">Pending Debt</p>
+<h3 class="font-headline-md text-headline-md text-error">1.4k <span class="text-label-sm font-normal">€</span></h3>
+</div>
+<div class="flex items-center justify-between mt-xs">
+<p class="text-[10px] text-error opacity-70 uppercase font-bold">overdue invoices</p>
+<span class="material-symbols-outlined text-error text-md">warning</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Data Visualization / Table Placeholder -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0_4px_16px_rgba(0,23,54,0.06)] overflow-hidden">
+<div class="p-lg border-b border-surface-variant flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm text-primary">Monthly Performance Analysis</h3>
+<div class="flex gap-xs">
+<button class="p-xs hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-on-surface-variant">more_vert</span></button>
+</div>
+</div>
+<div class="p-lg space-y-lg">
+<!-- High-end Graphic Placeholder -->
+<div class="aspect-[21/9] w-full bg-surface-container-low rounded-lg relative overflow-hidden flex flex-col items-center justify-center p-xl">
+<img class="absolute inset-0 w-full h-full object-cover opacity-80" data-alt="A clean, minimalist vector line chart showing fleet performance metrics. The chart features a primary deep blue line and a secondary soft light blue line flowing across a grid of subtle gray lines. The background is a crisp off-white light-mode surface. The overall aesthetic is professional, corporate, and data-driven with high legibility and plenty of white space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq4PqypmAlrt1YBF8Za0sW0OsxPFAKIS_RavqmXpFiv1oWYj4SdyFi_xGtHXfyV9tOzCF-bd0v-ErF3CCV8G7dTrNYvZDAlxY5E68k7_ax4gGjyOgfYcWy0xmMTp9Hs6XbQwxRsvTZFZnetHi1YmMX5jkVDzQJlUtIuoSdUrIuwr9sU4MqO7WOHwrKzC7ze66SFTllprJtS5AKQudGtB-TNYiNeFymzQBxzMr-L4rNJcGFYstmOlN6k0imS5C4qr2PHe1ga4G7zJc"/>
+<div class="relative z-10 text-center space-y-md">
+<span class="material-symbols-outlined text-xxl text-primary-container opacity-40">query_stats</span>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Detailed visualization of cost trends and mileage processed for the selected period.</p>
+</div>
+</div>
+<!-- Asymmetric Details Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="md:col-span-2 space-y-md">
+<h4 class="font-label-lg text-label-lg text-primary uppercase tracking-widest">LATEST ACTIVITIES</h4>
+<div class="space-y-sm">
+<div class="flex items-center justify-between p-md bg-surface-container-lowest border border-surface-variant/50 rounded-xl hover:shadow-md transition-shadow">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">local_shipping</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">Regional Delivery Porto</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">VTR-402 • 14:20h</p>
+</div>
+</div>
+<span class="font-label-lg text-label-lg text-primary">84.20 €</span>
+</div>
+<div class="flex items-center justify-between p-md bg-surface-container-lowest border border-surface-variant/50 rounded-xl hover:shadow-md transition-shadow">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">commute</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg">Executive Transfer Lisbon</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">VTR-108 • 11:45h</p>
+</div>
+</div>
+<span class="font-label-lg text-label-lg text-primary">125.00 €</span>
+</div>
+</div>
+</div>
+<div class="bg-primary-container p-lg rounded-xl text-on-primary flex flex-col justify-between">
+<div>
+<h4 class="font-label-lg text-label-lg text-primary-fixed mb-md uppercase tracking-widest">FLEET EFFICIENCY</h4>
+<div class="relative w-32 h-32 mx-auto mb-md">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#264778" stroke-dasharray="100, 100" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#a9c7ff" stroke-dasharray="85, 100" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-headline-sm font-bold">85%</span>
+<span class="text-[8px] uppercase tracking-tighter opacity-70">OPTIMIZED</span>
+</div>
+</div>
+</div>
+<p class="text-label-sm text-on-primary-container">Your fleet is operating 15% above the industry average this quarter.</p>
+</div>
+</div>
+</div>
+</section>
 </div>
 </main>
-
-
-
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant flex justify-around items-center h-16 z-40 px-md">
+<a class="flex flex-col items-center gap-xs text-secondary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold">Trips</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="text-[10px] font-bold">Bookings</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold">Profile</span>
+</a>
+</nav>
 </body></html>

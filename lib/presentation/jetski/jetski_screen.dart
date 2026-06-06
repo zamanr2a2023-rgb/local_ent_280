@@ -9,6 +9,7 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class JetskiScreen extends StatelessWidget {
   const JetskiScreen({super.key});
@@ -96,7 +97,7 @@ class _JetskiAppBar extends StatelessWidget {
             SizedBox(width: 8.w),
             Expanded(
               child: Text(
-                'Local Transport',
+                context.l10n.appNameLocalTransport,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -166,7 +167,7 @@ class _JetskiHero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999.r),
                   ),
                   child: Text(
-                    'Aventura no Mar',
+                    context.l10n.jetskiAdventureTag,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -177,7 +178,7 @@ class _JetskiHero extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'Domine as Ondas',
+                  context.l10n.jetskiHeroTitle,
                   style: GoogleFonts.manrope(
                     fontSize: 32.sp,
                     fontWeight: FontWeight.w700,
@@ -187,7 +188,7 @@ class _JetskiHero extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  'Aluguer premium de motas de água de alta performance.',
+                  context.l10n.jetskiHeroSubtitle,
                   style: GoogleFonts.inter(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w400,
@@ -248,7 +249,7 @@ class _SearchFilterCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'DURAÇÃO',
+                            context.l10n.jetskiDurationLabel,
                             style: GoogleFonts.inter(
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
@@ -257,7 +258,7 @@ class _SearchFilterCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '1 Hora — Passeio Rápido',
+                            context.l10n.jetskiDurationValue,
                             style: GoogleFonts.inter(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -293,7 +294,7 @@ class _SearchFilterCard extends StatelessWidget {
                             SizedBox(width: 4.w),
                             Flexible(
                               child: Text(
-                                'Explorar Frota',
+                                context.l10n.jetskiExploreFleet,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
@@ -345,7 +346,7 @@ class _FleetSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Nossa Frota',
+              context.l10n.jetskiOurFleet,
               style: GoogleFonts.manrope(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
@@ -356,7 +357,7 @@ class _FleetSection extends StatelessWidget {
             GestureDetector(
               onTap: () {},
               child: Text(
-                'Ver todos',
+                context.l10n.seeAll,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -375,7 +376,7 @@ class _FleetSection extends StatelessWidget {
           description: 'Performance extrema para pilotos experientes.',
           rating: '4.9',
           tags: const ['3 LUGARES', 'SUPERCHARGED'],
-          primaryLabel: 'Reservar Agora',
+          primaryLabel: context.l10n.jetskiBookNow,
           isPrimaryFilled: true,
           onPrimaryTap: () => AppNavigation.openEventBooking(context),
         ),
@@ -385,7 +386,7 @@ class _FleetSection extends StatelessWidget {
           title: 'Sea-Doo Spark Trixx',
           price: '85',
           description: 'Agilidade e diversão para manobras leves.',
-          primaryLabel: 'Ver Detalhes',
+          primaryLabel: context.l10n.details,
           isPrimaryFilled: false,
           onPrimaryTap: () {},
         ),
@@ -614,23 +615,15 @@ class _FleetCard extends StatelessWidget {
 class _SafetySection extends StatelessWidget {
   const _SafetySection();
 
-  static const _items = [
-    (
-      title: 'Colete Salva-vidas Incluído',
-      subtitle: 'Equipamento homologado para todos os pesos.',
-    ),
-    (
-      title: 'Briefing de Segurança',
-      subtitle: 'Instrução obrigatória de 15 min antes da partida.',
-    ),
-    (
-      title: 'Monitorização GPS',
-      subtitle: 'Equipa de apoio pronta para intervir 24/7.',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final items = [
+      (title: l10n.jetskiSafetyLifeJacketTitle, subtitle: l10n.jetskiSafetyLifeJacketSubtitle),
+      (title: l10n.jetskiSafetyBriefingTitle, subtitle: l10n.jetskiSafetyBriefingSubtitle),
+      (title: l10n.jetskiSafetyGpsTitle, subtitle: l10n.jetskiSafetyGpsSubtitle),
+    ];
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
@@ -650,7 +643,7 @@ class _SafetySection extends StatelessWidget {
               SizedBox(width: 8.w),
               Expanded(
                 child: Text(
-                  'Segurança Primeiro',
+                  context.l10n.jetskiSafetyTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
@@ -664,7 +657,7 @@ class _SafetySection extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24.h),
-          ..._items.map(
+          ...items.map(
             (item) => Padding(
               padding: EdgeInsets.only(bottom: 16),
               child: Row(
@@ -722,7 +715,7 @@ class _MarinaSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Nossa Base',
+          context.l10n.jetskiOurBase,
           style: GoogleFonts.manrope(
             fontSize: 20.sp,
             fontWeight: FontWeight.w600,
@@ -804,7 +797,7 @@ class _MarinaSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Abrir Mapa',
+                    context.l10n.jetskiOpenMap,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
