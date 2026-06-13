@@ -2,23 +2,145 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/data/trip_destination_data.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/core/services/current_location_service.dart';
+import 'package:local_ent_280/core/services/location_permission_helper.dart';
+import 'package:local_ent_280/core/services/places_autocomplete_service.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/presentation/widgets/address_autocomplete_field.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
-import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/presentation/widgets/current_location_field.dart';
+import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Destino da viagem — `roles/details.md` (Para onde vamos hoje?).
-class TripDestinationScreen extends StatelessWidget {
+class TripDestinationScreen extends StatefulWidget {
   const TripDestinationScreen({super.key});
+
+  @override
+  State<TripDestinationScreen> createState() => _TripDestinationScreenState();
+}
+
+class _TripDestinationScreenState extends State<TripDestinationScreen> {
+  final _destinationController = TextEditingController();
+  final _locationService = CurrentLocationService();
+
+  String? _currentAddress;
+  double? _pickupLat;
+  double? _pickupLng;
+  String? _destinationPlaceId;
+  bool _isLoadingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationAccess();
+    });
+  }
+
+  Future<void> _requestLocationAccess() async {
+    if (!mounted) return;
+    setState(() => _isLoadingLocation = true);
+
+    final granted = await LocationPermissionHelper.ensureGranted(context);
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() {
+        _isLoadingLocation = false;
+        _currentAddress = null;
+        _pickupLat = null;
+        _pickupLng = null;
+      });
+      return;
+    }
+
+    await _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+
+    final cached = await _locationService.getLastKnownLocation();
+    if (mounted && cached != null) {
+      setState(() {
+        _currentAddress = cached.address;
+        _pickupLat = cached.latitude;
+        _pickupLng = cached.longitude;
+      });
+    }
+
+    final location = await _locationService.getCurrentLocation();
+    if (!mounted) return;
+    setState(() {
+      _isLoadingLocation = false;
+      _currentAddress = location?.address ?? _currentAddress;
+      _pickupLat = location?.latitude ?? _pickupLat;
+      _pickupLng = location?.longitude ?? _pickupLng;
+    });
+  }
+
+  void _onDestinationSelected(PlacePrediction prediction) {
+    _destinationPlaceId = prediction.placeId;
+  }
+
+  void _selectPlace(TripPlace place) {
+    _destinationController.text = place.title;
+    _destinationPlaceId = null;
+    setState(() {});
+  }
+
+  void _openTripConfirm(BuildContext context) {
+    final l10n = context.l10n;
+    final pickup = _currentAddress?.trim();
+    final destination = _destinationController.text.trim();
+
+    if (pickup == null || pickup.isEmpty || _pickupLat == null || _pickupLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeLocationUnavailable)),
+      );
+      return;
+    }
+    if (destination.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeDestinationHint)),
+      );
+      return;
+    }
+
+    AppNavigation.toTripConfirm(
+      context,
+      TripRouteDraft(
+        pickupAddress: pickup,
+        pickupLat: _pickupLat!,
+        pickupLng: _pickupLng!,
+        destinationAddress: destination,
+        destinationPlaceId: _destinationPlaceId,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _destinationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      drawer: const ClientDrawer(selected: ClientDrawerSection.trips),
       body: Column(
         children: [
-          const _DestinationAppBar(),
+          _DestinationAppBar(
+            onMenu: () => Scaffold.of(context).openDrawer(),
+            onProfileTap: () => AppNavigation.toProfile(context),
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -32,21 +154,38 @@ class TripDestinationScreen extends StatelessWidget {
                 children: [
                   const _HeaderSection(),
                   SizedBox(height: 24.h),
-                  const _SearchBar(),
+                  AddressAutocompleteField(
+                    icon: Icons.search,
+                    iconColor: AppColors.outline,
+                    label: context.l10n.tripDestinationSearchHint,
+                    hint: context.l10n.tripDestinationSearchHint,
+                    controller: _destinationController,
+                    onPlaceSelected: _onDestinationSelected,
+                  ),
                   SizedBox(height: 16.h),
-                  const _CurrentLocationCard(),
+                  CurrentLocationField(
+                    address: _currentAddress,
+                    isLoading: _isLoadingLocation,
+                    onRefresh: _requestLocationAccess,
+                  ),
                   SizedBox(height: 24.h),
                   _SectionTitle(title: context.l10n.tripDestinationRecentPlaces),
                   SizedBox(height: 8.h),
                   for (final place in TripDestinationData.recentPlaces) ...[
-                    _PlaceCard(place: place),
+                    _PlaceCard(
+                      place: place,
+                      onTap: () => _selectPlace(place),
+                    ),
                     SizedBox(height: 8.h),
                   ],
                   SizedBox(height: 16.h),
                   _SectionTitle(title: context.l10n.tripDestinationSuggestions),
                   SizedBox(height: 8.h),
                   for (final place in TripDestinationData.favorites) ...[
-                    _PlaceCard(place: place),
+                    _PlaceCard(
+                      place: place,
+                      onTap: () => _selectPlace(place),
+                    ),
                     SizedBox(height: 8.h),
                   ],
                   SizedBox(height: 8.h),
@@ -54,7 +193,9 @@ class TripDestinationScreen extends StatelessWidget {
                   SizedBox(height: 32.h),
                   _SectionTitle(title: context.l10n.tripDestinationExploreMap),
                   SizedBox(height: 12.h),
-                  const _ExploreMapCard(),
+                  _ExploreMapCard(
+                    onOpenMap: () => _openTripConfirm(context),
+                  ),
                 ],
               ),
             ),
@@ -70,7 +211,13 @@ class TripDestinationScreen extends StatelessWidget {
 }
 
 class _DestinationAppBar extends StatelessWidget {
-  const _DestinationAppBar();
+  const _DestinationAppBar({
+    required this.onMenu,
+    required this.onProfileTap,
+  });
+
+  final VoidCallback onMenu;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +230,7 @@ class _DestinationAppBar extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              onPressed: () {},
+              onPressed: onMenu,
               icon: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
               padding: EdgeInsets.zero,
               constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
@@ -101,25 +248,10 @@ class _DestinationAppBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Container(
-              width: 32.w,
-              height: 32.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.outlineVariant),
-                color: AppColors.surfaceContainerHigh,
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  TripDestinationData.profileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.person,
-                    size: 18.sp,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
+            SessionProfileAvatar(
+              size: 32.w,
+              fontSize: 12.sp,
+              onTap: onProfileTap,
             ),
           ],
         ),
@@ -160,148 +292,6 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8.r,
-            offset: Offset(0, 2.h),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          SizedBox(width: 12.w),
-          Icon(Icons.search, color: AppColors.outline, size: 22.sp),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: context.l10n.tripDestinationSearchHint,
-                hintStyle: GoogleFonts.inter(
-                  fontSize: 16.sp,
-                  color: AppColors.outline,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 14.h),
-              ),
-              style: GoogleFonts.inter(
-                fontSize: 16.sp,
-                color: AppColors.onSurface,
-              ),
-            ),
-          ),
-          Material(
-            color: AppColors.secondaryContainer,
-            borderRadius: BorderRadius.circular(8.r),
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(8.r),
-              child: Padding(
-                padding: EdgeInsets.all(10.w),
-                child: Icon(
-                  Icons.near_me,
-                  color: AppColors.onSecondaryContainer,
-                  size: 22.sp,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CurrentLocationCard extends StatelessWidget {
-  const _CurrentLocationCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(12.r),
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(12.r),
-        child: Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.2),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.04),
-                blurRadius: 4.r,
-                offset: Offset(0, 1.h),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.h,
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.my_location,
-                  color: AppColors.secondary,
-                  size: 22.sp,
-                ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.discoverCurrentLocation,
-                      style: GoogleFonts.inter(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        height: 20 / 14,
-                        letterSpacing: 0.1,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    Text(
-                      'Avenida da Liberdade, Lisboa',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                        height: 16 / 12,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});
 
@@ -326,9 +316,10 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _PlaceCard extends StatelessWidget {
-  const _PlaceCard({required this.place});
+  const _PlaceCard({required this.place, required this.onTap});
 
   final TripPlace place;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +327,7 @@ class _PlaceCard extends StatelessWidget {
       color: AppColors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(12.r),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12.r),
         child: Padding(
           padding: EdgeInsets.all(16.w),
@@ -442,7 +433,7 @@ class _SuggestionBanner extends StatelessWidget {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Belém & Monumentos',
+                    context.l10n.tripDestinationSuggestionTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.manrope(
@@ -463,7 +454,9 @@ class _SuggestionBanner extends StatelessWidget {
 }
 
 class _ExploreMapCard extends StatelessWidget {
-  const _ExploreMapCard();
+  const _ExploreMapCard({required this.onOpenMap});
+
+  final VoidCallback onOpenMap;
 
   @override
   Widget build(BuildContext context) {
@@ -505,7 +498,7 @@ class _ExploreMapCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999.r),
                   elevation: 8,
                   child: InkWell(
-                    onTap: () => AppNavigation.toTripConfirm(context),
+                    onTap: onOpenMap,
                     borderRadius: BorderRadius.circular(999.r),
                     child: Padding(
                       padding: EdgeInsets.symmetric(

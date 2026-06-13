@@ -4,12 +4,12 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 class FareLine {
   const FareLine({
     required this.label,
-    required this.amount,
+    required this.amountMinor,
     this.isDiscount = false,
   });
 
   final String label;
-  final String amount;
+  final int amountMinor;
   final bool isDiscount;
 }
 
@@ -35,7 +35,7 @@ abstract final class TripDetailsData {
 
   static const pickupAddress = 'Avenida da Liberdade, 110';
   static const pickupCity = 'Lisboa, Portugal';
-  static const destinationAddress = 'Aeroporto Humberto Delgado';
+  static const destinationAddress = 'Humberto Delgado Airport';
   static const destinationDetails = 'Terminal 1, Partidas';
 
   static const ratingTitle = 'Avalie a sua experiência';
@@ -44,13 +44,13 @@ abstract final class TripDetailsData {
 
   static const invoiceTitle = 'Fatura Digital';
   static const invoiceLines = <FareLine>[
-    FareLine(label: 'Tarifa Base', amount: '3,50 €'),
-    FareLine(label: 'Distância (12.5 km)', amount: '14,25 €'),
-    FareLine(label: 'Tempo (24 min)', amount: '4,80 €'),
-    FareLine(label: 'Desconto Promocional', amount: '- 2,50 €', isDiscount: true),
+    FareLine(label: 'Tarifa Base', amountMinor: 350),
+    FareLine(label: 'Distância (12.5 km)', amountMinor: 1425),
+    FareLine(label: 'Tempo (24 min)', amountMinor: 480),
+    FareLine(label: 'Desconto Promocional', amountMinor: 250, isDiscount: true),
   ];
   static const totalLabel = 'Total Pago';
-  static const totalAmount = '20,05 €';
+  static const totalAmountMinor = 2005;
   static const methodLabel = 'Método';
   static const methodValue = 'Visa •••• 4242';
   static const downloadCta = 'Descarregar PDF';

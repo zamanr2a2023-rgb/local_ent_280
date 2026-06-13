@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_ent_280/core/data/driver_home_data.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
@@ -9,7 +11,14 @@ import 'package:local_ent_280/core/theme/app_typography.dart';
 
 /// Request expired — `roles/details.md` (dead-end state, no bottom nav).
 class DriverRequestExpiredScreen extends StatefulWidget {
-  const DriverRequestExpiredScreen({super.key});
+  const DriverRequestExpiredScreen({
+    super.key,
+    this.tripId,
+    this.driverRepository,
+  });
+
+  final String? tripId;
+  final DriverRepository? driverRepository;
 
   @override
   State<DriverRequestExpiredScreen> createState() =>
@@ -23,10 +32,19 @@ class _DriverRequestExpiredScreenState extends State<DriverRequestExpiredScreen>
   @override
   void initState() {
     super.initState();
+    _releaseTripIfNeeded();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
+  }
+
+  Future<void> _releaseTripIfNeeded() async {
+    final tripId = widget.tripId;
+    final driverId = UserSession.instance.profile?.uid;
+    if (tripId == null || driverId == null) return;
+    final repository = widget.driverRepository ?? DriverRepository();
+    await repository.releaseTrip(driverId, tripId);
   }
 
   @override

@@ -170,4 +170,45 @@ void main() {
     expect(profile, isNull);
     expect(auth.currentUser, isNull);
   });
+
+  test('signUp creates client profile in Firestore', () async {
+    auth = MockFirebaseAuth();
+    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+
+    final profile = await repository.signUp(
+      name: 'New Client',
+      email: 'new.client@test.com',
+      password: password,
+      phone: '+351910000001',
+      selectedRole: LoginSelectedRole.client,
+    );
+
+    expect(profile.role.name, 'client');
+    expect(profile.name, 'New Client');
+    expect(profile.email, 'new.client@test.com');
+
+    final doc = await firestore.collection('users').doc(profile.uid).get();
+    expect(doc.exists, isTrue);
+    expect(doc.data()?['role'], 'client');
+  });
+
+  test('signUp creates driver profile and driverStatus', () async {
+    auth = MockFirebaseAuth();
+    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+
+    final profile = await repository.signUp(
+      name: 'New Driver',
+      email: 'new.driver@test.com',
+      password: password,
+      phone: '',
+      selectedRole: LoginSelectedRole.professional,
+    );
+
+    expect(profile.role.name, 'driver');
+
+    final status =
+        await firestore.collection('driverStatus').doc(profile.uid).get();
+    expect(status.exists, isTrue);
+    expect(status.data()?['isAvailable'], false);
+  });
 }

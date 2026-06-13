@@ -23,24 +23,11 @@ abstract final class DriverHomeData {
   static const licensePlate = 'AA-00-XX';
   static const batteryLevel = '82%';
 
-  static const todayEarnings = '€142.50';
+  static const todayEarningsEur = 142.50;
   static const tripsCount = '14';
   static const distanceValue = '186 km';
 
-  static const recentTrips = [
-    DriverRecentTrip(
-      passengerName: 'Ana Martins',
-      destination: 'Humberto Delgado Airport',
-      price: '€14.50',
-      hoursAgo: 2,
-    ),
-    DriverRecentTrip(
-      passengerName: 'Carlos Mendes',
-      destination: 'Parque das Nações',
-      price: '€9.80',
-      hoursAgo: 5,
-    ),
-  ];
+  static const recentTrips = <DriverRecentTrip>[];
 }
 
 /// Incoming trip request demo data.
@@ -54,7 +41,7 @@ abstract final class DriverTripRequestData {
   static const passengerName = 'Ana Martins';
   static const passengerRating = '4.9';
   static const passengerPhoto = AppAssets.driverFoundDriverImage;
-  static const fare = '€14.50';
+  static const fareEur = 14.50;
 
   static const acceptCountdownSeconds = 12;
 }

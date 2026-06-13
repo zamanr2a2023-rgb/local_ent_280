@@ -12,8 +12,7 @@ import 'package:local_ent_280/features/auth/data/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/auth_signing.dart';
 import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
-
-enum UserRole { cliente, profissional }
+import 'package:local_ent_280/presentation/login/auth_form_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, AuthSigning? authRepository})
@@ -21,15 +20,12 @@ class LoginScreen extends StatefulWidget {
 
   final AuthSigning? _authRepository;
 
-    static double get _inputRadius => 12.r;
-  static double get _buttonRadius => 12.r;
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  UserRole _role = UserRole.cliente;
+  AuthUserRole _role = AuthUserRole.cliente;
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -40,8 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   LoginSelectedRole get _selectedLoginRole => switch (_role) {
-        UserRole.cliente => LoginSelectedRole.client,
-        UserRole.profissional => LoginSelectedRole.professional,
+        AuthUserRole.cliente => LoginSelectedRole.client,
+        AuthUserRole.profissional => LoginSelectedRole.professional,
       };
 
   @override
@@ -80,10 +76,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-                SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
               _buildHeader(l10n),
               SizedBox(height: 60.h),
-              _RoleSelector(
+              AuthRoleSelector(
                 clientLabel: l10n.loginRoleClient,
                 professionalLabel: l10n.loginRoleProfessional,
                 selected: _role,
@@ -94,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 30.h),
               _buildPasswordField(l10n),
               SizedBox(height: 12.h),
-              _buildSecurityNote(l10n),
+              AuthSecurityNote(text: l10n.secureConnectionE2E),
               SizedBox(height: 30.h),
               _buildLoginButton(l10n),
               SizedBox(height: 40.h),
@@ -139,20 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(
-            l10n.loginEmailOrMobileLabel,
-            style: GoogleFonts.inter(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              height: 20 / 14,
-              letterSpacing: 0.1,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-        ),
-        _AuthTextField(
+        AuthFieldLabel(label: l10n.loginEmailOrMobileLabel),
+        AuthTextField(
           controller: _emailController,
           hintText: l10n.loginEmailHint,
           prefixIcon: Icons.alternate_email,
@@ -167,37 +151,22 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 4),
-          child: Row(
-            children: [
-              Text(
-                l10n.loginPasswordLabel,
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 20 / 14,
-                  letterSpacing: 0.1,
-                  color: AppColors.onSurfaceVariant,
-                ),
+        AuthFieldLabel(
+          label: l10n.loginPasswordLabel,
+          trailing: GestureDetector(
+            onTap: () {},
+            child: Text(
+              l10n.loginForgotPassword,
+              style: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                height: 16 / 12,
+                color: AppColors.secondary,
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () {},
-                child: Text(
-                  l10n.loginForgotPassword,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 16 / 12,
-                    color: AppColors.secondary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-        _AuthTextField(
+        AuthTextField(
           controller: _passwordController,
           hintText: '••••••••',
           prefixIcon: Icons.lock_outline,
@@ -214,33 +183,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSecurityNote(AppLocalizations l10n) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Row(
-        children: [
-          Icon(
-            Icons.verified_user,
-            size: 18.sp,
-            color: AppColors.onSurfaceVariant,
-          ),
-          SizedBox(width: 4.w),
-          Expanded(
-            child: Text(
-              l10n.secureConnectionE2E,
-              style: GoogleFonts.inter(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                height: 16 / 12,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -290,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
           foregroundColor: AppColors.onSecondary,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LoginScreen._buttonRadius),
+            borderRadius: BorderRadius.circular(AuthFormLayout.buttonRadius),
           ),
         ),
         child: _isLoading
@@ -343,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Text(l10n.loginNoAccountPrompt, style: bodyStyle),
           GestureDetector(
-            onTap: () {},
+            onTap: () => AppNavigation.toRegister(context),
             child: Text(l10n.loginRegisterNow, style: linkStyle),
           ),
         ],
@@ -362,203 +304,12 @@ class _LoginScreenState extends State<LoginScreen> {
             spacing: 16.w,
             runSpacing: 8.h,
             children: [
-              _FooterLink(label: l10n.loginPrivacy, onTap: () {}),
-              _FooterLink(label: l10n.loginTermsOfUse, onTap: () {}),
-              _FooterLink(label: l10n.loginSupport, onTap: () {}),
+              AuthFooterLink(label: l10n.loginPrivacy, onTap: () {}),
+              AuthFooterLink(label: l10n.loginTermsOfUse, onTap: () {}),
+              AuthFooterLink(label: l10n.loginSupport, onTap: () {}),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RoleSelector extends StatelessWidget {
-  const _RoleSelector({
-    required this.clientLabel,
-    required this.professionalLabel,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final String clientLabel;
-  final String professionalLabel;
-  final UserRole selected;
-  final ValueChanged<UserRole> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _RoleTab(
-              label: clientLabel,
-              icon: Icons.person,
-              isSelected: selected == UserRole.cliente,
-              onTap: () => onChanged(UserRole.cliente),
-            ),
-          ),
-          Expanded(
-            child: _RoleTab(
-              label: professionalLabel,
-              icon: Icons.directions_car,
-              isSelected: selected == UserRole.profissional,
-              onTap: () => onChanged(UserRole.profissional),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleTab extends StatelessWidget {
-  const _RoleTab({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.secondaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20.sp,
-              color: isSelected
-                  ? AppColors.onSecondaryContainer
-                  : AppColors.onSurfaceVariant,
-            ),
-            SizedBox(width: 8.w),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 20 / 14,
-                  letterSpacing: 0.1,
-                  color: isSelected
-                      ? AppColors.onSecondaryContainer
-                      : AppColors.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AuthTextField extends StatelessWidget {
-  const _AuthTextField({
-    required this.controller,
-    required this.hintText,
-    required this.prefixIcon,
-    this.obscureText = false,
-    this.keyboardType,
-    this.textInputAction,
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final IconData prefixIcon;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      style: GoogleFonts.inter(
-        fontSize: 16.sp,
-        fontWeight: FontWeight.w400,
-        color: AppColors.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: GoogleFonts.inter(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w400,
-          color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-        ),
-        filled: true,
-        fillColor: AppColors.surfaceContainerLowest,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
-        prefixIcon: Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22.sp),
-        prefixIconConstraints: BoxConstraints(minWidth: 48.w, minHeight: 48.h),
-        suffixIcon: suffixIcon,
-        suffixIconConstraints: BoxConstraints(minWidth: 48.w, minHeight: 48.h),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: BorderSide(color: AppColors.secondary, width: 1.5.w),
-        ),
-        constraints: BoxConstraints(minHeight: 56.h),
-      ),
-    );
-  }
-}
-
-class _FooterLink extends StatelessWidget {
-  const _FooterLink({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w500,
-          height: 16 / 12,
-          color: AppColors.onSurfaceVariant,
-        ),
       ),
     );
   }

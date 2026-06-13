@@ -4,15 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
-import 'package:local_ent_280/core/data/driver_search_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// A procurar motorista disponível — `roles/details.md`.
 class DriverSearchScreen extends StatefulWidget {
-  const DriverSearchScreen({super.key});
+  const DriverSearchScreen({super.key, this.tripId, this.tripRepository});
+
+  final String? tripId;
+  final TripRepository? tripRepository;
 
   @override
   State<DriverSearchScreen> createState() => _DriverSearchScreenState();
@@ -21,7 +26,14 @@ class DriverSearchScreen extends StatefulWidget {
 class _DriverSearchScreenState extends State<DriverSearchScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
-  Timer? _foundNavigationTimer;
+  TripRepository? _tripRepository;
+  StreamSubscription<TripRecord?>? _tripSubscription;
+  TripRecord? _trip;
+  bool _isCancelling = false;
+  bool _hasNavigatedForward = false;
+
+  String get _tripId =>
+      widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
   @override
   void initState() {
@@ -30,15 +42,70 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat();
-    _foundNavigationTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      AppNavigation.toDriverFound(context);
+    _listenToTrip();
+  }
+
+  void _listenToTrip() {
+    final tripId = _tripId;
+    if (tripId.isEmpty) return;
+
+    _tripRepository = widget.tripRepository ?? TripRepository();
+    _tripSubscription = _tripRepository!.watchTrip(tripId).listen((trip) {
+      if (!mounted || trip == null) return;
+      setState(() => _trip = trip);
+      ActiveTripSession.instance.updateTrip(trip);
+
+      final status = trip.status.toUpperCase();
+      if (!_hasNavigatedForward &&
+          (trip.hasAssignedDriver || trip.isDriverAssignedStatus)) {
+        _hasNavigatedForward = true;
+        AppNavigation.toDriverFound(
+          context,
+          tripId: trip.id,
+          trip: trip,
+          tripRepository: _tripRepository,
+        );
+        return;
+      }
+      if (status == 'NO_DRIVERS_AVAILABLE' && !_hasNavigatedForward) {
+        _hasNavigatedForward = true;
+        _showMessage(context.l10n.driverSearchNoDrivers);
+        AppNavigation.cancelToTripDestination(context);
+      }
     });
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _cancelTrip() async {
+    final tripId = _tripId;
+    if (tripId.isEmpty || _isCancelling) {
+      AppNavigation.cancelToTripDestination(context);
+      return;
+    }
+
+    setState(() => _isCancelling = true);
+    try {
+      final repository = _tripRepository ?? TripRepository(disabled: true);
+      await repository.cancelTripByClient(tripId);
+      ActiveTripSession.instance.clear();
+      if (!mounted) return;
+      AppNavigation.cancelToTripDestination(context);
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage(context.l10n.driverSearchCancelFailed);
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
   }
 
   @override
   void dispose() {
-    _foundNavigationTimer?.cancel();
+    _tripSubscription?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -73,10 +140,9 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
             right: 0,
             bottom: 0,
             child: _SearchBottomSheet(
-              onCancel: () {
-                _foundNavigationTimer?.cancel();
-                AppNavigation.cancelToTripDestination(context);
-              },
+              trip: _trip,
+              isCancelling: _isCancelling,
+              onCancel: _cancelTrip,
             ),
           ),
         ],
@@ -375,8 +441,14 @@ class _StatusToastState extends State<_StatusToast>
 }
 
 class _SearchBottomSheet extends StatelessWidget {
-  const _SearchBottomSheet({required this.onCancel});
+  const _SearchBottomSheet({
+    required this.trip,
+    required this.isCancelling,
+    required this.onCancel,
+  });
 
+  final TripRecord? trip;
+  final bool isCancelling;
   final VoidCallback onCancel;
 
   static double get _radius => 24.r;
@@ -440,14 +512,14 @@ class _SearchBottomSheet extends StatelessWidget {
               Expanded(
                 child: _InfoBox(
                   label: context.l10n.driverSearchOrigin,
-                  value: DriverSearchData.originShort,
+                  value: _originLabel(trip),
                 ),
               ),
               SizedBox(width: 16.w),
               Expanded(
                 child: _InfoBox(
                   label: context.l10n.driverSearchEstimate,
-                  value: DriverSearchData.estimate,
+                  value: _estimateLabel(trip),
                 ),
               ),
             ],
@@ -457,10 +529,12 @@ class _SearchBottomSheet extends StatelessWidget {
             height: 56.h,
             width: double.infinity,
             child: TextButton.icon(
-              onPressed: onCancel,
+              onPressed: isCancelling ? null : onCancel,
               icon: Icon(Icons.close, size: 20.sp, color: AppColors.primary),
               label: Text(
-                context.l10n.driverSearchCancelTrip,
+                isCancelling
+                    ? context.l10n.driverSearchCancelling
+                    : context.l10n.driverSearchCancelTrip,
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -480,6 +554,20 @@ class _SearchBottomSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static String _originLabel(TripRecord? trip) {
+    final address = trip?.pickup.address.trim() ?? '';
+    if (address.isEmpty) return '—';
+    final comma = address.indexOf(',');
+    if (comma <= 0) return address;
+    return address.substring(0, comma).trim();
+  }
+
+  static String _estimateLabel(TripRecord? trip) {
+    final minutes = trip?.meteringSnapshot.totalMinutes;
+    if (minutes == null || minutes <= 0) return '3-5 minutos';
+    return '$minutes min';
   }
 }
 

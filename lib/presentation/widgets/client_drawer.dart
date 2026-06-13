@@ -8,6 +8,7 @@ import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/features/auth/data/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/presentation/widgets/drawer_user_card.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -31,7 +32,8 @@ class ClientDrawer extends StatelessWidget {
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final l10n = context.l10n;
-    Navigator.of(context).pop();
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
 
     final shouldSignOut = await showDialog<bool>(
       context: context,
@@ -56,15 +58,20 @@ class ClientDrawer extends StatelessWidget {
       },
     );
 
-    if (shouldSignOut != true || !context.mounted) return;
+    if (shouldSignOut != true) return;
+
+    if (context.mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
 
     try {
       await (_authRepository ?? AuthRepository()).signOut();
-      if (!context.mounted) return;
-      AppNavigation.signOutToLogin(context);
+      rootNavigator.pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
     } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text(l10n.signOutFailed)),
       );
     }

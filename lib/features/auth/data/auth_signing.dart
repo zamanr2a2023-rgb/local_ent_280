@@ -7,4 +7,12 @@ abstract class AuthSigning {
     required String password,
     required LoginSelectedRole selectedRole,
   });
+
+  Future<AppUserProfile> signUp({
+    required String name,
+    required String email,
+    required String password,
+    required String phone,
+    required LoginSelectedRole selectedRole,
+  });
 }

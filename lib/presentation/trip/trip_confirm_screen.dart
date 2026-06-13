@@ -1,79 +1,349 @@
+import 'dart:developer' as developer;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_ent_280/core/constants/app_assets.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/trip_confirm_data.dart';
+import 'package:local_ent_280/core/models/trip_directions_result.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_location.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/core/services/directions_service.dart';
+import 'package:local_ent_280/core/services/places_details_service.dart';
+import 'package:local_ent_280/core/services/transport_types_service.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Confirmação de viagem com mapa — `roles/details.md`.
 class TripConfirmScreen extends StatefulWidget {
-  const TripConfirmScreen({super.key});
+  const TripConfirmScreen({
+    super.key,
+    this.route,
+    DirectionsService? directionsService,
+    PlacesDetailsService? placesDetailsService,
+    TransportTypesService? transportTypesService,
+    TripRepository? tripRepository,
+  })  : _directionsService = directionsService,
+        _placesDetailsService = placesDetailsService,
+        _transportTypesService = transportTypesService,
+        _tripRepository = tripRepository;
+
+  final TripRouteDraft? route;
+  final DirectionsService? _directionsService;
+  final PlacesDetailsService? _placesDetailsService;
+  final TransportTypesService? _transportTypesService;
+  final TripRepository? _tripRepository;
 
   @override
   State<TripConfirmScreen> createState() => _TripConfirmScreenState();
 }
 
 class _TripConfirmScreenState extends State<TripConfirmScreen> {
-  String _selectedTransportId = TripConfirmData.transportOptions.first.id;
+  late final TripRouteDraft _route = widget.route ?? TripRouteDraft.demo();
+  late final DirectionsService _directionsService =
+      widget._directionsService ?? DirectionsService();
+  late final PlacesDetailsService _placesDetailsService =
+      widget._placesDetailsService ?? PlacesDetailsService();
+  late final TransportTypesService _transportTypesService =
+      widget._transportTypesService ?? TransportTypesService();
 
-  double get _totalPrice {
-    return TripConfirmData.transportOptions
-        .firstWhere((o) => o.id == _selectedTransportId)
-        .price;
+  GoogleMapController? _mapController;
+  TripDirectionsResult? _directions;
+  List<TransportTypeOption> _transportOptions = [];
+  String? _selectedTransportId;
+  bool _isLoading = true;
+  bool _isSubmitting = false;
+  LatLng? _destinationLatLng;
+  TripRepository get _tripRepository =>
+      widget._tripRepository ?? TripRepository();
+
+  LatLng get _pickupLatLng =>
+      LatLng(_route.pickupLat, _route.pickupLng);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRouteData();
   }
 
+  Future<void> _loadRouteData() async {
+    LatLng? destination;
+    if (_route.destinationLat != null && _route.destinationLng != null) {
+      destination = LatLng(_route.destinationLat!, _route.destinationLng!);
+    } else {
+      destination = await _placesDetailsService.resolveCoordinates(
+        placeId: _route.destinationPlaceId,
+        address: _route.destinationAddress,
+      );
+    }
+
+    if (!mounted) return;
+    if (destination == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    final directions = await _directionsService.getDrivingRoute(
+      origin: _pickupLatLng,
+      destination: destination,
+    );
+    final transportOptions = await _transportTypesService.fetchActiveTypes();
+
+    if (!mounted) return;
+    setState(() {
+      _destinationLatLng = destination;
+      _directions = directions;
+      _transportOptions = transportOptions;
+      _selectedTransportId = transportOptions.first.id;
+      _isLoading = false;
+    });
+    _fitMapToRoute();
+  }
+
+  Future<void> _fitMapToRoute() async {
+    final controller = _mapController;
+    final directions = _directions;
+    final destination = _destinationLatLng;
+    if (controller == null || directions == null || destination == null) {
+      return;
+    }
+
+    final points = directions.polylinePoints;
+    if (points.isEmpty) return;
+
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (final point in points) {
+      minLat = minLat < point.latitude ? minLat : point.latitude;
+      maxLat = maxLat > point.latitude ? maxLat : point.latitude;
+      minLng = minLng < point.longitude ? minLng : point.longitude;
+      maxLng = maxLng > point.longitude ? maxLng : point.longitude;
+    }
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 56));
+  }
+
+  double get _distanceKm => _directions?.distanceKm ?? 0;
+
+  TransportTypeOption? get _selectedTransport {
+    if (_selectedTransportId == null) return null;
+    for (final option in _transportOptions) {
+      if (option.id == _selectedTransportId) return option;
+    }
+    return null;
+  }
+
+  double get _totalPrice =>
+      _selectedTransport?.priceForDistanceKm(_distanceKm) ?? 0;
+
   String get _formattedTotal =>
-      '${_totalPrice.toStringAsFixed(2).replaceAll('.', ',')}€';
+      AppCurrencyFormatter.instance.formatEurMajor(_totalPrice);
+
+  Future<void> _confirmTrip() async {
+    if (_isSubmitting || _isLoading) return;
+
+    final profile = UserSession.instance.profile;
+    final destination = _destinationLatLng;
+    final transport = _selectedTransport;
+    final directions = _directions;
+
+    if (profile == null) {
+      _showMessage(context.l10n.tripConfirmSessionInvalid);
+      return;
+    }
+    if (destination == null || transport == null || directions == null) {
+      _showMessage(context.l10n.tripConfirmRouteLoading);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final tripId = await _tripRepository.createTrip(
+        CreateTripInput(
+          clientId: profile.uid,
+          clientProfile: profile,
+          pickup: TripLocation(
+            address: _route.pickupAddress,
+            latitude: _route.pickupLat,
+            longitude: _route.pickupLng,
+          ),
+          destination: TripLocation(
+            address: _route.destinationAddress,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+          ),
+          transportType: TripTransportType(
+            id: transport.id,
+            name: transport.label,
+          ),
+          distanceKm: directions.distanceKm,
+          durationMinutes: directions.durationMinutes,
+          estimatedPriceEur: _totalPrice,
+        ),
+      );
+
+      ActiveTripSession.instance.setTrip(tripId: tripId);
+      if (!mounted) return;
+      AppNavigation.toDriverSearch(
+        context,
+        tripId: tripId,
+        tripRepository: widget._tripRepository,
+      );
+    } on FirebaseException catch (error) {
+      developer.log(
+        'Trip create failed: ${error.code} ${error.message}',
+        name: 'TripConfirmScreen',
+      );
+      if (!mounted) return;
+      final message = error.code == 'permission-denied'
+          ? context.l10n.tripConfirmPermissionDenied
+          : context.l10n.tripConfirmCreateFailed;
+      _showMessage(message);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Trip create failed',
+        name: 'TripConfirmScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (!mounted) return;
+      _showMessage(context.l10n.tripConfirmCreateFailed);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Set<Marker> get _markers {
+    final destination = _destinationLatLng;
+    return {
+      Marker(
+        markerId: const MarkerId('pickup'),
+        position: _pickupLatLng,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      ),
+      if (destination != null)
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: destination,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+    };
+  }
+
+  Set<Polyline> get _polylines {
+    final directions = _directions;
+    if (directions == null || directions.polylinePoints.length < 2) {
+      return {};
+    }
+    return {
+      Polyline(
+        polylineId: const PolylineId('route'),
+        color: AppColors.secondary,
+        width: 5,
+        points: directions.polylinePoints,
+      ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top + 56.h;
+    final destination = _destinationLatLng;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final topInset = MediaQuery.paddingOf(context).top + 56.h;
-          // Mapa visível acima do bottom sheet (~44% do ecrã).
-          final mapAreaBottom = constraints.maxHeight * 0.44;
-
-          return Stack(
-            fit: StackFit.expand,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: topInset,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _GoogleMapLayer(
+              initialTarget: destination ?? _pickupLatLng,
+              markers: _markers,
+              polylines: _polylines,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                _fitMapToRoute();
+              },
+            ),
+          ),
+          Column(
             children: [
-              _MapLayer(mapTop: topInset, mapBottom: mapAreaBottom),
-              Column(
-                children: [
-                  _ConfirmAppBar(onBack: () => AppNavigation.back(context)),
-                  const Spacer(),
-                ],
-              ),
-              Positioned(
-                top: topInset + 12.h,
-                right: AppLayout.marginMobile,
-                child: Column(
-                  children: [
-                    _MapFabButton(icon: Icons.my_location, onTap: () {}),
-                    SizedBox(height: 8.h),
-                    _MapFabButton(icon: Icons.layers, onTap: () {}),
-                  ],
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: _TripDetailsSheet(
-                  selectedTransportId: _selectedTransportId,
-                  totalFormatted: _formattedTotal,
-                  onTransportSelected: (id) =>
-                      setState(() => _selectedTransportId = id),
-                  onConfirm: () => AppNavigation.toDriverSearch(context),
-                ),
-              ),
+              _ConfirmAppBar(onBack: () => AppNavigation.back(context)),
+              const Spacer(),
             ],
-          );
-        },
+          ),
+          Positioned(
+            top: topInset + 12.h,
+            right: AppLayout.marginMobile,
+            child: Column(
+              children: [
+                _MapFabButton(
+                  icon: Icons.my_location,
+                  onTap: () => _mapController?.animateCamera(
+                    CameraUpdate.newLatLngZoom(_pickupLatLng, 14),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _MapFabButton(
+                  icon: Icons.layers,
+                  onTap: _fitMapToRoute,
+                ),
+              ],
+            ),
+          ),
+          DraggableScrollableSheet(
+            initialChildSize: 0.56,
+            minChildSize: 0.36,
+            maxChildSize: 0.90,
+            snap: true,
+            snapSizes: const [0.36, 0.56, 0.90],
+            builder: (context, scrollController) {
+              return _TripDetailsSheet(
+                scrollController: scrollController,
+                pickupLabel: _route.pickupAddress,
+                destinationLabel: _route.destinationAddress,
+                distanceLabel: _directions?.formattedDistance ?? '—',
+                durationLabel: _directions?.formattedDuration ?? '—',
+                isLoading: _isLoading,
+                transportOptions: _transportOptions,
+                selectedTransportId: _selectedTransportId ?? '',
+                distanceKm: _distanceKm,
+                totalFormatted: _formattedTotal,
+                onTransportSelected: (id) =>
+                    setState(() => _selectedTransportId = id),
+                isSubmitting: _isSubmitting,
+                onConfirm: _confirmTrip,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -117,24 +387,10 @@ class _ConfirmAppBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Container(
-              width: 40.w,
-              height: 40.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.surfaceContainerHigh,
-                  width: 2.w,
-                ),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  TripConfirmData.profileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.person, size: 20.sp, color: AppColors.primary),
-                ),
-              ),
+            SessionProfileAvatar(
+              size: 40.w,
+              fontSize: 14.sp,
+              onTap: () => AppNavigation.toProfile(context),
             ),
           ],
         ),
@@ -143,79 +399,33 @@ class _ConfirmAppBar extends StatelessWidget {
   }
 }
 
-/// Mapa Lisboa com rota e pins já desenhados no asset — sem overlays extra.
-class _MapLayer extends StatelessWidget {
-  const _MapLayer({required this.mapTop, required this.mapBottom});
+class _GoogleMapLayer extends StatelessWidget {
+  const _GoogleMapLayer({
+    required this.initialTarget,
+    required this.markers,
+    required this.polylines,
+    required this.onMapCreated,
+  });
 
-  final double mapTop;
-  final double mapBottom;
+  final LatLng initialTarget;
+  final Set<Marker> markers;
+  final Set<Polyline> polylines;
+  final ValueChanged<GoogleMapController> onMapCreated;
 
   @override
   Widget build(BuildContext context) {
-    final mapHeight = mapBottom - mapTop;
-    if (mapHeight <= 0) {
-      return const SizedBox.shrink();
-    }
-
-    return Positioned(
-      top: mapTop,
-      left: 0,
-      right: 0,
-      height: mapHeight,
-      child: ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              AppAssets.tripConfirmMapImage,
-              fit: BoxFit.cover,
-              alignment: const Alignment(0.05, -0.05),
-              filterQuality: FilterQuality.medium,
-              errorBuilder: (context, error, stackTrace) => ColoredBox(
-                color: AppColors.surfaceContainer,
-                child: Center(
-                  child: Icon(Icons.map, size: 64.sp, color: AppColors.outline),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 20.h,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.background.withValues(alpha: 0.35),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 56.h,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      AppColors.surfaceContainerLowest,
-                      AppColors.surfaceContainerLowest.withValues(alpha: 0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return ClipRect(
+      child: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: initialTarget,
+          zoom: 12,
         ),
+        onMapCreated: onMapCreated,
+        markers: markers,
+        polylines: polylines,
+        myLocationButtonEnabled: false,
+        zoomControlsEnabled: false,
+        mapToolbarEnabled: false,
       ),
     );
   }
@@ -249,15 +459,33 @@ class _MapFabButton extends StatelessWidget {
 
 class _TripDetailsSheet extends StatelessWidget {
   const _TripDetailsSheet({
+    required this.scrollController,
+    required this.pickupLabel,
+    required this.destinationLabel,
+    required this.distanceLabel,
+    required this.durationLabel,
+    required this.isLoading,
+    required this.transportOptions,
     required this.selectedTransportId,
+    required this.distanceKm,
     required this.totalFormatted,
     required this.onTransportSelected,
+    required this.isSubmitting,
     required this.onConfirm,
   });
 
+  final ScrollController scrollController;
+  final String pickupLabel;
+  final String destinationLabel;
+  final String distanceLabel;
+  final String durationLabel;
+  final bool isLoading;
+  final List<TransportTypeOption> transportOptions;
   final String selectedTransportId;
+  final double distanceKm;
   final String totalFormatted;
   final ValueChanged<String> onTransportSelected;
+  final bool isSubmitting;
   final VoidCallback onConfirm;
 
   static double get _sheetRadius => 24.r;
@@ -266,133 +494,174 @@ class _TripDetailsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return Container(
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(_sheetRadius)),
+      child: Material(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(_sheetRadius)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 16.r,
-            offset: Offset(0, -4.h),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppLayout.marginMobile,
-        8.h,
-        AppLayout.marginMobile,
-        24.h + bottomInset,
-      ),
-      child: SingleChildScrollView(
+        elevation: 12,
+        shadowColor: AppColors.primary.withValues(alpha: 0.08),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 48.w,
-                height: 6.h,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(999.r),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: EdgeInsets.fromLTRB(
+                  AppLayout.marginMobile,
+                  8.h,
+                  AppLayout.marginMobile,
+                  0,
                 ),
-              ),
-            ),
-            SizedBox(height: 24.h),
-            const _RouteSection(),
-            SizedBox(height: 24.h),
-            const _TripStatsRow(),
-            SizedBox(height: 24.h),
-            Text(
-              context.l10n.tripConfirmTransportType,
-              style: GoogleFonts.inter(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                height: 20 / 14,
-                letterSpacing: 0.1,
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(height: 12.h),
-            SizedBox(
-              height: 108.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: TripConfirmData.transportOptions.length,
-                separatorBuilder: (context, index) => SizedBox(width: 16.w),
-                itemBuilder: (context, index) {
-                  final option = TripConfirmData.transportOptions[index];
-                  return _TransportOptionCard(
-                    option: option,
-                    selected: option.id == selectedTransportId,
-                    onTap: () => onTransportSelected(option.id),
-                  );
-                },
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Divider(color: AppColors.surfaceVariant),
-            SizedBox(height: 16.h),
-            Row(
-              children: [
-                Icon(
-                  Icons.credit_card,
-                  size: 22.sp,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                SizedBox(width: 8.w),
-                Flexible(
-                  child: Text(
-                    TripConfirmData.cardMask,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                  Center(
+                    child: Container(
+                      width: 48.w,
+                      height: 6.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+                  _RouteSection(
+                    pickupLabel: pickupLabel,
+                    destinationLabel: destinationLabel,
+                  ),
+                  SizedBox(height: 24.h),
+                  _TripStatsRow(
+                    distanceLabel: distanceLabel,
+                    durationLabel: durationLabel,
+                  ),
+                  SizedBox(height: 24.h),
+                  Text(
+                    context.l10n.tripConfirmTransportType,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
+                      height: 20 / 14,
+                      letterSpacing: 0.1,
                       color: AppColors.primary,
                     ),
                   ),
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  'Total: $totalFormatted',
-                  style: GoogleFonts.manrope(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    height: 24 / 18,
-                    color: AppColors.primary,
+                  SizedBox(height: 12.h),
+                  SizedBox(
+                    height: 108.h,
+                    child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                for (var i = 0; i < transportOptions.length; i++) ...[
+                                  if (i > 0) SizedBox(width: 16.w),
+                                  Builder(
+                                    builder: (context) {
+                                      final option = transportOptions[i];
+                                      return _TransportOptionCard(
+                                        option: option,
+                                        price: option.priceForDistanceKm(distanceKm),
+                                        selected: option.id == selectedTransportId,
+                                        onTap: () => onTransportSelected(option.id),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.h),
-            SizedBox(
-              height: 56.h,
-              child: FilledButton(
-                onPressed: onConfirm,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: AppColors.onSecondary,
-                  elevation: 6,
-                  shadowColor: AppColors.secondary.withValues(alpha: 0.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      context.l10n.tripConfirmTrip,
-                      style: GoogleFonts.inter(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Icon(Icons.chevron_right, size: 24.sp),
+                  SizedBox(height: 16.h),
                   ],
                 ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppLayout.marginMobile,
+                0,
+                AppLayout.marginMobile,
+                24.h + bottomInset,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Divider(color: AppColors.surfaceVariant),
+                  SizedBox(height: 16.h),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.credit_card,
+                        size: 22.sp,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      SizedBox(width: 8.w),
+                      Flexible(
+                        child: Text(
+                          TripConfirmData.cardMask,
+                          style: GoogleFonts.inter(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'Total: $totalFormatted',
+                        style: GoogleFonts.manrope(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w600,
+                          height: 24 / 18,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16.h),
+                  SizedBox(
+                    height: 56.h,
+                    child: FilledButton(
+                      onPressed: isSubmitting || isLoading ? null : onConfirm,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: AppColors.onSecondary,
+                        elevation: 6,
+                        shadowColor: AppColors.secondary.withValues(alpha: 0.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (isSubmitting) ...[
+                            SizedBox(
+                              width: 20.w,
+                              height: 20.h,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.onSecondary,
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                          ],
+                          Text(
+                            context.l10n.tripConfirmTrip,
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Icon(Icons.chevron_right, size: 24.sp),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -403,7 +672,13 @@ class _TripDetailsSheet extends StatelessWidget {
 }
 
 class _RouteSection extends StatelessWidget {
-  const _RouteSection();
+  const _RouteSection({
+    required this.pickupLabel,
+    required this.destinationLabel,
+  });
+
+  final String pickupLabel;
+  final String destinationLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +718,7 @@ class _RouteSection extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    TripConfirmData.pickupLabel,
+                    pickupLabel,
                     style: GoogleFonts.inter(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -478,7 +753,7 @@ class _RouteSection extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    TripConfirmData.destinationLabel,
+                    destinationLabel,
                     style: GoogleFonts.inter(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -497,7 +772,13 @@ class _RouteSection extends StatelessWidget {
 }
 
 class _TripStatsRow extends StatelessWidget {
-  const _TripStatsRow();
+  const _TripStatsRow({
+    required this.distanceLabel,
+    required this.durationLabel,
+  });
+
+  final String distanceLabel;
+  final String durationLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -509,7 +790,7 @@ class _TripStatsRow extends StatelessWidget {
             iconColor: AppColors.primaryContainer,
             iconBgColor: AppColors.primaryContainer.withValues(alpha: 0.1),
             label: context.l10n.distance,
-            value: TripConfirmData.distance,
+            value: distanceLabel,
           ),
         ),
         SizedBox(width: 16.w),
@@ -519,7 +800,7 @@ class _TripStatsRow extends StatelessWidget {
             iconColor: AppColors.secondary,
             iconBgColor: AppColors.secondaryContainer.withValues(alpha: 0.1),
             label: context.l10n.duration,
-            value: TripConfirmData.duration,
+            value: durationLabel,
           ),
         ),
       ],
@@ -594,18 +875,19 @@ class _StatCard extends StatelessWidget {
 class _TransportOptionCard extends StatelessWidget {
   const _TransportOptionCard({
     required this.option,
+    required this.price,
     required this.selected,
     required this.onTap,
   });
 
-  final TransportOption option;
+  final TransportTypeOption option;
+  final double price;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final priceText =
-        '${option.price.toStringAsFixed(2).replaceAll('.', ',')}€';
+    final priceText = AppCurrencyFormatter.instance.formatEurMajor(price);
     final label = switch (option.id) {
       'premium' => context.l10n.tripConfirmTransportPremium,
       'eco' => context.l10n.tripConfirmTransportEco,

@@ -2,16 +2,37 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/driver_home_data.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/core/services/current_location_service.dart';
+import 'package:local_ent_280/core/services/directions_service.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/driver/data/driver_location_tracker.dart';
+import 'package:local_ent_280/features/driver/data/driver_repository.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Pedido de viagem recebido — aceitar ou recusar dentro de 12 segundos.
 class DriverTripRequestScreen extends StatefulWidget {
-  const DriverTripRequestScreen({super.key});
+  const DriverTripRequestScreen({
+    super.key,
+    required this.tripId,
+    this.trip,
+    this.driverRepository,
+  });
+
+  final String tripId;
+  final TripRecord? trip;
+  final DriverRepository? driverRepository;
+
+  static const acceptCountdownSeconds = 12;
 
   @override
   State<DriverTripRequestScreen> createState() =>
@@ -19,42 +40,144 @@ class DriverTripRequestScreen extends StatefulWidget {
 }
 
 class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
+  late final DriverRepository _driverRepository;
+  late final TripRepository _tripRepository;
+  final _directionsService = DirectionsService();
+  final _locationService = CurrentLocationService();
+
   late int _secondsLeft;
   Timer? _countdownTimer;
+  StreamSubscription<TripRecord?>? _tripSubscription;
+  TripRecord? _trip;
+  String _pickupDistance = DriverTripRequestData.pickupDistance;
+  String _destinationInfo = DriverTripRequestData.destinationInfo;
+  bool _isSubmitting = false;
+
+  String? get _driverId => UserSession.instance.profile?.uid;
 
   @override
   void initState() {
     super.initState();
-    _secondsLeft = DriverTripRequestData.acceptCountdownSeconds;
+    _driverRepository = widget.driverRepository ?? DriverRepository();
+    _tripRepository = TripRepository();
+    _trip = widget.trip;
+    final driverId = _driverId;
+    if (driverId != null) {
+      DriverLocationTracker.instance.start(driverId);
+    }
+    _tripSubscription =
+        _tripRepository.watchTrip(widget.tripId).listen((trip) {
+      if (!mounted || trip == null) return;
+      setState(() => _trip = trip);
+    });
+    _secondsLeft = DriverTripRequestScreen.acceptCountdownSeconds;
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       if (_secondsLeft <= 1) {
         timer.cancel();
-        AppNavigation.toDriverRequestExpired(context);
+        _onExpired();
         return;
       }
       setState(() => _secondsLeft--);
     });
+    _loadRouteDetails();
+  }
+
+  Future<void> _loadRouteDetails() async {
+    final trip = _trip;
+    if (trip == null) return;
+
+    final location = await _locationService.getLastKnownLocation() ??
+        await _locationService.getCurrentLocation();
+    if (location != null) {
+      final toPickup = await _directionsService.getDrivingRoute(
+        origin: LatLng(location.latitude, location.longitude),
+        destination: LatLng(trip.pickup.latitude, trip.pickup.longitude),
+      );
+      if (mounted) {
+        setState(() {
+          _pickupDistance = '${toPickup.distanceKm.toStringAsFixed(1)} km';
+        });
+      }
+    }
+
+    final route = await _directionsService.getDrivingRoute(
+      origin: LatLng(trip.pickup.latitude, trip.pickup.longitude),
+      destination: LatLng(trip.destination.latitude, trip.destination.longitude),
+    );
+    if (mounted) {
+      setState(() {
+        _destinationInfo =
+            '${route.distanceKm.toStringAsFixed(1)} km • ${route.durationMinutes} min';
+      });
+    }
+  }
+
+  Future<void> _onExpired() async {
+    final driverId = _driverId;
+    if (driverId != null) {
+      await _driverRepository.releaseTrip(driverId, widget.tripId);
+    }
+    if (!mounted) return;
+    AppNavigation.toDriverRequestExpired(
+      context,
+      tripId: widget.tripId,
+      driverRepository: _driverRepository,
+    );
+  }
+
+  Future<void> _accept() async {
+    if (_isSubmitting) return;
+    final driverId = _driverId;
+    final profile = UserSession.instance.profile;
+    if (driverId == null || profile == null) return;
+
+    _countdownTimer?.cancel();
+    setState(() => _isSubmitting = true);
+    try {
+      await _driverRepository.acceptTrip(
+        driverId: driverId,
+        tripId: widget.tripId,
+        profile: profile,
+      );
+      if (!mounted) return;
+      AppNavigation.toDriverTripAccepted(
+        context,
+        tripId: widget.tripId,
+        trip: _trip,
+        driverRepository: _driverRepository,
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.tryAgain)),
+        );
+      }
+    }
+  }
+
+  Future<void> _decline() async {
+    if (_isSubmitting) return;
+    final driverId = _driverId;
+    _countdownTimer?.cancel();
+    if (driverId != null) {
+      await _driverRepository.declineTrip(driverId, widget.tripId);
+    }
+    if (!mounted) return;
+    AppNavigation.toDriverHome(context);
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _tripSubscription?.cancel();
     super.dispose();
-  }
-
-  void _accept() {
-    _countdownTimer?.cancel();
-    AppNavigation.toDriverTripAccepted(context);
-  }
-
-  void _decline() {
-    _countdownTimer?.cancel();
-    AppNavigation.toDriverHome(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final trip = _trip;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -65,11 +188,10 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
               Colors.black.withValues(alpha: 0.35),
               BlendMode.darken,
             ),
-            child: Image.network(
-              DriverHomeData.mapImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  ColoredBox(color: AppColors.surfaceContainer),
+            child: DriverMapLayer(
+              pickup: trip?.pickup,
+              destination: trip?.destination,
+              showRoute: true,
             ),
           ),
           SafeArea(
@@ -78,7 +200,11 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
                 const _RequestAppBar(),
                 const Spacer(),
                 _RequestCard(
+                  trip: trip,
                   secondsLeft: _secondsLeft,
+                  pickupDistance: _pickupDistance,
+                  destinationInfo: _destinationInfo,
+                  isSubmitting: _isSubmitting,
                   onAccept: _accept,
                   onDecline: _decline,
                 ),
@@ -125,18 +251,40 @@ class _RequestAppBar extends StatelessWidget {
 
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
+    required this.trip,
     required this.secondsLeft,
+    required this.pickupDistance,
+    required this.destinationInfo,
+    required this.isSubmitting,
     required this.onAccept,
     required this.onDecline,
   });
 
+  final TripRecord? trip;
   final int secondsLeft;
+  final String pickupDistance;
+  final String destinationInfo;
+  final bool isSubmitting;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final pickupAddress =
+        trip?.pickup.address ?? DriverTripRequestData.pickupAddress;
+    final destinationAddress =
+        trip?.destination.address ?? DriverTripRequestData.destinationAddress;
+    final passengerName =
+        trip?.passengerName ?? DriverTripRequestData.passengerName;
+    final passengerRating =
+        trip?.passengerRatingLabel ?? '—';
+    final fare = trip?.fareFormatted ??
+        AppCurrencyFormatter.instance.formatEurMajor(
+          DriverTripRequestData.fareEur,
+        );
+    final tripTitle = trip?.tripTypeLabel ?? l10n.driverPremiumTrip;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
       child: Container(
@@ -179,7 +327,7 @@ class _RequestCard extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
             Text(
-              l10n.driverPremiumTrip,
+              tripTitle,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -191,26 +339,22 @@ class _RequestCard extends StatelessWidget {
               icon: Icons.trip_origin,
               iconColor: AppColors.accent,
               label: l10n.driverPickup.toUpperCase(),
-              address: DriverTripRequestData.pickupAddress,
-              detail: DriverTripRequestData.pickupDistance,
+              address: pickupAddress,
+              detail: pickupDistance,
             ),
             SizedBox(height: 16.h),
             _RouteRow(
               icon: Icons.location_on,
               iconColor: AppColors.error,
               label: l10n.driverDestination.toUpperCase(),
-              address: DriverTripRequestData.destinationAddress,
-              detail: DriverTripRequestData.destinationInfo,
+              address: destinationAddress,
+              detail: destinationInfo,
             ),
             SizedBox(height: 20.h),
             Row(
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundImage: NetworkImage(
-                    DriverTripRequestData.passengerPhoto,
-                  ),
-                  onBackgroundImageError: (_, _) {},
                   child: Icon(Icons.person, color: AppColors.accent),
                 ),
                 SizedBox(width: 12.w),
@@ -219,7 +363,7 @@ class _RequestCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DriverTripRequestData.passengerName,
+                        passengerName,
                         style: AppTypography.inter(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
@@ -231,7 +375,7 @@ class _RequestCard extends StatelessWidget {
                           Icon(Icons.star, size: 14.sp, color: Colors.amber),
                           SizedBox(width: 4.w),
                           Text(
-                            DriverTripRequestData.passengerRating,
+                            passengerRating,
                             style: AppTypography.inter(
                               fontSize: 13.sp,
                               color: AppColors.onSurfaceVariant,
@@ -243,7 +387,7 @@ class _RequestCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  DriverTripRequestData.fare,
+                  fare,
                   style: AppTypography.manrope(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w700,
@@ -257,7 +401,7 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onDecline,
+                    onPressed: isSubmitting ? null : onDecline,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.onSurfaceVariant,
                       side: BorderSide(color: AppColors.outlineVariant),
@@ -279,7 +423,7 @@ class _RequestCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: FilledButton(
-                    onPressed: onAccept,
+                    onPressed: isSubmitting ? null : onAccept,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       foregroundColor: AppColors.onAccent,
@@ -288,13 +432,22 @@ class _RequestCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    child: Text(
-                      l10n.driverAcceptTrip,
-                      style: AppTypography.inter(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    child: isSubmitting
+                        ? SizedBox(
+                            width: 20.w,
+                            height: 20.h,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.onAccent,
+                            ),
+                          )
+                        : Text(
+                            l10n.driverAcceptTrip,
+                            style: AppTypography.inter(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -313,7 +466,8 @@ class _CountdownBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = secondsLeft / DriverTripRequestData.acceptCountdownSeconds;
+    final progress =
+        secondsLeft / DriverTripRequestScreen.acceptCountdownSeconds;
 
     return SizedBox(
       width: 48.w,

@@ -10,6 +10,7 @@ class AppUserProfile {
     required this.phone,
     required this.role,
     required this.isActive,
+    this.photoUrl,
     this.createdAt,
     this.updatedAt,
   });
@@ -20,6 +21,7 @@ class AppUserProfile {
   final String phone;
   final AppUserRole role;
   final bool isActive;
+  final String? photoUrl;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -43,8 +45,33 @@ class AppUserProfile {
       phone: data['phone'] as String? ?? '',
       role: role,
       isActive: data['isActive'] as bool? ?? false,
+      photoUrl: data['photoUrl'] as String?,
       createdAt: _timestampToDateTime(data['createdAt']),
       updatedAt: _timestampToDateTime(data['updatedAt']),
+    );
+  }
+
+  AppUserProfile copyWith({
+    String? uid,
+    String? email,
+    String? name,
+    String? phone,
+    AppUserRole? role,
+    bool? isActive,
+    String? photoUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return AppUserProfile(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
+      photoUrl: photoUrl ?? this.photoUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 

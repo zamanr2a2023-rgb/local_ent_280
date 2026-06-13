@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/trip_history_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/driver/data/driver_repository.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_history_mapper.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
@@ -10,8 +16,24 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Histórico de Viagens — `roles/details.md`.
+enum TripHistoryAudience { client, driver }
+
+/// Histórico de Viagens — `roles/details.md`.
 class TripHistoryScreen extends StatefulWidget {
-  const TripHistoryScreen({super.key});
+  const TripHistoryScreen({
+    super.key,
+    this.tripRepository,
+    this.driverRepository,
+    this.clientId,
+    this.driverId,
+    this.audience = TripHistoryAudience.client,
+  });
+
+  final TripRepository? tripRepository;
+  final DriverRepository? driverRepository;
+  final String? clientId;
+  final String? driverId;
+  final TripHistoryAudience audience;
 
   static String _filterLabel(
     AppLocalizations l10n,
@@ -32,19 +54,36 @@ class TripHistoryScreen extends StatefulWidget {
 
 class _TripHistoryScreenState extends State<TripHistoryScreen> {
   TripHistoryFilter _filter = TripHistoryFilter.todos;
+  late final TripRepository _tripRepository =
+      widget.tripRepository ?? TripRepository();
+  late final DriverRepository _driverRepository =
+      widget.driverRepository ?? DriverRepository();
 
-  List<TripHistoryItem> get _filteredTrips {
+  bool get _isDriverMode => widget.audience == TripHistoryAudience.driver;
+
+  List<TripHistoryItem> _filterTrips(List<TripHistoryItem> trips) {
+    final now = DateTime.now();
     switch (_filter) {
       case TripHistoryFilter.todos:
+        return trips;
       case TripHistoryFilter.recentes:
+        final cutoff = now.subtract(const Duration(days: 30));
+        return trips
+            .where(
+              (trip) =>
+                  trip.createdAt != null && trip.createdAt!.isAfter(cutoff),
+            )
+            .toList();
       case TripHistoryFilter.esteAno:
-        return TripHistoryData.trips;
+        return trips
+            .where((trip) => trip.createdAt?.year == now.year)
+            .toList();
       case TripHistoryFilter.concluidas:
-        return TripHistoryData.trips
+        return trips
             .where((t) => t.status == TripHistoryStatus.concluida)
             .toList();
       case TripHistoryFilter.canceladas:
-        return TripHistoryData.trips
+        return trips
             .where((t) => t.status == TripHistoryStatus.cancelada)
             .toList();
     }
@@ -52,63 +91,154 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userId = UserSession.instance.profile?.uid;
+    final clientId = widget.clientId ?? userId;
+    final driverId = widget.driverId ?? userId;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _HistoryAppBar(onMenu: () {}),
+            const _HistoryAppBar(),
             Expanded(
               child: Stack(
                 children: [
-                  ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      AppLayout.marginMobile,
-                      16.h,
-                      AppLayout.marginMobile,
-                      96.h,
-                    ),
-                    children: [
-                      const _HeaderStats(),
-                      SizedBox(height: 24.h),
-                      _FilterChips(
-                        selected: _filter,
-                        onSelected: (f) => setState(() => _filter = f),
+                  _isDriverMode
+                      ? (driverId == null
+                          ? const Center(child: CircularProgressIndicator())
+                          : StreamBuilder(
+                              stream: _driverRepository
+                                  .watchDriverTripHistory(driverId),
+                              builder: (context, snapshot) =>
+                                  _buildHistoryBody(context, snapshot),
+                            ))
+                      : (clientId == null
+                          ? const Center(child: CircularProgressIndicator())
+                          : StreamBuilder(
+                              stream:
+                                  _tripRepository.watchClientTrips(clientId),
+                              builder: (context, snapshot) =>
+                                  _buildHistoryBody(context, snapshot),
+                            )),
+                  if (!_isDriverMode)
+                    Positioned(
+                      right: AppLayout.marginMobile,
+                      bottom: 16.h,
+                      child: _FloatingAddButton(
+                        onTap: () => AppNavigation.toTripDestination(context),
                       ),
-                      SizedBox(height: 16.h),
-                      for (final trip in _filteredTrips) ...[
-                        _TripCard(trip: trip),
-                        SizedBox(height: 12.h),
-                      ],
-                    ],
-                  ),
-                  Positioned(
-                    right: AppLayout.marginMobile,
-                    bottom: 16.h,
-                    child: _FloatingAddButton(
-                      onTap: () => AppNavigation.toTripDestination(context),
                     ),
-                  ),
                 ],
               ),
             ),
             AppBottomNav(
-              selectedIndex: AppNavIndex.viagens,
-              onItemTap: (index) =>
-                  AppNavigation.onBottomNavTap(context, index),
+              mode: _isDriverMode
+                  ? AppBottomNavMode.driver
+                  : AppBottomNavMode.full,
+              selectedIndex:
+                  _isDriverMode ? 1 : AppNavIndex.viagens,
+              onItemTap: (index) => _isDriverMode
+                  ? AppNavigation.onDriverBottomNavLocalTap(context, index)
+                  : AppNavigation.onBottomNavTap(context, index),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildHistoryBody(
+    BuildContext context,
+    AsyncSnapshot<List<TripRecord>> snapshot,
+  ) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (snapshot.hasError) {
+      return Padding(
+        padding: EdgeInsets.all(AppLayout.marginMobile),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 40.sp,
+              color: AppColors.onSurfaceVariant,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              context.l10n.tripHistoryLoadError,
+              textAlign: TextAlign.center,
+              style: AppTypography.inter(
+                fontSize: 14.sp,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final records = snapshot.data ?? const [];
+    final trips = records
+        .map(TripHistoryMapper.fromTripRecord)
+        .toList(growable: false);
+    final filteredTrips = _filterTrips(trips);
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        AppLayout.marginMobile,
+        16.h,
+        AppLayout.marginMobile,
+        96.h,
+      ),
+      children: [
+        _HeaderStats(trips: trips),
+        SizedBox(height: 24.h),
+        _FilterChips(
+          selected: _filter,
+          onSelected: (f) => setState(() => _filter = f),
+        ),
+        SizedBox(height: 16.h),
+        if (filteredTrips.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 32.h),
+            child: Column(
+              children: [
+                Text(
+                  context.l10n.tripHistoryEmpty,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.manrope(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  context.l10n.tripHistoryEmptyBody,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.inter(
+                    fontSize: 14.sp,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        for (final trip in filteredTrips) ...[
+          _TripCard(trip: trip),
+          SizedBox(height: 12.h),
+        ],
+      ],
+    );
+  }
 }
 
 class _HistoryAppBar extends StatelessWidget {
-  const _HistoryAppBar({required this.onMenu});
-
-  final VoidCallback onMenu;
+  const _HistoryAppBar();
 
   @override
   Widget build(BuildContext context) {
@@ -116,53 +246,38 @@ class _HistoryAppBar extends StatelessWidget {
       height: 56.h,
       padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
       color: AppColors.background,
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onMenu,
-            icon: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              context.l10n.premiumMobility,
-              style: AppTypography.manrope(
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w700,
-                height: 32 / 22,
-                color: AppColors.primary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surfaceContainerHigh,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              TripHistoryData.profileAvatarImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Icon(
-                Icons.person,
-                size: 18.sp,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-        ],
+      alignment: Alignment.centerLeft,
+      child: Text(
+        context.l10n.premiumMobility,
+        style: AppTypography.manrope(
+          fontSize: 22.sp,
+          fontWeight: FontWeight.w700,
+          height: 32 / 22,
+          color: AppColors.primary,
+        ),
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
 }
 
 class _HeaderStats extends StatelessWidget {
-  const _HeaderStats();
+  const _HeaderStats({required this.trips});
+
+  final List<TripHistoryItem> trips;
+
+  String get _monthSpend {
+    final now = DateTime.now();
+    final monthTotalMinor = trips.fold<int>(0, (sum, trip) {
+      final createdAt = trip.createdAt;
+      if (createdAt == null) return sum;
+      if (createdAt.year != now.year || createdAt.month != now.month) {
+        return sum;
+      }
+      return sum + trip.costMinor;
+    });
+    return AppCurrencyFormatter.instance.formatEurMinor(monthTotalMinor);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,14 +309,14 @@ class _HeaderStats extends StatelessWidget {
           children: [
             Expanded(
               child: _StatBox(
-                value: TripHistoryData.totalTrips,
+                value: '${trips.length}',
                 label: context.l10n.tripHistoryTrips,
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: _StatBox(
-                value: TripHistoryData.monthSpend,
+                value: _monthSpend,
                 label: context.l10n.tripHistoryThisMonth,
               ),
             ),
@@ -330,7 +445,6 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canOpen = !trip.isCancelled;
     return Opacity(
       opacity: trip.isCancelled ? 0.78 : 1,
       child: Material(
@@ -338,7 +452,7 @@ class _TripCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: canOpen ? () => AppNavigation.toTripDetails(context) : null,
+          onTap: () => AppNavigation.toTripDetails(context, tripId: trip.id),
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12.r),
@@ -412,7 +526,9 @@ class _TripCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            trip.price,
+                            AppCurrencyFormatter.instance.formatEurMinor(
+                              trip.costMinor,
+                            ),
                             style: AppTypography.manrope(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
@@ -520,13 +636,29 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCancelled = status == TripHistoryStatus.cancelada;
-    final bg = isCancelled
-        ? AppColors.errorContainer
-        : const Color(0xFFD1FAE5);
-    final fg = isCancelled
-        ? AppColors.onErrorContainer
-        : const Color(0xFF065F46);
+    final l10n = context.l10n;
+    final (bg, fg, label) = switch (status) {
+      TripHistoryStatus.cancelada => (
+          AppColors.errorContainer,
+          AppColors.onErrorContainer,
+          l10n.tripHistoryStatusCancelled,
+        ),
+      TripHistoryStatus.concluida => (
+          const Color(0xFFD1FAE5),
+          const Color(0xFF065F46),
+          l10n.tripDetailsStatusCompleted,
+        ),
+      TripHistoryStatus.agendada => (
+          AppColors.secondaryContainer,
+          AppColors.onSecondaryContainer,
+          l10n.tripHistoryStatusScheduled,
+        ),
+      TripHistoryStatus.emCurso => (
+          AppColors.primaryContainer,
+          AppColors.onPrimaryContainer,
+          l10n.tripHistoryStatusInProgress,
+        ),
+    };
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
@@ -535,7 +667,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999.r),
       ),
       child: Text(
-        isCancelled ? context.l10n.tripHistoryStatusCancelled : context.l10n.tripDetailsStatusCompleted,
+        label,
         style: AppTypography.inter(
           fontSize: 11.sp,
           fontWeight: FontWeight.w600,

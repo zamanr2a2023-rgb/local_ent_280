@@ -15,7 +15,7 @@ abstract final class DriverFoundData {
   static const serviceTier = 'Premium';
 
   static const estimatedTime = '4 min';
-  static const fare = '14,50€';
+  static const fareEur = 14.50;
 
   static const cancelHint =
       'Pode cancelar sem custos nos próximos 2 minutos enquanto o motorista confirma a reserva.';

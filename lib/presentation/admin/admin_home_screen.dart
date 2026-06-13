@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:local_ent_280/core/data/admin_home_data.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/admin/data/admin_repository.dart';
+import 'package:local_ent_280/features/admin/data/models/admin_stats.dart';
 import 'package:local_ent_280/presentation/admin/admin_drawer.dart';
+import 'package:local_ent_280/presentation/widgets/admin_activity_map_layer.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
@@ -11,16 +15,73 @@ import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Painel Admin — Mobilidade Premium (`roles/details.md`).
-class AdminHomeScreen extends StatelessWidget {
-  const AdminHomeScreen({super.key});
+class AdminHomeScreen extends StatefulWidget {
+  const AdminHomeScreen({super.key, this.adminRepository});
 
-  static List<BoxShadow> get _cardShadow => [
+  final AdminRepository? adminRepository;
+
+  static List<BoxShadow> get cardShadow => [
         BoxShadow(
           color: const Color(0x0A001736),
           blurRadius: 8.r,
           offset: Offset(0, 2.h),
         ),
       ];
+
+  @override
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
+}
+
+class _AdminHomeScreenState extends State<AdminHomeScreen> {
+  late final AdminRepository _repository;
+  StreamSubscription? _dashboardSubscription;
+  StreamSubscription? _tariffSubscription;
+  StreamSubscription? _fleetSubscription;
+  StreamSubscription? _marketSubscription;
+  StreamSubscription? _activityMapSubscription;
+
+  AdminDashboardStats _stats = AdminDashboardStats.empty;
+  AdminTariffSummary? _tariff;
+  AdminMarketSummary? _market;
+  AdminActivityMapData _activityMap = AdminActivityMapData.empty;
+  List<AdminFleetRow> _fleet = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.adminRepository ?? AdminRepository();
+    _dashboardSubscription =
+        _repository.watchDashboardStats().listen((stats) {
+      if (!mounted) return;
+      setState(() => _stats = stats);
+    });
+    _tariffSubscription = _repository.watchTariffSummary().listen((tariff) {
+      if (!mounted) return;
+      setState(() => _tariff = tariff);
+    });
+    _fleetSubscription = _repository.watchRecentFleet().listen((fleet) {
+      if (!mounted) return;
+      setState(() => _fleet = fleet);
+    });
+    _marketSubscription = _repository.watchMarketSummary().listen((market) {
+      if (!mounted) return;
+      setState(() => _market = market);
+    });
+    _activityMapSubscription = _repository.watchActivityMap().listen((mapData) {
+      if (!mounted) return;
+      setState(() => _activityMap = mapData);
+    });
+  }
+
+  @override
+  void dispose() {
+    _dashboardSubscription?.cancel();
+    _tariffSubscription?.cancel();
+    _fleetSubscription?.cancel();
+    _marketSubscription?.cancel();
+    _activityMapSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,15 +102,15 @@ class AdminHomeScreen extends StatelessWidget {
                   AppLayout.xxl,
                 ),
                 children: [
-                  const _FleetStatusSection(),
+                  _FleetStatusSection(stats: _stats),
                   SizedBox(height: AppLayout.lg),
-                  const _CriticalOperationsSection(),
+                  _CriticalOperationsSection(stats: _stats),
                   SizedBox(height: AppLayout.lg),
-                  const _ActivityMapSection(),
+                  _ActivityMapSection(activityMap: _activityMap),
                   SizedBox(height: AppLayout.lg),
-                  const _RatesSection(),
+                  _RatesSection(tariff: _tariff, market: _market),
                   SizedBox(height: AppLayout.lg),
-                  const _RecentFleetSection(),
+                  _RecentFleetSection(fleet: _fleet),
                 ],
               ),
             ),
@@ -104,7 +165,9 @@ class _AdminAppBar extends StatelessWidget {
 }
 
 class _FleetStatusSection extends StatelessWidget {
-  const _FleetStatusSection();
+  const _FleetStatusSection({required this.stats});
+
+  final AdminDashboardStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -143,10 +206,12 @@ class _FleetStatusSection extends StatelessWidget {
               child: _FleetStatCard(
                 icon: Symbols.directions_car,
                 iconColor: AppColors.secondary,
-                value: AdminHomeData.activeTripsCount,
+                value: stats.activeTripsFormatted,
                 label: context.l10n.adminActiveTripsLabel,
                 footerDotColor: AppColors.secondary,
-                footerText: context.l10n.adminActiveTripsTrend,
+                footerText: context.l10n.adminActiveTripsTrendDynamic(
+                  stats.activeTripsTrendLabel,
+                ),
                 footerTextColor: AppColors.secondary,
               ),
             ),
@@ -155,7 +220,7 @@ class _FleetStatusSection extends StatelessWidget {
               child: _FleetStatCard(
                 icon: Symbols.person_pin,
                 iconColor: AppColors.tertiary,
-                value: AdminHomeData.availableDriversCount,
+                value: stats.availableDriversFormatted,
                 label: context.l10n.adminAvailableDriversLabel,
                 footerDotColor: AppColors.tertiaryContainer,
                 footerText: context.l10n.adminAvailableDriversHint,
@@ -196,7 +261,7 @@ class _FleetStatCard extends StatelessWidget {
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.surfaceVariant),
-        boxShadow: AdminHomeScreen._cardShadow,
+        boxShadow: AdminHomeScreen.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,10 +319,17 @@ class _FleetStatCard extends StatelessWidget {
 }
 
 class _CriticalOperationsSection extends StatelessWidget {
-  const _CriticalOperationsSection();
+  const _CriticalOperationsSection({required this.stats});
+
+  final AdminDashboardStats stats;
 
   @override
   Widget build(BuildContext context) {
+    final monthName = _monthLabel(context);
+    final debtSubtitle = stats.pendingDebtorCount == 0
+        ? context.l10n.adminPendingDebtorsCount(0)
+        : context.l10n.adminPendingDebtorsCount(stats.pendingDebtorCount);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -276,7 +348,7 @@ class _CriticalOperationsSection extends StatelessWidget {
             color: AppColors.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: AppColors.surfaceVariant),
-            boxShadow: AdminHomeScreen._cardShadow,
+            boxShadow: AdminHomeScreen.cardShadow,
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -286,10 +358,10 @@ class _CriticalOperationsSection extends StatelessWidget {
                 iconBg: AppColors.errorContainer,
                 iconColor: AppColors.error,
                 title: context.l10n.adminPendingDebtorsTitle,
-                subtitle: context.l10n.adminPendingDebtorsSubtitle,
+                subtitle: debtSubtitle,
                 onTap: () => AppNavigation.toAdminReports(context),
                 trailing: Text(
-                  AdminHomeData.pendingDebtorsAmount,
+                  stats.pendingDebtFormatted,
                   style: AppTypography.manrope(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -304,7 +376,10 @@ class _CriticalOperationsSection extends StatelessWidget {
                 iconBg: AppColors.secondaryFixed,
                 iconColor: AppColors.secondary,
                 title: context.l10n.adminMonthlyReportsTitle,
-                subtitle: context.l10n.adminMonthlyReportsSubtitle,
+                subtitle: context.l10n.adminMonthlyReportsSubtitle.replaceFirst(
+                  'October',
+                  monthName,
+                ),
                 backgroundColor: AppColors.surfaceContainerLow,
                 onTap: () => AppNavigation.toAdminReports(context),
                 trailing: Icon(
@@ -319,6 +394,14 @@ class _CriticalOperationsSection extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _monthLabel(BuildContext context) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return months[DateTime.now().month - 1];
   }
 }
 
@@ -410,11 +493,27 @@ class _CriticalOpRow extends StatelessWidget {
   }
 }
 
-class _ActivityMapSection extends StatelessWidget {
-  const _ActivityMapSection();
+class _ActivityMapSection extends StatefulWidget {
+  const _ActivityMapSection({required this.activityMap});
+
+  final AdminActivityMapData activityMap;
+
+  @override
+  State<_ActivityMapSection> createState() => _ActivityMapSectionState();
+}
+
+class _ActivityMapSectionState extends State<_ActivityMapSection> {
+  final _mapKey = GlobalKey<AdminActivityMapLayerState>();
 
   @override
   Widget build(BuildContext context) {
+    final activityMap = widget.activityMap;
+    final locationLabel =
+        activityMap.locationLabel ?? context.l10n.driverLocationCity;
+    final liveSummary = activityMap.hasLiveMarkers
+        ? '${activityMap.activeTripCount} trips • ${activityMap.activeDriverCount} drivers'
+        : context.l10n.adminActivityMapWaiting;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -428,6 +527,15 @@ class _ActivityMapSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppLayout.sm),
+        Text(
+          liveSummary,
+          style: AppTypography.inter(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w500,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        SizedBox(height: AppLayout.sm),
         ClipRRect(
           borderRadius: BorderRadius.circular(12.r),
           child: SizedBox(
@@ -435,17 +543,10 @@ class _ActivityMapSection extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.network(
-                  AdminHomeData.activityMapImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => ColoredBox(
-                    color: AppColors.surfaceContainerHigh,
-                    child: Icon(
-                      Icons.map,
-                      size: 48.sp,
-                      color: AppColors.outline,
-                    ),
-                  ),
+                AdminActivityMapLayer(
+                  key: _mapKey,
+                  data: activityMap,
+                  initialZoom: 11,
                 ),
                 Positioned(
                   top: AppLayout.md,
@@ -480,7 +581,7 @@ class _ActivityMapSection extends StatelessWidget {
                           ),
                           SizedBox(width: AppLayout.unit),
                           Text(
-                            AdminHomeData.activityMapLocation,
+                            locationLabel,
                             style: AppTypography.inter(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w500,
@@ -500,13 +601,17 @@ class _ActivityMapSection extends StatelessWidget {
                     color: AppColors.surfaceContainerLowest,
                     shape: const CircleBorder(),
                     elevation: 4,
-                    child: SizedBox(
-                      width: 40.w,
-                      height: 40.h,
-                      child: Icon(
-                        Symbols.my_location,
-                        color: AppColors.primary,
-                        size: 22.sp,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => _mapKey.currentState?.recenter(),
+                      child: SizedBox(
+                        width: 40.w,
+                        height: 40.h,
+                        child: Icon(
+                          Symbols.my_location,
+                          color: AppColors.primary,
+                          size: 22.sp,
+                        ),
                       ),
                     ),
                   ),
@@ -521,7 +626,10 @@ class _ActivityMapSection extends StatelessWidget {
 }
 
 class _RatesSection extends StatelessWidget {
-  const _RatesSection();
+  const _RatesSection({required this.tariff, required this.market});
+
+  final AdminTariffSummary? tariff;
+  final AdminMarketSummary? market;
 
   @override
   Widget build(BuildContext context) {
@@ -543,9 +651,9 @@ class _RatesSection extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
-              _BaseRateCard(),
+              _BaseRateCard(tariff: tariff),
               SizedBox(width: AppLayout.md),
-              _FuelCostCard(),
+              _FuelCostCard(market: market),
             ],
           ),
         ),
@@ -555,8 +663,17 @@ class _RatesSection extends StatelessWidget {
 }
 
 class _BaseRateCard extends StatelessWidget {
+  const _BaseRateCard({required this.tariff});
+
+  final AdminTariffSummary? tariff;
+
   @override
   Widget build(BuildContext context) {
+    final rate = tariff?.perKmFormatted ?? '—';
+    final dynamicText = tariff?.dynamicLabel == null
+        ? context.l10n.adminBaseRateDynamic
+        : context.l10n.adminBaseRateLive(tariff!.dynamicLabel!);
+
     return Container(
       width: 200.w,
       padding: EdgeInsets.all(AppLayout.md),
@@ -598,7 +715,7 @@ class _BaseRateCard extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            AdminHomeData.baseRateValue,
+            rate,
             style: AppTypography.manrope(
               fontSize: 22.sp,
               fontWeight: FontWeight.w600,
@@ -607,7 +724,7 @@ class _BaseRateCard extends StatelessWidget {
             ),
           ),
           Text(
-            context.l10n.adminBaseRateDynamic,
+            dynamicText,
             style: AppTypography.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
@@ -622,8 +739,16 @@ class _BaseRateCard extends StatelessWidget {
 }
 
 class _FuelCostCard extends StatelessWidget {
+  const _FuelCostCard({required this.market});
+
+  final AdminMarketSummary? market;
+
   @override
   Widget build(BuildContext context) {
+    final value = market?.hasFuelCost == true
+        ? market!.fuelCostFormatted
+        : '—';
+
     return Container(
       width: 200.w,
       padding: EdgeInsets.all(AppLayout.md),
@@ -656,7 +781,7 @@ class _FuelCostCard extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            AdminHomeData.fuelCostValue,
+            value,
             style: AppTypography.manrope(
               fontSize: 22.sp,
               fontWeight: FontWeight.w600,
@@ -680,7 +805,9 @@ class _FuelCostCard extends StatelessWidget {
 }
 
 class _RecentFleetSection extends StatelessWidget {
-  const _RecentFleetSection();
+  const _RecentFleetSection({required this.fleet});
+
+  final List<AdminFleetRow> fleet;
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +828,7 @@ class _RecentFleetSection extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () => AppNavigation.toAdminFleet(context),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.secondary,
                 padding: EdgeInsets.zero,
@@ -721,28 +848,43 @@ class _RecentFleetSection extends StatelessWidget {
           ],
         ),
         SizedBox(height: AppLayout.sm),
-        for (var i = 0; i < AdminHomeData.recentFleet.length; i++) ...[
-          _FleetVehicleCard(vehicle: AdminHomeData.recentFleet[i]),
-          if (i < AdminHomeData.recentFleet.length - 1)
-            SizedBox(height: AppLayout.md),
-        ],
+        if (fleet.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(AppLayout.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.surfaceVariant),
+            ),
+            child: Text(
+              context.l10n.adminNoFleetVehicles,
+              style: AppTypography.inter(
+                fontSize: 13.sp,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          for (var i = 0; i < fleet.length; i++) ...[
+            _FleetVehicleCard(row: fleet[i]),
+            if (i < fleet.length - 1) SizedBox(height: AppLayout.md),
+          ],
       ],
     );
   }
 }
 
 class _FleetVehicleCard extends StatelessWidget {
-  const _FleetVehicleCard({required this.vehicle});
+  const _FleetVehicleCard({required this.row});
 
-  final AdminFleetVehicle vehicle;
+  final AdminFleetRow row;
 
   @override
   Widget build(BuildContext context) {
-    final isActive = vehicle.status == AdminFleetStatus.emViagem;
     final l10n = context.l10n;
-    final statusLabel = isActive
-        ? l10n.adminFleetStatusOnTrip
-        : l10n.adminFleetStatusInactive;
+    final statusLabel =
+        row.isOnTrip ? l10n.adminFleetStatusOnTrip : l10n.adminFleetStatusInactive;
 
     return Container(
       padding: EdgeInsets.all(AppLayout.md),
@@ -750,7 +892,7 @@ class _FleetVehicleCard extends StatelessWidget {
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.surfaceVariant),
-        boxShadow: AdminHomeScreen._cardShadow,
+        boxShadow: AdminHomeScreen.cardShadow,
       ),
       child: Row(
         children: [
@@ -773,7 +915,7 @@ class _FleetVehicleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  vehicle.vehicle,
+                  row.vehicleLabel.isNotEmpty ? row.vehicleLabel : '—',
                   style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -783,7 +925,7 @@ class _FleetVehicleCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  vehicle.driver,
+                  row.driverLabel,
                   style: AppTypography.inter(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w400,
@@ -800,11 +942,11 @@ class _FleetVehicleCard extends StatelessWidget {
               vertical: AppLayout.unit,
             ),
             decoration: BoxDecoration(
-              color: isActive
+              color: row.isOnTrip
                   ? AppColors.primaryContainer.withValues(alpha: 0.1)
                   : const Color(0x33D8DADC),
               borderRadius: BorderRadius.circular(999.r),
-              border: isActive
+              border: row.isOnTrip
                   ? null
                   : Border.all(color: AppColors.outlineVariant),
             ),
@@ -814,7 +956,7 @@ class _FleetVehicleCard extends StatelessWidget {
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 height: 16 / 12,
-                color: isActive
+                color: row.isOnTrip
                     ? AppColors.onPrimaryContainer
                     : AppColors.onSurfaceVariant,
               ),

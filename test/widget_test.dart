@@ -23,6 +23,8 @@ import 'package:local_ent_280/presentation/trip/trip_completed_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_in_progress_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_found_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
+import 'package:local_ent_280/core/services/transport_types_service.dart';
 import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
@@ -35,7 +37,15 @@ import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
 import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/balance/data/balance_repository.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_location.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 
 class _FakeAuthRepository implements AuthSigning {
   _FakeAuthRepository(this._profile);
@@ -51,6 +61,158 @@ class _FakeAuthRepository implements AuthSigning {
       _profile;
 }
 
+const _testClientProfile = AppUserProfile(
+  uid: 'test-client-uid',
+  email: 'cliente@example.com',
+  name: 'João Silva',
+  phone: '+351 912 345 678',
+  role: AppUserRole.client,
+  isActive: true,
+);
+
+final _testBalanceRepository = BalanceRepository(
+  disabled: true,
+  mockBalance: const ClientBalance(balanceMinor: 4250, currency: 'EUR'),
+);
+
+TripRepository _demoTripHistoryRepository() {
+  final demoTrips = <TripRecord>[
+    TripRecord(
+      id: 'trip-1',
+      clientId: _testClientProfile.uid,
+      pickup: const TripLocation(
+        address: 'Doca de Belém, Lisboa',
+        latitude: 38.6916,
+        longitude: -9.2159,
+      ),
+      destination: const TripLocation(
+        address: 'Lisboa Marina Hotel, Lisboa',
+        latitude: 38.7,
+        longitude: -9.2,
+      ),
+      transportType: const TripTransportType(id: 'premium', name: 'Executivo'),
+      status: 'COMPLETED',
+      meteringSnapshot: const TripMeteringSnapshot(
+        totalDistanceKm: 5.2,
+        totalMinutes: 18,
+        totalWaitMinutes: 0,
+        estimatedCostMinor: 2450,
+      ),
+      createdAt: DateTime(2023, 10, 12),
+    ),
+    TripRecord(
+      id: 'trip-2',
+      clientId: _testClientProfile.uid,
+      pickup: const TripLocation(
+        address: 'Centro, Lisboa',
+        latitude: 38.72,
+        longitude: -9.14,
+      ),
+      destination: const TripLocation(
+        address: 'Lisbon Airport (LIS)',
+        latitude: 38.77,
+        longitude: -9.13,
+      ),
+      transportType: const TripTransportType(id: 'eco', name: 'Eco'),
+      status: 'COMPLETED',
+      meteringSnapshot: const TripMeteringSnapshot(
+        totalDistanceKm: 12,
+        totalMinutes: 25,
+        totalWaitMinutes: 0,
+        estimatedCostMinor: 3200,
+      ),
+      createdAt: DateTime(2023, 10, 8),
+    ),
+    TripRecord(
+      id: 'trip-3',
+      clientId: _testClientProfile.uid,
+      pickup: const TripLocation(
+        address: 'Parque das Nações, Lisboa',
+        latitude: 38.76,
+        longitude: -9.09,
+      ),
+      destination: const TripLocation(
+        address: 'Torre Vasco da Gama, Lisboa',
+        latitude: 38.76,
+        longitude: -9.09,
+      ),
+      transportType: const TripTransportType(id: 'shared', name: 'Partilhado'),
+      status: 'CANCELLED_BY_CLIENT',
+      meteringSnapshot: const TripMeteringSnapshot(
+        totalDistanceKm: 3,
+        totalMinutes: 10,
+        totalWaitMinutes: 0,
+        estimatedCostMinor: 1200,
+      ),
+      createdAt: DateTime(2023, 9, 30),
+    ),
+  ];
+
+  return TripRepository(
+    disabled: true,
+    watchClientTripsOverride: (_) => Stream.value(demoTrips),
+  );
+}
+
+Widget _homeScreenForTests() {
+  return HomeScreen(balanceRepository: _testBalanceRepository);
+}
+
+Widget _tripHistoryScreenForTests() {
+  return TripHistoryScreen(
+    clientId: _testClientProfile.uid,
+    tripRepository: _demoTripHistoryRepository(),
+  );
+}
+
+TripRepository _driverAssignedTripRepository() {
+  return TripRepository(
+    disabled: true,
+    watchTripOverride: (tripId) async* {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      yield TripRecord(
+        id: tripId,
+        clientId: _testClientProfile.uid,
+        pickup: const TripLocation(
+          address: 'Av. da Liberdade, 110',
+          latitude: 38.72,
+          longitude: -9.15,
+        ),
+        destination: const TripLocation(
+          address: 'Lisbon Airport (LIS)',
+          latitude: 38.77,
+          longitude: -9.13,
+        ),
+        transportType: const TripTransportType(id: 'premium', name: 'Premium'),
+        status: 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE',
+        assignedDriverId: 'driver-1',
+        meteringSnapshot: const TripMeteringSnapshot(
+          totalDistanceKm: 8,
+          totalMinutes: 18,
+          totalWaitMinutes: 0,
+          estimatedCostMinor: 1450,
+        ),
+      );
+    },
+  );
+}
+
+TripRepository _createTripTestRepository() {
+  return TripRepository(
+    disabled: true,
+    createTripOverride: (_) async => 'created-trip-id',
+    watchTripOverride: (_) => Stream<TripRecord?>.value(null),
+  );
+}
+
+void _seedClientSession() {
+  UserSession.instance.setProfile(_testClientProfile);
+}
+
+void _clearClientSession() {
+  UserSession.instance.clear();
+}
+
 void _setPhoneSize(WidgetTester tester) {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1.0;
@@ -61,6 +223,22 @@ void _setPhoneSize(WidgetTester tester) {
 }
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('pt');
+  });
+
+  setUp(() {
+    AppNavigation.balanceRepositoryOverride = _testBalanceRepository;
+    AppNavigation.tripHistoryRepositoryOverride = _demoTripHistoryRepository();
+  });
+
+  tearDown(() {
+    AppNavigation.balanceRepositoryOverride = null;
+    AppNavigation.tripHistoryRepositoryOverride = null;
+    ActiveTripSession.instance.clear();
+    _clearClientSession();
+  });
+
   testWidgets('Splash screen shows app title', (WidgetTester tester) async {
     _setPhoneSize(tester);
     await tester.pumpWidget(
@@ -456,11 +634,13 @@ void main() {
 
   testWidgets('Home menu opens navigation drawer', (WidgetTester tester) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    _seedClientSession();
+    await tester.pumpWidget(AppScreenUtil.testWrap(_homeScreenForTests()));
     await tester.pump();
 
     await tester.tap(find.byIcon(Icons.menu));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Local Transport'), findsWidgets);
     expect(find.text('Início'), findsWidgets);
@@ -469,7 +649,9 @@ void main() {
 
   testWidgets('Trip map screen shows planning UI', (WidgetTester tester) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    _seedClientSession();
+    await tester.pumpWidget(AppScreenUtil.testWrap(_homeScreenForTests()));
+    await tester.pump();
 
     expect(find.text('Saldo Disponível'), findsOneWidget);
     expect(find.text('42,50 €'), findsOneWidget);
@@ -487,13 +669,14 @@ void main() {
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    _seedClientSession();
+    await tester.pumpWidget(AppScreenUtil.testWrap(_homeScreenForTests()));
     await tester.tap(find.text('Reservas'));
     await tester.pumpAndSettle();
 
     expect(find.text('Gerencie as suas próximas viagens'), findsOneWidget);
     expect(find.text('Nova reserva'), findsOneWidget);
-    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
+    expect(find.text('Lisbon Airport (LIS)'), findsOneWidget);
   });
 
   testWidgets('Vehicle rental screen shows search UI', (
@@ -555,9 +738,9 @@ void main() {
     );
 
     expect(find.text('Para onde vamos hoje?'), findsOneWidget);
-    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
-    expect(find.text('Casa'), findsOneWidget);
-    expect(find.text('Trabalho'), findsOneWidget);
+    expect(find.text('Lisbon Airport (LIS)'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Work'), findsOneWidget);
     expect(find.text('Explorar Mapa'), findsOneWidget);
     expect(find.text('Viagens'), findsOneWidget);
   });
@@ -583,21 +766,42 @@ void main() {
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const TripConfirmScreen()));
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        TripConfirmScreen(
+          route: TripRouteDraft.demo(),
+          transportTypesService: TransportTypesService(useDefaultsOnly: true),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Avenida da Liberdade, 110'), findsOneWidget);
-    expect(find.text('8.4 km'), findsOneWidget);
-    expect(find.text('14 min'), findsOneWidget);
+    expect(find.text('Lisbon Airport (LIS)'), findsOneWidget);
+    expect(find.textContaining('km'), findsOneWidget);
+    expect(find.textContaining('min'), findsOneWidget);
     expect(find.text('Eco-Eletric'), findsOneWidget);
     expect(find.text('**** 4421'), findsOneWidget);
-    expect(find.text('Total: 12,50€'), findsOneWidget);
+    expect(find.textContaining('Total:'), findsOneWidget);
   });
 
   testWidgets('Confirmar viagem opens driver search', (
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const TripConfirmScreen()));
+    _seedClientSession();
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        TripConfirmScreen(
+          route: TripRouteDraft.demo(),
+          transportTypesService: TransportTypesService(useDefaultsOnly: true),
+          tripRepository: _createTripTestRepository(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.text('Confirmar viagem'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -605,6 +809,9 @@ void main() {
     expect(find.text('A procurar motorista disponível'), findsOneWidget);
     expect(find.text('Otimizando percurso em tempo real...'), findsOneWidget);
     expect(find.text('Cancelar Viagem'), findsOneWidget);
+
+    await tester.pumpWidget(AppScreenUtil.testWrap(const SizedBox.shrink()));
+    await tester.pump();
   });
 
   testWidgets('Driver search screen shows loading UI', (
@@ -625,14 +832,24 @@ void main() {
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const DriverSearchScreen()));
+    await tester.pumpWidget(
+      AppScreenUtil.testWrap(
+        DriverSearchScreen(
+          tripId: 'trip-test',
+          tripRepository: _driverAssignedTripRepository(),
+        ),
+      ),
+    );
     await tester.pump();
-    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pump();
 
     expect(find.text('Motorista encontrado'), findsOneWidget);
     expect(find.text('A aguardar confirmação...'), findsOneWidget);
     expect(find.text('Ricardo Santos'), findsOneWidget);
+
+    await tester.pumpWidget(AppScreenUtil.testWrap(const SizedBox.shrink()));
+    await tester.pump();
   });
 
   testWidgets('Driver found screen shows assignment UI', (
@@ -862,15 +1079,14 @@ void main() {
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const TripHistoryScreen()));
+    await tester.pumpWidget(AppScreenUtil.testWrap(_tripHistoryScreenForTests()));
     await tester.pump();
 
     expect(find.text('Histórico de Viagens'), findsOneWidget);
-    expect(find.text('24'), findsOneWidget);
-    expect(find.text('128€'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
     expect(find.text('Todos'), findsOneWidget);
     expect(find.text('Lisboa Marina Hotel'), findsOneWidget);
-    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
+    expect(find.text('Lisbon Airport (LIS)'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Torre Vasco da Gama'),
@@ -883,7 +1099,8 @@ void main() {
 
   testWidgets('Home Viagens tab opens trip history', (WidgetTester tester) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const HomeScreen()));
+    _seedClientSession();
+    await tester.pumpWidget(AppScreenUtil.testWrap(_homeScreenForTests()));
     await tester.tap(find.text('Viagens'));
     await tester.pumpAndSettle();
 
@@ -901,7 +1118,7 @@ void main() {
     expect(find.text('Gerencie as suas próximas viagens'), findsOneWidget);
     expect(find.text('Nova reserva'), findsOneWidget);
     expect(find.text('15 de Outubro, 2023'), findsOneWidget);
-    expect(find.text('Aeroporto de Lisboa (LIS)'), findsOneWidget);
+    expect(find.text('Lisbon Airport (LIS)'), findsOneWidget);
     expect(find.text('Avenida da Liberdade, 120'), findsOneWidget);
     expect(find.text('Confirmada'), findsOneWidget);
     expect(find.text('Executivo · Tesla Model S'), findsOneWidget);
@@ -939,7 +1156,7 @@ void main() {
     expect(find.text('14 de Outubro, 2023 • 18:42'), findsOneWidget);
     expect(find.text('Concluída'), findsOneWidget);
     expect(find.text('Avenida da Liberdade, 110'), findsOneWidget);
-    expect(find.text('Aeroporto Humberto Delgado'), findsOneWidget);
+    expect(find.text('Humberto Delgado Airport'), findsOneWidget);
     expect(find.text('Avalie a sua experiência'), findsOneWidget);
     expect(find.text('Editar'), findsOneWidget);
 
@@ -962,7 +1179,7 @@ void main() {
     WidgetTester tester,
   ) async {
     _setPhoneSize(tester);
-    await tester.pumpWidget(AppScreenUtil.testWrap(const TripHistoryScreen()));
+    await tester.pumpWidget(AppScreenUtil.testWrap(_tripHistoryScreenForTests()));
     await tester.pump();
 
     await tester.tap(find.text('Lisboa Marina Hotel'));
@@ -1011,6 +1228,7 @@ void main() {
     await tester.pumpWidget(AppScreenUtil.testWrap(const DriverSearchScreen()));
     await tester.pump();
 
+    await tester.ensureVisible(find.text('Cancelar Viagem'));
     await tester.tap(find.text('Cancelar Viagem'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

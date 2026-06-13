@@ -24,7 +24,7 @@ abstract final class TripConfirmData {
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDbjzR9aNIio-uIssWv_E9VN8EQYs7OOI9GD9Piov3kT2R_F4M_VKTyapah4Y4pRmatbLJ4e8Z3BQa7LmUf07hYwIr2RCqWEOWRjzz3YI75UWqVZECCuROmDujHGBETkhwG_m3f3vHdWSKhFs69Py3XPAf22Ji5jBYIojZwL8PHa-K7yEGm2coHLc5a91yiTl47VvZnCQthP2d9ZUAQA9JkoMlP5P3M9Psrsj4mGc5Ptsff_ao13HUpNQ9URjiUm_bZrkvyIj5FZTk';
 
   static const pickupLabel = 'Avenida da Liberdade, 110';
-  static const destinationLabel = 'Aeroporto de Lisboa (LIS)';
+  static const destinationLabel = 'Lisbon Airport (LIS)';
   static const distance = '8.4 km';
   static const duration = '14 min';
   static const cardMask = '**** 4421';

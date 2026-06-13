@@ -1,11 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
+import 'package:local_ent_280/features/reservations/data/reservation_repository.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
@@ -20,6 +25,9 @@ class ReservationReviewScreen extends StatefulWidget {
 
 class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
   bool _creditCardSelected = true;
+  bool _isSubmitting = false;
+  final _reservationRepository = ReservationRepository();
+  final _draft = RentalBookingDraft.instance;
 
   static final _cardDecoration = BoxDecoration(
     color: AppColors.surfaceContainerLowest,
@@ -32,6 +40,45 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
       ),
     ],
   );
+
+  Future<void> _confirmBooking() async {
+    if (_isSubmitting) return;
+    final profile = UserSession.instance.profile;
+    final vehicleId = _draft.vehicleId;
+    if (profile == null || vehicleId == null || vehicleId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tripConfirmSessionInvalid)),
+      );
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await _reservationRepository.createVehicleRentalReservation(
+        clientId: profile.uid,
+        vehicleId: vehicleId,
+        vehicleLabel: _draft.vehicleLabel ?? 'Vehicle',
+        scheduledAt:
+            _draft.pickupDate ?? DateTime.now().add(const Duration(days: 1)),
+        pickupAddress: _draft.pickupLocation ?? 'Lisbon',
+        returnAddress: _draft.returnLocation ?? 'Lisbon',
+        totalEur: _draft.estimatedTotalEur,
+        fullInsurance: _draft.fullInsurance,
+      );
+      _draft.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.reservationConfirmAndPay)),
+      );
+      AppNavigation.toReservations(context);
+    } on FirebaseException catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tryAgain)),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,11 +106,14 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
                   SizedBox(height: 24.h),
                   _CostAndPaymentCard(
                     decoration: _cardDecoration,
+                    draft: _draft,
                     creditCardSelected: _creditCardSelected,
+                    isSubmitting: _isSubmitting,
                     onCreditCardTap: () =>
                         setState(() => _creditCardSelected = true),
                     onApplePayTap: () =>
                         setState(() => _creditCardSelected = false),
+                    onConfirm: _confirmBooking,
                   ),
                 ],
               ),
@@ -268,7 +318,7 @@ class _ItineraryCard extends StatelessWidget {
             icon: Icons.location_on,
             iconColor: AppColors.secondary,
             label: context.l10n.reservationPickupLabel,
-            place: 'Aeroporto de Lisboa (LIS)',
+            place: 'Lisbon Airport (LIS)',
             dateTime: '15 Out, 2023 às 10:00',
             showConnector: true,
           ),
@@ -276,7 +326,7 @@ class _ItineraryCard extends StatelessWidget {
             icon: Icons.flag,
             iconColor: AppColors.primary,
             label: context.l10n.reservationReturnLabel,
-            place: 'Aeroporto de Lisboa (LIS)',
+            place: 'Lisbon Airport (LIS)',
             dateTime: '20 Out, 2023 às 18:00',
             showConnector: false,
           ),
@@ -431,25 +481,36 @@ class _SecurityBanner extends StatelessWidget {
 class _CostAndPaymentCard extends StatelessWidget {
   const _CostAndPaymentCard({
     required this.decoration,
+    required this.draft,
     required this.creditCardSelected,
     required this.onCreditCardTap,
     required this.onApplePayTap,
+    required this.onConfirm,
+    this.isSubmitting = false,
   });
 
   final BoxDecoration decoration;
+  final RentalBookingDraft draft;
   final bool creditCardSelected;
   final VoidCallback onCreditCardTap;
   final VoidCallback onApplePayTap;
-
-  static const _lineItems = [
-    ('Aluguer (5 dias)', '345,00 €'),
-    ('Taxas de Aeroporto', '24,50 €'),
-    ('Cadeira de Criança (Extra)', '15,00 €'),
-    ('IVA (23%)', '88,44 €'),
-  ];
+  final VoidCallback onConfirm;
+  final bool isSubmitting;
 
   @override
   Widget build(BuildContext context) {
+    final formatter = AppCurrencyFormatter.instance;
+    final rentalTotal = draft.pricePerDayEur * draft.rentalDays;
+    final lineItems = <(String, String)>[
+      (
+        'Rental (${draft.rentalDays} days)',
+        formatter.formatEurMajor(rentalTotal),
+      ),
+      if (draft.fullInsurance)
+        ('Full insurance', formatter.formatEurMajor(15)),
+    ];
+    final totalLabel = formatter.formatEurMajor(draft.estimatedTotalEur);
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: decoration.copyWith(
@@ -477,7 +538,7 @@ class _CostAndPaymentCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24.h),
-          ..._lineItems.map(
+          ...lineItems.map(
             (item) => Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: Row(
@@ -527,7 +588,7 @@ class _CostAndPaymentCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
                     child: Text(
-                    '472,94 €',
+                    totalLabel,
                     style: GoogleFonts.manrope(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.w700,
@@ -669,7 +730,7 @@ class _CostAndPaymentCard extends StatelessWidget {
             elevation: 4,
             shadowColor: AppColors.secondary.withValues(alpha: 0.2),
             child: InkWell(
-              onTap: () {},
+              onTap: isSubmitting ? null : onConfirm,
               borderRadius: BorderRadius.circular(12.r),
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 18.h),

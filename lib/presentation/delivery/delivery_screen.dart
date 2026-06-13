@@ -7,6 +7,8 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class DeliveryScreen extends StatelessWidget {
@@ -380,7 +382,7 @@ class _PartnersSection extends StatelessWidget {
       name: 'Market Gourmet',
       rating: '4.9',
       time: '15-25 min',
-      fee: '€2.50 entrega',
+      feeMinor: 250,
       premium: true,
       feeIsFree: false,
     ),
@@ -389,7 +391,7 @@ class _PartnersSection extends StatelessWidget {
       name: 'Pharma Care',
       rating: '4.8',
       time: '20-35 min',
-      fee: 'Grátis',
+      feeMinor: 0,
       premium: false,
       feeIsFree: true,
     ),
@@ -398,7 +400,7 @@ class _PartnersSection extends StatelessWidget {
       name: 'Adega Real',
       rating: '5.0',
       time: '10-20 min',
-      fee: '€1.90 entrega',
+      feeMinor: 190,
       premium: false,
       feeIsFree: false,
     ),
@@ -406,6 +408,8 @@ class _PartnersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formatter = AppCurrencyFormatter.instance;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -465,7 +469,9 @@ class _PartnersSection extends StatelessWidget {
                       name: p.name,
                       rating: p.rating,
                       time: p.time,
-                      fee: p.feeIsFree ? context.l10n.free : p.fee,
+                      fee: p.feeIsFree
+                          ? context.l10n.free
+                          : '${formatter.formatEurMinor(p.feeMinor)} entrega',
                       showPremiumBadge: p.premium,
                       feeIsFree: p.feeIsFree,
                     );
@@ -651,35 +657,53 @@ class _HighlightsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.deliveryHighlightsTitle, style: _sectionTitleStyle),
-        SizedBox(height: 16.h),
-        _HighlightCard(
-          imageUrl: AppAssets.deliveryAsparagusImage,
-          tag: context.l10n.promotion,
-          tagColor: AppColors.secondary,
-          tagBackground: AppColors.secondaryContainer.withValues(alpha: 0.1),
-          title: 'Aspargos Biológicos',
-          subtitle: 'Maço de 250g - Local',
-          price: '€3.49',
-          oldPrice: '€4.99',
-        ),
-        SizedBox(height: 16.h),
-        _HighlightCard(
-          imageUrl: AppAssets.deliveryChocolateImage,
-          tag: context.l10n.newBadge,
-          tagColor: AppColors.onPrimaryContainer,
-          tagBackground: AppColors.primaryFixed.withValues(alpha: 0.3),
-          title: 'Chocolate Negro 85%',
-          subtitle: 'Origem Única - 100g',
-          price: '€5.20',
-        ),
-      ],
+    return StreamBuilder<List<CatalogPackage>>(
+      stream: CatalogRepository().watchActivePackages(),
+      builder: (context, snapshot) {
+        final packages = snapshot.data ?? const [];
+        if (packages.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final formatter = AppCurrencyFormatter.instance;
+        final first = packages.first;
+        final second = packages.length > 1 ? packages[1] : null;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.l10n.deliveryHighlightsTitle, style: _sectionTitleStyle),
+            SizedBox(height: 16.h),
+            _HighlightCard(
+              imageUrl: AppAssets.deliveryAsparagusImage,
+              tag: context.l10n.promotion,
+              tagColor: AppColors.secondary,
+              tagBackground: AppColors.secondaryContainer.withValues(alpha: 0.1),
+              title: first.title,
+              subtitle: first.description,
+              price: formatter.formatEurMajor(first.priceEur),
+              oldPrice: second == null
+                  ? null
+                  : formatter.formatEurMajor(second.priceEur),
+            ),
+            if (second != null) ...[
+              SizedBox(height: 16.h),
+              _HighlightCard(
+                imageUrl: AppAssets.deliveryChocolateImage,
+                tag: context.l10n.newBadge,
+                tagColor: AppColors.onPrimaryContainer,
+                tagBackground: AppColors.primaryFixed.withValues(alpha: 0.3),
+                title: second.title,
+                subtitle: second.description,
+                price: formatter.formatEurMajor(second.priceEur),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
+
 
 class _HighlightCard extends StatelessWidget {
   const _HighlightCard({

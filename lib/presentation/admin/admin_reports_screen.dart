@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:local_ent_280/core/data/admin_reports_data.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/features/admin/data/admin_repository.dart';
+import 'package:local_ent_280/features/admin/data/models/admin_stats.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/admin/admin_drawer.dart';
@@ -9,11 +13,14 @@ import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
+import 'package:local_ent_280/presentation/admin/widgets/admin_report_statement_tabs.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 /// Detailed Reports — `roles/details.md`.
-class AdminReportsScreen extends StatelessWidget {
-  const AdminReportsScreen({super.key});
+class AdminReportsScreen extends StatefulWidget {
+  const AdminReportsScreen({super.key, this.adminRepository});
+
+  final AdminRepository? adminRepository;
 
   static List<BoxShadow> get _cardShadow => [
         BoxShadow(
@@ -22,6 +29,36 @@ class AdminReportsScreen extends StatelessWidget {
           offset: Offset(0, 2.h),
         ),
       ];
+
+  @override
+  State<AdminReportsScreen> createState() => _AdminReportsScreenState();
+}
+
+class _AdminReportsScreenState extends State<AdminReportsScreen>
+    with SingleTickerProviderStateMixin {
+  late final AdminRepository _repository;
+  late final TabController _tabs;
+  StreamSubscription? _reportsSubscription;
+
+  AdminReportsStats _stats = AdminReportsStats.empty;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 3, vsync: this);
+    _repository = widget.adminRepository ?? AdminRepository();
+    _reportsSubscription = _repository.watchReportsStats().listen((stats) {
+      if (!mounted) return;
+      setState(() => _stats = stats);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    _reportsSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,20 +72,37 @@ class AdminReportsScreen extends StatelessWidget {
         child: Column(
           children: [
             _ReportsAppBar(title: l10n.adminReportsTitle),
+            TabBar(
+              controller: _tabs,
+              labelColor: AppColors.primary,
+              isScrollable: true,
+              tabs: [
+                Tab(text: l10n.adminReportsTabOverview),
+                Tab(text: l10n.adminReportsTabClient),
+                Tab(text: l10n.adminReportsTabDriver),
+              ],
+            ),
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.marginMobile,
-                  AppLayout.md,
-                  AppLayout.marginMobile,
-                  AppLayout.xxl,
-                ),
+              child: TabBarView(
+                controller: _tabs,
                 children: [
-                  _FiltersCard(l10n: l10n),
-                  SizedBox(height: AppLayout.lg),
-                  _MetricsGrid(l10n: l10n),
-                  SizedBox(height: AppLayout.lg),
-                  _PerformanceSection(l10n: l10n),
+                  ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppLayout.marginMobile,
+                      AppLayout.md,
+                      AppLayout.marginMobile,
+                      AppLayout.xxl,
+                    ),
+                    children: [
+                      _FiltersCard(l10n: l10n),
+                      SizedBox(height: AppLayout.lg),
+                      _MetricsGrid(l10n: l10n, stats: _stats),
+                      SizedBox(height: AppLayout.lg),
+                      _PerformanceSection(l10n: l10n, stats: _stats),
+                    ],
+                  ),
+                  AdminClientStatementTab(),
+                  AdminDriverStatementTab(),
                 ],
               ),
             ),
@@ -111,6 +165,17 @@ class _FiltersCard extends StatelessWidget {
 
   final AppLocalizations l10n;
 
+  String _currentMonthRange() {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    final now = DateTime.now();
+    final month = months[now.month - 1];
+    final lastDay = DateTime(now.year, now.month + 1, 0).day;
+    return '1 $month – $lastDay $month ${now.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -126,7 +191,7 @@ class _FiltersCard extends StatelessWidget {
           _FilterField(
             label: l10n.adminReportsDateRangeLabel,
             icon: Icons.calendar_today_outlined,
-            value: AdminReportsData.dateRangeValue,
+            value: _currentMonthRange(),
           ),
           SizedBox(height: AppLayout.md),
           _FilterField(
@@ -224,9 +289,10 @@ class _FilterField extends StatelessWidget {
 }
 
 class _MetricsGrid extends StatelessWidget {
-  const _MetricsGrid({required this.l10n});
+  const _MetricsGrid({required this.l10n, required this.stats});
 
   final AppLocalizations l10n;
+  final AdminReportsStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -237,8 +303,8 @@ class _MetricsGrid extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: l10n.adminReportsTotalTrips,
-                value: AdminReportsData.totalTrips,
-                badge: AdminReportsData.tripsTrend,
+                value: stats.totalTripsFormatted,
+                badge: stats.tripsTrendLabel,
                 accentBorder: true,
               ),
             ),
@@ -246,7 +312,7 @@ class _MetricsGrid extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: l10n.adminReportsTotalDistance,
-                value: AdminReportsData.totalDistance,
+                value: stats.totalDistanceFormatted,
                 unit: 'km',
               ),
             ),
@@ -258,7 +324,7 @@ class _MetricsGrid extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: l10n.adminReportsTimeOnRoute,
-                value: AdminReportsData.timeOnRoute,
+                value: stats.timeOnRouteFormatted,
                 unit: 'h',
               ),
             ),
@@ -266,14 +332,14 @@ class _MetricsGrid extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: l10n.adminReportsTotalCost,
-                value: AdminReportsData.totalCost,
-                unit: '€',
+                value: stats.totalCostFormatted,
+                unit: AppCurrencyFormatter.instance.displaySymbol,
               ),
             ),
           ],
         ),
         SizedBox(height: AppLayout.md),
-        _PendingDebtCard(l10n: l10n),
+        _PendingDebtCard(l10n: l10n, stats: stats),
       ],
     );
   }
@@ -374,9 +440,10 @@ class _MetricCard extends StatelessWidget {
 }
 
 class _PendingDebtCard extends StatelessWidget {
-  const _PendingDebtCard({required this.l10n});
+  const _PendingDebtCard({required this.l10n, required this.stats});
 
   final AppLocalizations l10n;
+  final AdminReportsStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -408,7 +475,7 @@ class _PendingDebtCard extends StatelessWidget {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: AdminReportsData.pendingDebt,
+                        text: stats.pendingDebtFormatted,
                         style: AppTypography.manrope(
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w600,
@@ -416,7 +483,7 @@ class _PendingDebtCard extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: ' €',
+                        text: ' ${AppCurrencyFormatter.instance.displaySymbol}',
                         style: AppTypography.inter(
                           fontSize: 12.sp,
                           color: AppColors.error,
@@ -445,9 +512,10 @@ class _PendingDebtCard extends StatelessWidget {
 }
 
 class _PerformanceSection extends StatelessWidget {
-  const _PerformanceSection({required this.l10n});
+  const _PerformanceSection({required this.l10n, required this.stats});
 
   final AppLocalizations l10n;
+  final AdminReportsStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +566,7 @@ class _PerformanceSection extends StatelessWidget {
               children: [
                 _ChartPlaceholder(hint: l10n.adminReportsChartHint),
                 SizedBox(height: AppLayout.lg),
-                _ActivitiesAndEfficiency(l10n: l10n),
+                _ActivitiesAndEfficiency(l10n: l10n, stats: stats),
               ],
             ),
           ),
@@ -519,51 +587,42 @@ class _ChartPlaceholder extends StatelessWidget {
       borderRadius: BorderRadius.circular(8.r),
       child: AspectRatio(
         aspectRatio: 21 / 9,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              AdminReportsData.chartImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  ColoredBox(color: AppColors.surfaceContainerLow),
-            ),
-            Container(color: AppColors.surfaceContainerLow.withValues(alpha: 0.35)),
-            Padding(
-              padding: EdgeInsets.all(AppLayout.md),
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Symbols.query_stats,
-                        size: 32.sp,
-                        color: AppColors.primaryContainer.withValues(alpha: 0.4),
-                      ),
-                      SizedBox(height: AppLayout.sm),
-                      SizedBox(
-                        width: 220.w,
-                        child: Text(
-                          hint,
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.inter(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w400,
-                            height: 20 / 14,
-                            color: AppColors.onSurfaceVariant,
-                          ),
+        child: ColoredBox(
+          color: AppColors.surfaceContainerLow,
+          child: Padding(
+            padding: EdgeInsets.all(AppLayout.md),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Symbols.query_stats,
+                      size: 32.sp,
+                      color: AppColors.primaryContainer.withValues(alpha: 0.4),
+                    ),
+                    SizedBox(height: AppLayout.sm),
+                    SizedBox(
+                      width: 220.w,
+                      child: Text(
+                        hint,
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.inter(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w400,
+                          height: 20 / 14,
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -571,9 +630,10 @@ class _ChartPlaceholder extends StatelessWidget {
 }
 
 class _ActivitiesAndEfficiency extends StatelessWidget {
-  const _ActivitiesAndEfficiency({required this.l10n});
+  const _ActivitiesAndEfficiency({required this.l10n, required this.stats});
 
   final AppLocalizations l10n;
+  final AdminReportsStats stats;
 
   @override
   Widget build(BuildContext context) {
@@ -590,12 +650,21 @@ class _ActivitiesAndEfficiency extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppLayout.md),
-        for (final activity in AdminReportsData.activities) ...[
-          _ActivityTile(activity: activity),
-          SizedBox(height: AppLayout.sm),
-        ],
+        if (stats.recentActivities.isEmpty)
+          Text(
+            l10n.adminNoReportActivities,
+            style: AppTypography.inter(
+              fontSize: 13.sp,
+              color: AppColors.onSurfaceVariant,
+            ),
+          )
+        else
+          for (final activity in stats.recentActivities) ...[
+            _ActivityTile(activity: activity),
+            SizedBox(height: AppLayout.sm),
+          ],
         SizedBox(height: AppLayout.md),
-        _FleetEfficiencyCard(l10n: l10n),
+        _FleetEfficiencyCard(l10n: l10n, stats: stats),
       ],
     );
   }
@@ -604,12 +673,7 @@ class _ActivitiesAndEfficiency extends StatelessWidget {
 class _ActivityTile extends StatelessWidget {
   const _ActivityTile({required this.activity});
 
-  final AdminReportActivity activity;
-
-  IconData get _icon => switch (activity.iconName) {
-        'shipping' => Symbols.local_shipping,
-        _ => Symbols.commute,
-      };
+  final AdminReportActivityRow activity;
 
   @override
   Widget build(BuildContext context) {
@@ -631,7 +695,7 @@ class _ActivityTile extends StatelessWidget {
               color: AppColors.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8.r),
             ),
-            child: Icon(_icon, color: AppColors.secondary, size: 22.sp),
+            child: Icon(Symbols.commute, color: AppColors.secondary, size: 22.sp),
           ),
           SizedBox(width: AppLayout.md),
           Expanded(
@@ -640,6 +704,8 @@ class _ActivityTile extends StatelessWidget {
               children: [
                 Text(
                   activity.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -671,13 +737,14 @@ class _ActivityTile extends StatelessWidget {
 }
 
 class _FleetEfficiencyCard extends StatelessWidget {
-  const _FleetEfficiencyCard({required this.l10n});
+  const _FleetEfficiencyCard({required this.l10n, required this.stats});
 
   final AppLocalizations l10n;
+  final AdminReportsStats stats;
 
   @override
   Widget build(BuildContext context) {
-    final percent = AdminReportsData.fleetEfficiencyPercent;
+    final percent = stats.fleetEfficiencyPercent;
 
     return Container(
       padding: EdgeInsets.all(AppLayout.lg),

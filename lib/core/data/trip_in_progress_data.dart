@@ -14,5 +14,5 @@ abstract final class TripInProgressData {
   static const destinationAddress = 'Avenida da Liberdade, Lisboa';
 
   static const costLabel = 'Custo Estimado';
-  static const estimatedCost = '12,50€';
+  static const estimatedCostEur = 12.50;
 }

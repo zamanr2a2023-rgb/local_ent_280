@@ -10,6 +10,8 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Local Transport — Início (app_details/details.md).
@@ -667,44 +669,57 @@ class _ExperiencesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.premiumHomeExperiencesTitle,
-          style: GoogleFonts.manrope(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.w600,
-            height: 28 / 20,
-            color: AppColors.primary,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        SizedBox(height: 422.h,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            children: [
-              _ExperienceCard(
-                imageUrl: AppAssets.premiumHomeJetskiExperienceImage,
-                badge: context.l10n.newBadge,
-                title: context.l10n.premiumHomeJetskiRentalTitle,
-                description: context.l10n.premiumHomeJetskiRentalDesc,
-                footer: context.l10n.premiumHomeFromPrice,
-                onTap: onJetskiCard,
+    return StreamBuilder<int?>(
+      stream: CatalogRepository().watchCheapestPackageMinor(),
+      builder: (context, snapshot) {
+        final formatter = AppCurrencyFormatter.instance;
+        final fromPrice = snapshot.data == null
+            ? null
+            : context.l10n.premiumHomeFromPrice(
+                formatter.formatEurMinor(snapshot.data!),
+              );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.premiumHomeExperiencesTitle,
+              style: GoogleFonts.manrope(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w600,
+                height: 28 / 20,
+                color: AppColors.primary,
               ),
-              SizedBox(width: 16.w),
-              _ExperienceCard(
-                imageUrl: AppAssets.premiumHomeIslandExperienceImage,
-                title: context.l10n.premiumHomeIslandGuideTitle,
-                description: context.l10n.premiumHomeIslandGuideDesc,
-                footer: context.l10n.discoverExploreMap,
-                onTap: onIslandCard,
+            ),
+            SizedBox(height: 16.h),
+            SizedBox(
+              height: 422.h,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                children: [
+                  _ExperienceCard(
+                    imageUrl: AppAssets.premiumHomeJetskiExperienceImage,
+                    badge: context.l10n.newBadge,
+                    title: context.l10n.premiumHomeJetskiRentalTitle,
+                    description: context.l10n.premiumHomeJetskiRentalDesc,
+                    footer: fromPrice ?? '—',
+                    onTap: onJetskiCard,
+                  ),
+                  SizedBox(width: 16.w),
+                  _ExperienceCard(
+                    imageUrl: AppAssets.premiumHomeIslandExperienceImage,
+                    title: context.l10n.premiumHomeIslandGuideTitle,
+                    description: context.l10n.premiumHomeIslandGuideDesc,
+                    footer: context.l10n.discoverExploreMap,
+                    onTap: onIslandCard,
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

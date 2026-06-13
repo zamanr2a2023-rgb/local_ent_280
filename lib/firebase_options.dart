@@ -32,6 +32,8 @@ class DefaultFirebaseOptions {
     appId: '1:451122835320:android:ebbb15573a453adc2ba28d',
     messagingSenderId: '451122835320',
     projectId: 'local-transport-482015',
+    databaseURL:
+        'https://local-transport-482015-default-rtdb.europe-west1.firebasedatabase.app',
     storageBucket: 'local-transport-482015.firebasestorage.app',
   );
 }

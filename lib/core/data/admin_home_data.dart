@@ -22,7 +22,7 @@ abstract final class AdminHomeData {
   static const criticalOpsTitle = 'Operações Críticas';
   static const pendingDebtorsTitle = 'Devedores Pendentes';
   static const pendingDebtorsSubtitle = '3 faturas em atraso';
-  static const pendingDebtorsAmount = '€1.420';
+  static const pendingDebtorsAmountEur = 1420.0;
   static const monthlyReportsTitle = 'Relatórios Mensais';
   static const monthlyReportsSubtitle = 'Performance de Outubro';
 
@@ -31,10 +31,10 @@ abstract final class AdminHomeData {
 
   static const ratesTitle = 'Tarifas & Mercado';
   static const baseRateLabel = 'Tarifa Base';
-  static const baseRateValue = '€2.45/km';
+  static const baseRateEurPerKm = 2.45;
   static const baseRateDynamic = 'Dinâmica: Ativa (1.2x)';
   static const fuelCostLabel = 'Custo Combustível';
-  static const fuelCostValue = '€1.74/L';
+  static const fuelCostEurPerLiter = 1.74;
   static const fuelCostHint = 'Média Nacional';
 
   static const recentFleetTitle = 'Frota Recente';

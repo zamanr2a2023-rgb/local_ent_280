@@ -23,38 +23,38 @@ abstract final class PremiumSearchItems {
   static const List<PremiumSearchItem> all = [
     PremiumSearchItem(
       title: 'Tesla Model 3 Performance',
-      subtitle: 'Aluguer Premium • Aeroporto de Lisboa',
-      keywords: ['tesla', 'model', 'performance', 'aluguer', 'carro', 'elétrico'],
+      subtitle: 'Premium Rental • Lisbon Airport',
+      keywords: ['tesla', 'model', 'performance', 'rental', 'car', 'electric'],
     ),
     PremiumSearchItem(
-      title: 'Aeroporto de Lisboa (LIS)',
-      subtitle: 'Levantamento e devolução de viatura',
-      keywords: ['lisboa', 'aeroporto', 'lis', 'levantamento', 'devolução'],
+      title: 'Lisbon Airport (LIS)',
+      subtitle: 'Vehicle pickup and drop-off',
+      keywords: ['lisbon', 'airport', 'lis', 'pickup', 'drop-off'],
     ),
     PremiumSearchItem(
-      title: 'Aluguer de Viatura',
-      subtitle: 'Revisão de reserva • 5 dias',
-      keywords: ['aluguer', 'viatura', 'reserva', 'rental', 'carro'],
+      title: 'Car Rental',
+      subtitle: 'Reservation review • 5 days',
+      keywords: ['rental', 'vehicle', 'reservation', 'car'],
     ),
     PremiumSearchItem(
-      title: 'Porto — Estação de Campanhã',
-      subtitle: 'Destino e serviços de mobilidade',
-      keywords: ['porto', 'campanhã', 'comboio', 'destino'],
+      title: 'Porto — Campanhã Station',
+      subtitle: 'Destination and mobility services',
+      keywords: ['porto', 'campanha', 'train', 'destination'],
     ),
     PremiumSearchItem(
-      title: 'Entregas Rápidas',
-      subtitle: 'Mercearia e Farmácia',
-      keywords: ['entrega', 'mercearia', 'farmácia', 'compras'],
+      title: 'Fast Delivery',
+      subtitle: 'Grocery & Pharmacy',
+      keywords: ['delivery', 'grocery', 'pharmacy', 'shopping'],
     ),
     PremiumSearchItem(
-      title: 'Mota de Água',
-      subtitle: 'Aluguer premium na marina',
-      keywords: ['jetski', 'mota', 'água', 'marina'],
+      title: 'Jet Ski',
+      subtitle: 'Premium marina rental',
+      keywords: ['jetski', 'jet', 'ski', 'marina'],
     ),
     PremiumSearchItem(
-      title: 'Guia de Ilhas',
-      subtitle: 'Experiências e roteiros exclusivos',
-      keywords: ['ilhas', 'guia', 'explorar', 'roteiro'],
+      title: 'Island Guide',
+      subtitle: 'Exclusive experiences and itineraries',
+      keywords: ['islands', 'guide', 'explore', 'itinerary'],
     ),
   ];
 

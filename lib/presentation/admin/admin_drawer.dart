@@ -8,11 +8,33 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum AdminDrawerSection { home, reports, profile, settings }
+enum AdminDrawerSection {
+  home,
+  hub,
+  users,
+  managerPermissions,
+  support,
+  incidents,
+  monitoring,
+  reservations,
+  supportSettings,
+  events,
+  fleet,
+  transportTypes,
+  tripPackages,
+  tariffs,
+  balances,
+  currency,
+  reports,
+  audit,
+  profile,
+  settings,
+}
 
-/// Admin navigation drawer — `roles/details.md`.
+/// Admin navigation drawer with all module links.
 class AdminDrawer extends StatelessWidget {
   const AdminDrawer({
     super.key,
@@ -23,14 +45,10 @@ class AdminDrawer extends StatelessWidget {
   final AdminDrawerSection selected;
   final AuthRepository? _authRepository;
 
-  Future<void> _closeAndRun(BuildContext context, VoidCallback action) async {
-    Navigator.of(context).pop();
-    action();
-  }
-
   Future<void> _confirmSignOut(BuildContext context) async {
     final l10n = context.l10n;
-    Navigator.of(context).pop();
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
 
     final shouldSignOut = await showDialog<bool>(
       context: context,
@@ -55,15 +73,20 @@ class AdminDrawer extends StatelessWidget {
       },
     );
 
-    if (shouldSignOut != true || !context.mounted) return;
+    if (shouldSignOut != true) return;
+
+    if (context.mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
 
     try {
       await (_authRepository ?? AuthRepository()).signOut();
-      if (!context.mounted) return;
-      AppNavigation.signOutToLogin(context);
+      rootNavigator.pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
     } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text(l10n.signOutFailed)),
       );
     }
@@ -102,47 +125,26 @@ class AdminDrawer extends StatelessWidget {
               child: ListView(
                 padding: EdgeInsets.symmetric(horizontal: AppLayout.md),
                 children: [
-                  _DrawerNavItem(
-                    icon: Symbols.dashboard,
-                    label: l10n.navHome,
-                    isSelected: selected == AdminDrawerSection.home,
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      if (selected != AdminDrawerSection.home) {
-                        AppNavigation.goAdminDashboard(context);
-                      }
-                    },
-                  ),
-                  _DrawerNavItem(
-                    icon: Symbols.analytics,
-                    label: l10n.adminReportsTitle,
-                    isSelected: selected == AdminDrawerSection.reports,
-                    filledIcon: true,
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      if (selected != AdminDrawerSection.reports) {
-                        AppNavigation.goAdminReports(context);
-                      }
-                    },
-                  ),
-                  _DrawerNavItem(
-                    icon: Symbols.person,
-                    label: l10n.navProfile,
-                    isSelected: selected == AdminDrawerSection.profile,
-                    onTap: () => _closeAndRun(
-                      context,
-                      () => AppNavigation.toProfile(context),
-                    ),
-                  ),
-                  _DrawerNavItem(
-                    icon: Symbols.settings,
-                    label: l10n.settingsTitle,
-                    isSelected: selected == AdminDrawerSection.settings,
-                    onTap: () => _closeAndRun(
-                      context,
-                      () => AppNavigation.toSettings(context),
-                    ),
-                  ),
+                  _nav(context, Symbols.dashboard, l10n.navHome, AdminDrawerSection.home, AppNavigation.goAdminDashboard),
+                  _nav(context, Symbols.apps, l10n.adminHubTitle, AdminDrawerSection.hub, AppNavigation.toAdminHub),
+                  _nav(context, Symbols.group, l10n.adminUsersTitle, AdminDrawerSection.users, AppNavigation.toAdminUsers),
+                  _nav(context, Symbols.admin_panel_settings, l10n.adminManagerPermissionsTitle, AdminDrawerSection.managerPermissions, AppNavigation.toAdminManagerPermissions),
+                  _nav(context, Symbols.support_agent, l10n.adminSupportRequestsTitle, AdminDrawerSection.support, AppNavigation.toAdminSupportRequests),
+                  _nav(context, Symbols.warning, l10n.adminIncidentsTitle, AdminDrawerSection.incidents, AppNavigation.toAdminIncidents),
+                  _nav(context, Symbols.local_shipping, l10n.adminFleetTitle, AdminDrawerSection.fleet, AppNavigation.toAdminFleet),
+                  _nav(context, Symbols.account_balance_wallet, l10n.adminBalancesTitle, AdminDrawerSection.balances, AppNavigation.toAdminBalances),
+                  _nav(context, Symbols.calendar_month, l10n.adminReservationsTitle, AdminDrawerSection.reservations, AppNavigation.toAdminReservations),
+                  _nav(context, Symbols.campaign, l10n.adminEventsTitle, AdminDrawerSection.events, AppNavigation.toAdminEvents),
+                  _nav(context, Symbols.category, l10n.adminTransportTypesTitle, AdminDrawerSection.transportTypes, AppNavigation.toAdminTransportTypes),
+                  _nav(context, Symbols.luggage, l10n.adminTripPackagesTitle, AdminDrawerSection.tripPackages, AppNavigation.toAdminTripPackages),
+                  _nav(context, Symbols.payments, l10n.adminTariffsTitle, AdminDrawerSection.tariffs, AppNavigation.toAdminTariffs),
+                  _nav(context, Symbols.currency_exchange, l10n.adminCurrencyTitle, AdminDrawerSection.currency, AppNavigation.toAdminCurrencySettings),
+                  _nav(context, Symbols.call, l10n.adminSupportSettingsTitle, AdminDrawerSection.supportSettings, AppNavigation.toAdminSupportSettings),
+                  _nav(context, Symbols.tune, l10n.adminMonitoringTitle, AdminDrawerSection.monitoring, AppNavigation.toAdminMonitoringSettings),
+                  _nav(context, Symbols.analytics, l10n.adminReportsTitle, AdminDrawerSection.reports, AppNavigation.goAdminReports, filled: true),
+                  _nav(context, Symbols.receipt_long, l10n.adminAuditTitle, AdminDrawerSection.audit, AppNavigation.toAdminAudit),
+                  _nav(context, Symbols.person, l10n.navProfile, AdminDrawerSection.profile, AppNavigation.toProfile),
+                  _nav(context, Symbols.settings, l10n.settingsTitle, AdminDrawerSection.settings, AppNavigation.toSettings),
                 ],
               ),
             ),
@@ -159,6 +161,26 @@ class AdminDrawer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _nav(
+    BuildContext context,
+    IconData icon,
+    String label,
+    AdminDrawerSection section,
+    void Function(BuildContext context) onTap, {
+    bool filled = false,
+  }) {
+    return _DrawerNavItem(
+      icon: icon,
+      label: label,
+      isSelected: selected == section,
+      filledIcon: filled,
+      onTap: () {
+        Navigator.of(context).pop();
+        if (selected != section) onTap(context);
+      },
     );
   }
 }

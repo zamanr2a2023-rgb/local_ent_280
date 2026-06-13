@@ -5,63 +5,100 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/reservations/data/reservation_repository.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
-/// Reservas — `roles/details.md`.
-class ReservationsScreen extends StatelessWidget {
-  const ReservationsScreen({super.key});
+String _reservationStatusLabel(
+  AppLocalizations l10n,
+  ReservationStatus status,
+) {
+  return switch (status) {
+    ReservationStatus.confirmada => l10n.reservationsStatusConfirmed,
+    ReservationStatus.pendente => l10n.reservationsStatusPending,
+  };
+}
 
-  static String _reservationStatusLabel(
-    AppLocalizations l10n,
-    ReservationStatus status,
-  ) {
-    return switch (status) {
-      ReservationStatus.confirmada => l10n.reservationsStatusConfirmed,
-      ReservationStatus.pendente => l10n.reservationsStatusPending,
-    };
+/// Reservas — `roles/details.md`.
+class ReservationsScreen extends StatefulWidget {
+  const ReservationsScreen({super.key, this.reservationRepository});
+
+  final ReservationRepository? reservationRepository;
+
+  @override
+  State<ReservationsScreen> createState() => _ReservationsScreenState();
+}
+
+class _ReservationsScreenState extends State<ReservationsScreen> {
+  late final ReservationRepository _repository;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.reservationRepository ?? ReservationRepository();
   }
 
   @override
   Widget build(BuildContext context) {
+    final clientId = UserSession.instance.profile?.uid;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            _ReservationsAppBar(onMenu: () {}),
+            const _ReservationsAppBar(),
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.marginMobile,
-                  16.h,
-                  AppLayout.marginMobile,
-                  24.h,
-                ),
-                children: [
-                  const _Header(),
-                  SizedBox(height: 16.h),
-                  _NewReservationButton(
-                    onTap: () => AppNavigation.toTripDestination(context),
-                  ),
-                  SizedBox(height: 24.h),
-                  for (final reservation in ReservationsData.reservations) ...[
-                    _ReservationCard(
-                      reservation: reservation,
-                      onDetails: () => AppNavigation.toTripConfirm(context),
-                      onCancel: () {},
+              child: clientId == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : StreamBuilder(
+                      stream: _repository.watchClientReservations(clientId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        final records = snapshot.data ?? const [];
+                        final reservations =
+                            records.map((record) => record.toItem()).toList();
+
+                        return ListView(
+                          padding: EdgeInsets.fromLTRB(
+                            AppLayout.marginMobile,
+                            16.h,
+                            AppLayout.marginMobile,
+                            24.h,
+                          ),
+                          children: [
+                            const _Header(),
+                            SizedBox(height: 16.h),
+                            _NewReservationButton(
+                              onTap: () =>
+                                  AppNavigation.toTripDestination(context),
+                            ),
+                            SizedBox(height: 24.h),
+                            if (reservations.isEmpty)
+                              const _EmptyState()
+                            else
+                              for (final reservation in reservations) ...[
+                                _ReservationCard(
+                                  reservation: reservation,
+                                  onDetails: () =>
+                                      AppNavigation.toTripConfirm(context),
+                                  onCancel: () {},
+                                ),
+                                SizedBox(height: 16.h),
+                              ],
+                            SizedBox(height: 16.h),
+                          ],
+                        );
+                      },
                     ),
-                    SizedBox(height: 16.h),
-                  ],
-                  SizedBox(height: 24.h),
-                  _EmptyState(
-                    onExplore: () => AppNavigation.toDiscover(context),
-                  ),
-                  SizedBox(height: 16.h),
-                ],
-              ),
             ),
             AppBottomNav(
               selectedIndex: AppNavIndex.reservas,
@@ -76,9 +113,7 @@ class ReservationsScreen extends StatelessWidget {
 }
 
 class _ReservationsAppBar extends StatelessWidget {
-  const _ReservationsAppBar({required this.onMenu});
-
-  final VoidCallback onMenu;
+  const _ReservationsAppBar();
 
   @override
   Widget build(BuildContext context) {
@@ -88,13 +123,6 @@ class _ReservationsAppBar extends StatelessWidget {
       color: AppColors.background,
       child: Row(
         children: [
-          IconButton(
-            onPressed: onMenu,
-            icon: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
-          ),
-          SizedBox(width: 8.w),
           Expanded(
             child: Text(
               context.l10n.premiumMobility,
@@ -340,7 +368,7 @@ class _CardHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(999.r),
           ),
           child: Text(
-            ReservationsScreen._reservationStatusLabel(
+            _reservationStatusLabel(
               context.l10n,
               reservation.status,
             ),
@@ -544,9 +572,7 @@ class _CardFooter extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onExplore});
-
-  final VoidCallback onExplore;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -604,31 +630,6 @@ class _EmptyState extends StatelessWidget {
               color: AppColors.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
-          ),
-        ),
-        SizedBox(height: 20.h),
-        SizedBox(
-          height: 48.h,
-          child: OutlinedButton(
-            onPressed: onExplore,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.secondary,
-              side: BorderSide(color: AppColors.secondary, width: 2.w),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 28.w),
-            ),
-            child: Text(
-              context.l10n.reservationsExploreDestinations,
-              style: AppTypography.inter(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                height: 20 / 14,
-                letterSpacing: 0.1,
-                color: AppColors.secondary,
-              ),
-            ),
           ),
         ),
       ],

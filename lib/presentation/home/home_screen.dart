@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -185,7 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _QuickActionsRow(
                     onPedir: () => AppNavigation.toTripDestination(context),
                     onReservar: () => AppNavigation.toReservations(context),
-                    onAlugar: () => AppNavigation.toVehicleRental(context),
+                    // onAlugar: () => AppNavigation.toVehicleRental(context),
+                    onAlugar: () {},
                     onHistorico: () => AppNavigation.toTripHistory(context),
                     onSaldo: () => AppNavigation.toClientBalance(context),
                   ),
@@ -380,7 +382,8 @@ class _BalanceCard extends StatelessWidget {
                         stream: balanceRepository.watchClientBalance(uid),
                         builder: (context, snapshot) {
                           final balance = snapshot.data;
-                          final label = balance?.formattedAmount ?? '0,00 EUR';
+                          final label = balance?.formattedAmount ??
+                              AppCurrencyFormatter.instance.formatEurMajor(0);
                           return Text(
                             label,
                             style: GoogleFonts.manrope(

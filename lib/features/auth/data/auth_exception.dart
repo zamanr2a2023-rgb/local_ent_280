@@ -3,6 +3,9 @@ enum AuthFailureCode {
   profileNotFound,
   accountInactive,
   roleMismatch,
+  emailAlreadyInUse,
+  weakPassword,
+  registrationFailed,
   unknown,
 }
 

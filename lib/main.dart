@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/settings/user_preferences.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_fonts.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await UserPreferences.instance.load();
+  AppCurrencyFormatter.instance.initialize();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -39,16 +41,19 @@ class LocalTransportApp extends StatefulWidget {
 
 class _LocalTransportAppState extends State<LocalTransportApp> {
   final UserPreferences _preferences = UserPreferences.instance;
+  final AppCurrencyFormatter _currencyFormatter = AppCurrencyFormatter.instance;
 
   @override
   void initState() {
     super.initState();
     _preferences.addListener(_onPreferencesChanged);
+    _currencyFormatter.addListener(_onPreferencesChanged);
   }
 
   @override
   void dispose() {
     _preferences.removeListener(_onPreferencesChanged);
+    _currencyFormatter.removeListener(_onPreferencesChanged);
     super.dispose();
   }
 

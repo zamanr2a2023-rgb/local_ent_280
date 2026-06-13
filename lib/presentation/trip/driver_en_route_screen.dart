@@ -4,14 +4,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/data/driver_en_route_data.dart';
-import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/features/driver/data/driver_location_repository.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_watcher.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Motorista a caminho — viagem ativa (`roles/details.md`).
 class DriverEnRouteScreen extends StatefulWidget {
-  const DriverEnRouteScreen({super.key});
+  const DriverEnRouteScreen({
+    super.key,
+    this.tripId,
+    this.trip,
+    this.tripRepository,
+  });
+
+  final String? tripId;
+  final TripRecord? trip;
+  final TripRepository? tripRepository;
 
   @override
   State<DriverEnRouteScreen> createState() => _DriverEnRouteScreenState();
@@ -20,30 +35,71 @@ class DriverEnRouteScreen extends StatefulWidget {
 class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
-  Timer? _tripStartTimer;
+  late final ClientTripWatcher _tripWatcher;
+  final _driverLocationRepository = DriverLocationRepository();
+  StreamSubscription<DriverLocationSnapshot?>? _driverLocationSubscription;
+  TripRecord? _trip;
+  DriverLocationSnapshot? _driverLocation;
+
+  String get _tripId =>
+      widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
   @override
   void initState() {
     super.initState();
+    _trip = widget.trip ?? ActiveTripSession.instance.trip;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _tripStartTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      AppNavigation.toTripInProgress(context);
+    _tripWatcher = ClientTripWatcher(
+      screen: ClientTripScreen.driverEnRoute,
+      repository: widget.tripRepository,
+      onTripChanged: (trip) {
+        setState(() => _trip = trip);
+        _watchDriverLocation(trip.assignedDriverId);
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tripId = _tripId;
+      if (tripId.isNotEmpty && mounted) {
+        _tripWatcher.start(tripId: tripId, context: context);
+      }
+      _watchDriverLocation(_trip?.assignedDriverId);
+    });
+  }
+
+  void _watchDriverLocation(String? driverId) {
+    if (driverId == null || driverId.isEmpty) return;
+    _driverLocationSubscription?.cancel();
+    _driverLocationSubscription =
+        _driverLocationRepository.watchLocation(driverId).listen((location) {
+      if (!mounted || location == null) return;
+      setState(() => _driverLocation = location);
     });
   }
 
   @override
   void dispose() {
-    _tripStartTimer?.cancel();
+    _tripWatcher.dispose();
+    _driverLocationSubscription?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final trip = _trip;
+    final driverMarker = _driverLocation == null
+        ? const <({double latitude, double longitude, bool isDriver})>[]
+        : [
+            (
+              latitude: _driverLocation!.latitude,
+              longitude: _driverLocation!.longitude,
+              isDriver: true,
+            ),
+          ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -53,8 +109,18 @@ class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const _MapBackground(),
-                const _MapMarkers(),
+                if (trip?.pickup != null && trip?.destination != null)
+                  DriverMapLayer(
+                    pickup: trip!.pickup,
+                    destination: trip.destination,
+                    showRoute: true,
+                    myLocationEnabled: true,
+                    extraMarkers: driverMarker,
+                    fitToExtraMarkers: driverMarker.isNotEmpty,
+                  )
+                else
+                  const _MapBackground(),
+                if (trip == null) const _MapMarkers(),
                 Positioned(
                   top: 16.h,
                   left: AppLayout.marginMobile,
@@ -65,6 +131,7 @@ class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
                   right: 0,
                   bottom: 0,
                   child: _TripBottomSheet(
+                    trip: trip,
                     onMessage: () {},
                     onCall: () {},
                   ),
@@ -369,15 +436,26 @@ class _CarMarker extends StatelessWidget {
 
 class _TripBottomSheet extends StatelessWidget {
   const _TripBottomSheet({
+    required this.trip,
     required this.onMessage,
     required this.onCall,
   });
 
+  final TripRecord? trip;
   final VoidCallback onMessage;
   final VoidCallback onCall;
 
   @override
   Widget build(BuildContext context) {
+    final driverName =
+        trip?.driverSummary?.displayName ?? DriverEnRouteData.driverName;
+    final vehicleModel = trip?.transportType.name.trim().isNotEmpty == true
+        ? trip!.transportType.name
+        : DriverEnRouteData.vehicleModel;
+    final etaMinutes = trip == null
+        ? DriverEnRouteData.etaMinutes
+        : '${trip!.meteringSnapshot.totalMinutes}';
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -415,14 +493,14 @@ class _TripBottomSheet extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      _DriverAvatar(),
+                      _DriverAvatar(photoUrl: trip?.driverSummary?.photoUrl),
                       SizedBox(width: 16.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              DriverEnRouteData.driverName,
+                              driverName,
                               style: GoogleFonts.manrope(
                                 fontSize: 20.sp,
                                 fontWeight: FontWeight.w600,
@@ -441,7 +519,7 @@ class _TripBottomSheet extends StatelessWidget {
                                 SizedBox(width: 4.w),
                                 Flexible(
                                   child: Text(
-                                    '${DriverEnRouteData.rating} • ${DriverEnRouteData.vehicleModel}',
+                                    '$vehicleModel',
                                     style: GoogleFonts.inter(
                                       fontSize: 12.sp,
                                       fontWeight: FontWeight.w500,
@@ -463,7 +541,7 @@ class _TripBottomSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      DriverEnRouteData.etaMinutes,
+                      etaMinutes,
                       style: GoogleFonts.manrope(
                         fontSize: 32.sp,
                         fontWeight: FontWeight.w700,
@@ -567,8 +645,13 @@ class _TripBottomSheet extends StatelessWidget {
 }
 
 class _DriverAvatar extends StatelessWidget {
+  const _DriverAvatar({this.photoUrl});
+
+  final String? photoUrl;
+
   @override
   Widget build(BuildContext context) {
+    final imageUrl = photoUrl ?? DriverEnRouteData.driverPhotoImage;
     return Container(
       width: 56.w,
       height: 56.h,
@@ -578,7 +661,7 @@ class _DriverAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: Image.network(
-          DriverEnRouteData.driverPhotoImage,
+          imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => ColoredBox(
             color: AppColors.surfaceContainer,

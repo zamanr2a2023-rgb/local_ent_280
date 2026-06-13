@@ -1,23 +1,91 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/trip_completed_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 
 /// Viagem concluída — resumo e avaliação (`roles/details.md`).
 class TripCompletedScreen extends StatefulWidget {
-  const TripCompletedScreen({super.key});
+  const TripCompletedScreen({
+    super.key,
+    this.tripId,
+    this.trip,
+    this.tripRepository,
+  });
+
+  final String? tripId;
+  final TripRecord? trip;
+  final TripRepository? tripRepository;
 
   @override
   State<TripCompletedScreen> createState() => _TripCompletedScreenState();
 }
 
 class _TripCompletedScreenState extends State<TripCompletedScreen> {
+  late final TripRepository _tripRepository;
   int _rating = TripCompletedData.defaultRating;
   final _commentController = TextEditingController();
+  TripRecord? _trip;
+  bool _isSubmitting = false;
+  bool _ratingSubmitted = false;
+
+  String get _tripId =>
+      widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _tripRepository = widget.tripRepository ?? TripRepository();
+    _trip = widget.trip ?? ActiveTripSession.instance.trip;
+    final tripId = _tripId;
+    if (_trip == null && tripId.isNotEmpty) {
+      _tripRepository.getTrip(tripId).then((trip) {
+        if (mounted && trip != null) setState(() => _trip = trip);
+      });
+    }
+  }
+
+  Future<void> _submitRating() async {
+    if (_isSubmitting || _ratingSubmitted) return;
+    final tripId = _tripId;
+    final clientId = UserSession.instance.profile?.uid;
+    if (tripId.isEmpty || clientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tripConfirmSessionInvalid)),
+      );
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await _tripRepository.submitTripRating(
+        tripId: tripId,
+        clientId: clientId,
+        stars: _rating,
+        feedback: _commentController.text,
+      );
+      if (!mounted) return;
+      setState(() => _ratingSubmitted = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tripCompletedRatingSent)),
+      );
+    } on FirebaseException catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tryAgain)),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -27,6 +95,7 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final trip = _trip;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -47,17 +116,15 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                   children: [
                     const _SuccessHeader(),
                     SizedBox(height: 16.h),
-                    _TripSummaryCard(),
+                    _TripSummaryCard(trip: trip),
                     SizedBox(height: 12.h),
                     _RatingCard(
                       rating: _rating,
                       commentController: _commentController,
+                      isSubmitting: _isSubmitting,
+                      isSubmitted: _ratingSubmitted,
                       onRatingChanged: (value) => setState(() => _rating = value),
-                      onSubmit: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(context.l10n.tripCompletedRatingSent)),
-                        );
-                      },
+                      onSubmit: _submitRating,
                     ),
                     SizedBox(height: 12.h),
                     _FooterActions(
@@ -186,8 +253,23 @@ class _SuccessHeader extends StatelessWidget {
 }
 
 class _TripSummaryCard extends StatelessWidget {
+  const _TripSummaryCard({required this.trip});
+
+  final TripRecord? trip;
+
   @override
   Widget build(BuildContext context) {
+    final finalPrice = trip?.fareFormatted ??
+        AppCurrencyFormatter.instance.formatEurMajor(
+          TripCompletedData.finalPriceEur,
+        );
+    final distance = trip == null
+        ? TripCompletedData.distance
+        : '${trip!.meteringSnapshot.totalDistanceKm.toStringAsFixed(1)} km';
+    final duration = trip == null
+        ? TripCompletedData.duration
+        : '${trip!.meteringSnapshot.totalMinutes} min';
+
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +313,7 @@ class _TripSummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                TripCompletedData.finalPrice,
+                finalPrice,
                 style: GoogleFonts.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w600,
@@ -247,14 +329,14 @@ class _TripSummaryCard extends StatelessWidget {
               Expanded(
                 child: _StatBox(
                   label: context.l10n.distance,
-                  value: TripCompletedData.distance,
+                  value: distance,
                 ),
               ),
               SizedBox(width: 16.w),
               Expanded(
                 child: _StatBox(
                   label: context.l10n.duration,
-                  value: TripCompletedData.duration,
+                  value: duration,
                 ),
               ),
             ],
@@ -379,12 +461,16 @@ class _RatingCard extends StatelessWidget {
     required this.commentController,
     required this.onRatingChanged,
     required this.onSubmit,
+    this.isSubmitting = false,
+    this.isSubmitted = false,
   });
 
   final int rating;
   final TextEditingController commentController;
   final ValueChanged<int> onRatingChanged;
   final VoidCallback onSubmit;
+  final bool isSubmitting;
+  final bool isSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -476,7 +562,7 @@ class _RatingCard extends StatelessWidget {
             width: double.infinity,
             height: 56.h,
             child: FilledButton(
-              onPressed: onSubmit,
+              onPressed: isSubmitting || isSubmitted ? null : onSubmit,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 foregroundColor: AppColors.onSecondary,

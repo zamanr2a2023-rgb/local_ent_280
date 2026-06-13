@@ -164,8 +164,8 @@ class RentalVehicleRepository {
           vehicle.categoryLabel.toLowerCase() != carType.toLowerCase()) {
         return false;
       }
-      if (maxPrice != 'Qualquer preço') {
-        final limit = _maxPriceLimit(maxPrice);
+      if (maxPrice != 'any') {
+        final limit = RentalVehicleRepository.maxPriceLimitForKey(maxPrice);
         if (limit != null && vehicle.pricePerDay > limit) return false;
       }
       if (transmission != 'Todas' &&
@@ -177,11 +177,11 @@ class RentalVehicleRepository {
     }).toList();
   }
 
-  static int? _maxPriceLimit(String label) {
-    return switch (label) {
-      'Até 50€/dia' => 50,
-      'Até 100€/dia' => 100,
-      'Até 200€/dia' => 200,
+  static int? maxPriceLimitForKey(String key) {
+    return switch (key) {
+      'max_50' => 50,
+      'max_100' => 100,
+      'max_200' => 200,
       _ => null,
     };
   }

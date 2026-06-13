@@ -9,6 +9,8 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class JetskiScreen extends StatelessWidget {
@@ -337,60 +339,74 @@ class _SearchFilterCard extends StatelessWidget {
 class _FleetSection extends StatelessWidget {
   const _FleetSection();
 
+  static const _fallbackImages = [
+    AppAssets.jetskiYamahaImage,
+    AppAssets.jetskiSeaDooImage,
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StreamBuilder<List<CatalogPackage>>(
+      stream: CatalogRepository().watchActivePackages(),
+      builder: (context, snapshot) {
+        final packages = snapshot.data ?? const [];
+        if (packages.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final formatter = AppCurrencyFormatter.instance;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              context.l10n.jetskiOurFleet,
-              style: GoogleFonts.manrope(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w600,
-                height: 28 / 20,
-                color: AppColors.primary,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {},
-              child: Text(
-                context.l10n.seeAll,
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
-                  color: AppColors.secondary,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  context.l10n.jetskiOurFleet,
+                  style: GoogleFonts.manrope(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 28 / 20,
+                    color: AppColors.primary,
+                  ),
                 ),
-              ),
+                GestureDetector(
+                  onTap: () {},
+                  child: Text(
+                    context.l10n.seeAll,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.1,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ),
+              ],
             ),
+            SizedBox(height: 16.h),
+            for (var i = 0; i < packages.length && i < 4; i++) ...[
+              if (i > 0) SizedBox(height: 16.h),
+              _FleetCard(
+                imageUrl: packages[i].photoUrl ??
+                    _fallbackImages[i % _fallbackImages.length],
+                title: packages[i].title,
+                priceLabel: formatter.formatEurMajor(packages[i].priceEur),
+                description: packages[i].description,
+                rating: i == 0 ? '4.9' : null,
+                tags: i == 0 ? const ['3 LUGARES', 'SUPERCHARGED'] : const [],
+                primaryLabel: i == 0
+                    ? context.l10n.jetskiBookNow
+                    : context.l10n.details,
+                isPrimaryFilled: i == 0,
+                onPrimaryTap: i == 0
+                    ? () => AppNavigation.openEventBooking(context)
+                    : () {},
+              ),
+            ],
           ],
-        ),
-        SizedBox(height: 16.h),
-        _FleetCard(
-          imageUrl: AppAssets.jetskiYamahaImage,
-          title: 'Yamaha GP1800R',
-          price: '120',
-          description: 'Performance extrema para pilotos experientes.',
-          rating: '4.9',
-          tags: const ['3 LUGARES', 'SUPERCHARGED'],
-          primaryLabel: context.l10n.jetskiBookNow,
-          isPrimaryFilled: true,
-          onPrimaryTap: () => AppNavigation.openEventBooking(context),
-        ),
-        SizedBox(height: 16.h),
-        _FleetCard(
-          imageUrl: AppAssets.jetskiSeaDooImage,
-          title: 'Sea-Doo Spark Trixx',
-          price: '85',
-          description: 'Agilidade e diversão para manobras leves.',
-          primaryLabel: context.l10n.details,
-          isPrimaryFilled: false,
-          onPrimaryTap: () {},
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -399,7 +415,7 @@ class _FleetCard extends StatelessWidget {
   const _FleetCard({
     required this.imageUrl,
     required this.title,
-    required this.price,
+    required this.priceLabel,
     required this.description,
     required this.primaryLabel,
     required this.isPrimaryFilled,
@@ -410,7 +426,7 @@ class _FleetCard extends StatelessWidget {
 
   final String imageUrl;
   final String title;
-  final String price;
+  final String priceLabel;
   final String description;
   final String? rating;
   final List<String> tags;
@@ -505,7 +521,7 @@ class _FleetCard extends StatelessWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '$price€',
+                            text: priceLabel,
                             style: GoogleFonts.manrope(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w600,

@@ -118,6 +118,12 @@ abstract class AppLocalizations {
   /// **'Cancelar'**
   String get cancel;
 
+  /// No description provided for @save.
+  ///
+  /// In pt, this message translates to:
+  /// **'Guardar'**
+  String get save;
+
   /// No description provided for @signOut.
   ///
   /// In pt, this message translates to:
@@ -321,6 +327,90 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Não foi possível iniciar sessão. Tente novamente.'**
   String get authErrorSignInFailed;
+
+  /// No description provided for @authErrorEmailInUse.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este e-mail já está registado.'**
+  String get authErrorEmailInUse;
+
+  /// No description provided for @authErrorWeakPassword.
+  ///
+  /// In pt, this message translates to:
+  /// **'Palavra-passe demasiado fraca. Use pelo menos 6 caracteres.'**
+  String get authErrorWeakPassword;
+
+  /// No description provided for @authErrorRegistrationFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível criar a conta. Tente novamente.'**
+  String get authErrorRegistrationFailed;
+
+  /// No description provided for @registerSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crie a sua conta como cliente ou motorista profissional.'**
+  String get registerSubtitle;
+
+  /// No description provided for @registerNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome completo'**
+  String get registerNameLabel;
+
+  /// No description provided for @registerNameHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'ex. João Silva'**
+  String get registerNameHint;
+
+  /// No description provided for @registerPhoneLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telemóvel (opcional)'**
+  String get registerPhoneLabel;
+
+  /// No description provided for @registerPhoneHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'ex. +351910000000'**
+  String get registerPhoneHint;
+
+  /// No description provided for @registerConfirmPasswordLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar palavra-passe'**
+  String get registerConfirmPasswordLabel;
+
+  /// No description provided for @registerFillRequiredFields.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha nome, e-mail e palavra-passe.'**
+  String get registerFillRequiredFields;
+
+  /// No description provided for @registerPasswordTooShort.
+  ///
+  /// In pt, this message translates to:
+  /// **'A palavra-passe deve ter pelo menos 6 caracteres.'**
+  String get registerPasswordTooShort;
+
+  /// No description provided for @registerPasswordMismatch.
+  ///
+  /// In pt, this message translates to:
+  /// **'As palavras-passe não coincidem.'**
+  String get registerPasswordMismatch;
+
+  /// No description provided for @registerAlreadyHaveAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já tem conta? '**
+  String get registerAlreadyHaveAccount;
+
+  /// No description provided for @registerSignInNow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Iniciar sessão'**
+  String get registerSignInNow;
 
   /// No description provided for @settingsTitle.
   ///
@@ -598,6 +688,84 @@ abstract class AppLocalizations {
   /// **'Ir para o login'**
   String get profileGoToLogin;
 
+  /// No description provided for @profileChangePhoto.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterar foto de perfil'**
+  String get profileChangePhoto;
+
+  /// No description provided for @profilePhotoFromGallery.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escolher da galeria'**
+  String get profilePhotoFromGallery;
+
+  /// No description provided for @profilePhotoTakePhoto.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tirar foto'**
+  String get profilePhotoTakePhoto;
+
+  /// No description provided for @profilePhotoUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Foto de perfil actualizada'**
+  String get profilePhotoUpdated;
+
+  /// No description provided for @profilePhotoUpdateFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível actualizar a foto. Tente novamente.'**
+  String get profilePhotoUpdateFailed;
+
+  /// No description provided for @profilePhotoPermissionDenied.
+  ///
+  /// In pt, this message translates to:
+  /// **'Envio de foto bloqueado. Publique as regras Storage (roles/storage.rules) na Consola Firebase.'**
+  String get profilePhotoPermissionDenied;
+
+  /// No description provided for @profilePhotoUploading.
+  ///
+  /// In pt, this message translates to:
+  /// **'A enviar foto...'**
+  String get profilePhotoUploading;
+
+  /// No description provided for @profileEditName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar nome'**
+  String get profileEditName;
+
+  /// No description provided for @profileNameHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'O seu nome'**
+  String get profileNameHint;
+
+  /// No description provided for @profileNameUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome atualizado'**
+  String get profileNameUpdated;
+
+  /// No description provided for @profileNameUpdateFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível atualizar o nome. Tente novamente.'**
+  String get profileNameUpdateFailed;
+
+  /// No description provided for @profileNamePermissionDenied.
+  ///
+  /// In pt, this message translates to:
+  /// **'Actualização do nome bloqueada. Publique as regras Firestore (roles/firestore.rules) na Consola Firebase.'**
+  String get profileNamePermissionDenied;
+
+  /// No description provided for @profileNameEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza o seu nome.'**
+  String get profileNameEmpty;
+
   /// No description provided for @homeAvailableBalance.
   ///
   /// In pt, this message translates to:
@@ -640,6 +808,78 @@ abstract class AppLocalizations {
   /// **'Saldo'**
   String get homeActionBalance;
 
+  /// No description provided for @clientBalanceTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo'**
+  String get clientBalanceTitle;
+
+  /// No description provided for @clientBalanceSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carteira em tempo real na coleção balances do Firebase.'**
+  String get clientBalanceSubtitle;
+
+  /// No description provided for @clientBalanceDebtLimit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limite de dívida'**
+  String get clientBalanceDebtLimit;
+
+  /// No description provided for @clientBalanceLastUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Última atualização'**
+  String get clientBalanceLastUpdated;
+
+  /// No description provided for @clientBalanceHistoryTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajustes recentes'**
+  String get clientBalanceHistoryTitle;
+
+  /// No description provided for @clientBalanceHistoryEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda sem ajustes'**
+  String get clientBalanceHistoryEmpty;
+
+  /// No description provided for @clientBalanceHistoryEmptyBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Alterações de saldo feitas pelo admin aparecem aqui.'**
+  String get clientBalanceHistoryEmptyBody;
+
+  /// No description provided for @clientBalanceAdjustmentDefault.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuste de saldo'**
+  String get clientBalanceAdjustmentDefault;
+
+  /// No description provided for @clientBalanceDebtWarningTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limite de dívida atingido'**
+  String get clientBalanceDebtWarningTitle;
+
+  /// No description provided for @clientBalanceDebtWarningBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carregue o saldo para continuar a pedir viagens.'**
+  String get clientBalanceDebtWarningBody;
+
+  /// No description provided for @clientBalanceTopUpComingSoon.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carregamento online em breve. Contacte o suporte se precisar de ajuda.'**
+  String get clientBalanceTopUpComingSoon;
+
+  /// No description provided for @clientBalanceUnavailable.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo indisponível'**
+  String get clientBalanceUnavailable;
+
   /// No description provided for @homeWhereToday.
   ///
   /// In pt, this message translates to:
@@ -669,6 +909,66 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Confirmar Trajeto'**
   String get homeConfirmRoute;
+
+  /// No description provided for @homeLocationLoading.
+  ///
+  /// In pt, this message translates to:
+  /// **'A obter a sua localização...'**
+  String get homeLocationLoading;
+
+  /// No description provided for @homeLocationUnavailable.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível obter a localização'**
+  String get homeLocationUnavailable;
+
+  /// No description provided for @homeRefreshLocation.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar localização'**
+  String get homeRefreshLocation;
+
+  /// No description provided for @homeLocationPermissionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Permitir localização'**
+  String get homeLocationPermissionTitle;
+
+  /// No description provided for @homeLocationPermissionMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'O Local Transport precisa da sua localização para definir automaticamente o ponto de recolha.'**
+  String get homeLocationPermissionMessage;
+
+  /// No description provided for @homeLocationPermissionAllow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Permitir'**
+  String get homeLocationPermissionAllow;
+
+  /// No description provided for @homeLocationPermissionDeny.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agora não'**
+  String get homeLocationPermissionDeny;
+
+  /// No description provided for @homeLocationPermissionSettingsMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'A permissão de localização está desativada. Abra as definições para permitir o acesso.'**
+  String get homeLocationPermissionSettingsMessage;
+
+  /// No description provided for @homeLocationOpenSettings.
+  ///
+  /// In pt, this message translates to:
+  /// **'Abrir definições'**
+  String get homeLocationOpenSettings;
+
+  /// No description provided for @homeLocationServicesDisabled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ative os serviços de localização no dispositivo para usar o seu endereço atual.'**
+  String get homeLocationServicesDisabled;
 
   /// No description provided for @reservationsTitle.
   ///
@@ -1024,6 +1324,36 @@ abstract class AppLocalizations {
   /// **'3 faturas em atraso'**
   String get adminPendingDebtorsSubtitle;
 
+  /// No description provided for @adminPendingDebtorsCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} faturas em atraso'**
+  String adminPendingDebtorsCount(int count);
+
+  /// No description provided for @adminActiveTripsTrendDynamic.
+  ///
+  /// In pt, this message translates to:
+  /// **'{change} vs. ontem'**
+  String adminActiveTripsTrendDynamic(String change);
+
+  /// No description provided for @adminNoFleetVehicles.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda sem viaturas na frota'**
+  String get adminNoFleetVehicles;
+
+  /// No description provided for @adminNoReportActivities.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda sem viagens concluídas'**
+  String get adminNoReportActivities;
+
+  /// No description provided for @adminBaseRateLive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dinâmica: Ativa ({multiplier})'**
+  String adminBaseRateLive(String multiplier);
+
   /// No description provided for @adminMonthlyReportsTitle.
   ///
   /// In pt, this message translates to:
@@ -1041,6 +1371,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Mapa de Atividade'**
   String get adminActivityMapTitle;
+
+  /// No description provided for @adminActivityMapWaiting.
+  ///
+  /// In pt, this message translates to:
+  /// **'À espera de viagens e localizações em tempo real'**
+  String get adminActivityMapWaiting;
 
   /// No description provided for @adminRatesTitle.
   ///
@@ -1095,6 +1431,1086 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Motorista: {name}'**
   String adminFleetDriverPrefix(String name);
+
+  /// No description provided for @adminHubTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Área de administração'**
+  String get adminHubTitle;
+
+  /// No description provided for @adminHubHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Área de administração'**
+  String get adminHubHeading;
+
+  /// No description provided for @adminHubSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir operações, frota, tarifas e suporte.'**
+  String get adminHubSubtitle;
+
+  /// No description provided for @adminUsersTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Utilizadores'**
+  String get adminUsersTitle;
+
+  /// No description provided for @adminUsersDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestão de contas e permissões.'**
+  String get adminUsersDesc;
+
+  /// No description provided for @adminUsersHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gestão de contas e permissões'**
+  String get adminUsersHeading;
+
+  /// No description provided for @adminUsersSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir perfis, funções e acessos da equipa.'**
+  String get adminUsersSubtitle;
+
+  /// No description provided for @adminUsersSearchHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pesquisar por nome, email, telefone ou ID'**
+  String get adminUsersSearchHint;
+
+  /// No description provided for @adminUsersEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum utilizador encontrado'**
+  String get adminUsersEmpty;
+
+  /// No description provided for @adminUsersCreateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Adicionar utilizador'**
+  String get adminUsersCreateTitle;
+
+  /// No description provided for @adminUsersCreateSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar conta de cliente, motorista, gestor ou admin.'**
+  String get adminUsersCreateSubtitle;
+
+  /// No description provided for @adminUsersCreateAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar utilizador'**
+  String get adminUsersCreateAction;
+
+  /// No description provided for @adminUsersCreateSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Utilizador criado com sucesso'**
+  String get adminUsersCreateSuccess;
+
+  /// No description provided for @adminUsersCreateFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível criar o utilizador'**
+  String get adminUsersCreateFailed;
+
+  /// No description provided for @adminUsersRoleLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Função'**
+  String get adminUsersRoleLabel;
+
+  /// No description provided for @adminUsersAddTooltip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Adicionar utilizador'**
+  String get adminUsersAddTooltip;
+
+  /// No description provided for @adminStatusActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ativo'**
+  String get adminStatusActive;
+
+  /// No description provided for @adminStatusInactive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Inativo'**
+  String get adminStatusInactive;
+
+  /// No description provided for @adminStatusOpen.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aberto'**
+  String get adminStatusOpen;
+
+  /// No description provided for @adminStatusResolved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resolvido'**
+  String get adminStatusResolved;
+
+  /// No description provided for @adminStatusConfigured.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configurado'**
+  String get adminStatusConfigured;
+
+  /// No description provided for @adminManagerPermissionsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Permissões de gestor'**
+  String get adminManagerPermissionsTitle;
+
+  /// No description provided for @adminManagerPermissionsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configurar permissões operacionais por gestor.'**
+  String get adminManagerPermissionsDesc;
+
+  /// No description provided for @adminManagerPermissionsHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configuração de permissões operacionais'**
+  String get adminManagerPermissionsHeading;
+
+  /// No description provided for @adminManagerPermissionsSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configure, por gestor, os módulos e ações permitidas.'**
+  String get adminManagerPermissionsSubtitle;
+
+  /// No description provided for @adminManagersEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum gestor encontrado'**
+  String get adminManagersEmpty;
+
+  /// No description provided for @adminStatusUnconfigured.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não configurado'**
+  String get adminStatusUnconfigured;
+
+  /// No description provided for @adminManagerPermissionsSaveAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Guardar permissões'**
+  String get adminManagerPermissionsSaveAction;
+
+  /// No description provided for @adminManagerPermissionsSaveSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Permissões do gestor guardadas'**
+  String get adminManagerPermissionsSaveSuccess;
+
+  /// No description provided for @adminManagerPermissionsSaveError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível guardar as permissões'**
+  String get adminManagerPermissionsSaveError;
+
+  /// No description provided for @managerPermissionViewTrips.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver viagens'**
+  String get managerPermissionViewTrips;
+
+  /// No description provided for @managerPermissionViewReports.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver relatórios'**
+  String get managerPermissionViewReports;
+
+  /// No description provided for @managerPermissionViewAudit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver auditoria'**
+  String get managerPermissionViewAudit;
+
+  /// No description provided for @managerPermissionViewDrivers.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver motoristas'**
+  String get managerPermissionViewDrivers;
+
+  /// No description provided for @managerPermissionViewClients.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver clientes'**
+  String get managerPermissionViewClients;
+
+  /// No description provided for @managerPermissionViewSupportRequests.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver pedidos de suporte'**
+  String get managerPermissionViewSupportRequests;
+
+  /// No description provided for @managerPermissionManageClientChats.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir conversas de clientes'**
+  String get managerPermissionManageClientChats;
+
+  /// No description provided for @managerPermissionCancelTripBySupport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar viagem por suporte'**
+  String get managerPermissionCancelTripBySupport;
+
+  /// No description provided for @managerPermissionUpdateTripSupport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar suporte da viagem'**
+  String get managerPermissionUpdateTripSupport;
+
+  /// No description provided for @managerPermissionResolvePasswordHelpRequest.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resolver pedidos de ajuda de password'**
+  String get managerPermissionResolvePasswordHelpRequest;
+
+  /// No description provided for @managerPermissionManageEvents.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir eventos'**
+  String get managerPermissionManageEvents;
+
+  /// No description provided for @managerPermissionAssignVehicleToDriver.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atribuir veículo'**
+  String get managerPermissionAssignVehicleToDriver;
+
+  /// No description provided for @managerPermissionEditDriverStatus.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar estado do motorista'**
+  String get managerPermissionEditDriverStatus;
+
+  /// No description provided for @managerPermissionManageTariffs.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir tarifas'**
+  String get managerPermissionManageTariffs;
+
+  /// No description provided for @managerPermissionManageTripPackages.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir pacotes de viagem'**
+  String get managerPermissionManageTripPackages;
+
+  /// No description provided for @adminSupportRequestsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pedidos de suporte'**
+  String get adminSupportRequestsTitle;
+
+  /// No description provided for @adminSupportRequestsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Caixa de entrada de suporte e ajuda de password.'**
+  String get adminSupportRequestsDesc;
+
+  /// No description provided for @adminSupportEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem pedidos de suporte'**
+  String get adminSupportEmpty;
+
+  /// No description provided for @adminIncidentsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Incidentes operacionais'**
+  String get adminIncidentsTitle;
+
+  /// No description provided for @adminIncidentsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Incidentes de monitorização e aprovações.'**
+  String get adminIncidentsDesc;
+
+  /// No description provided for @adminIncidentsEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem incidentes operacionais'**
+  String get adminIncidentsEmpty;
+
+  /// No description provided for @adminIncidentDetailTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Detalhes do incidente'**
+  String get adminIncidentDetailTitle;
+
+  /// No description provided for @adminIncidentCurrentState.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estado atual'**
+  String get adminIncidentCurrentState;
+
+  /// No description provided for @adminIncidentTrip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Viagem'**
+  String get adminIncidentTrip;
+
+  /// No description provided for @adminIncidentStarted.
+  ///
+  /// In pt, this message translates to:
+  /// **'Iniciado'**
+  String get adminIncidentStarted;
+
+  /// No description provided for @adminIncidentRouteSummary.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo da rota'**
+  String get adminIncidentRouteSummary;
+
+  /// No description provided for @adminIncidentKmSummary.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo de km'**
+  String get adminIncidentKmSummary;
+
+  /// No description provided for @adminMonitoringTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definições de monitorização'**
+  String get adminMonitoringTitle;
+
+  /// No description provided for @adminMonitoringDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limites para monitorização operacional.'**
+  String get adminMonitoringDesc;
+
+  /// No description provided for @adminMonitoringHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Monitorização operacional'**
+  String get adminMonitoringHeading;
+
+  /// No description provided for @adminMonitoringSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Rever limites guardados no Firebase.'**
+  String get adminMonitoringSubtitle;
+
+  /// No description provided for @adminMonitoringConfig.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configuração atual'**
+  String get adminMonitoringConfig;
+
+  /// No description provided for @adminMonitoringLoading.
+  ///
+  /// In pt, this message translates to:
+  /// **'A carregar configuração de monitorização...'**
+  String get adminMonitoringLoading;
+
+  /// No description provided for @adminMonitoringEnabled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Monitorização ativa'**
+  String get adminMonitoringEnabled;
+
+  /// No description provided for @adminMonitoringEnabledHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'A monitorização operacional só corre quando está ativa.'**
+  String get adminMonitoringEnabledHint;
+
+  /// No description provided for @adminMonitoringBaseGeofence.
+  ///
+  /// In pt, this message translates to:
+  /// **'Geofence base'**
+  String get adminMonitoringBaseGeofence;
+
+  /// No description provided for @adminMonitoringServiceGeofences.
+  ///
+  /// In pt, this message translates to:
+  /// **'Geofences de serviço'**
+  String get adminMonitoringServiceGeofences;
+
+  /// No description provided for @adminMonitoringServiceGeofenceCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} configuradas'**
+  String adminMonitoringServiceGeofenceCount(int count);
+
+  /// No description provided for @adminMonitoringLastUpdated.
+  ///
+  /// In pt, this message translates to:
+  /// **'Última atualização'**
+  String get adminMonitoringLastUpdated;
+
+  /// No description provided for @adminMonitoringSaveSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Configuração de monitorização guardada'**
+  String get adminMonitoringSaveSuccess;
+
+  /// No description provided for @adminReservationsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reservas operacionais'**
+  String get adminReservationsTitle;
+
+  /// No description provided for @adminReservationsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendar viagens futuras para clientes.'**
+  String get adminReservationsDesc;
+
+  /// No description provided for @adminReservationsEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem reservas'**
+  String get adminReservationsEmpty;
+
+  /// No description provided for @adminSupportSettingsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Contacto de suporte'**
+  String get adminSupportSettingsTitle;
+
+  /// No description provided for @adminSupportSettingsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone oficial para recuperação de password.'**
+  String get adminSupportSettingsDesc;
+
+  /// No description provided for @adminSupportSettingsHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Contacto de suporte'**
+  String get adminSupportSettingsHeading;
+
+  /// No description provided for @adminSupportSettingsSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definir o número oficial de contacto.'**
+  String get adminSupportSettingsSubtitle;
+
+  /// No description provided for @adminSupportPhoneLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone de suporte'**
+  String get adminSupportPhoneLabel;
+
+  /// No description provided for @adminEventsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Eventos e alertas'**
+  String get adminEventsTitle;
+
+  /// No description provided for @adminEventsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviar lembretes e avisos aos motoristas.'**
+  String get adminEventsDesc;
+
+  /// No description provided for @adminEventsEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem eventos agendados'**
+  String get adminEventsEmpty;
+
+  /// No description provided for @adminFleetTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Frota'**
+  String get adminFleetTitle;
+
+  /// No description provided for @adminFleetDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Acompanhar viaturas, estado e disponibilidade.'**
+  String get adminFleetDesc;
+
+  /// No description provided for @adminFleetNoDriver.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem motorista atribuído'**
+  String get adminFleetNoDriver;
+
+  /// No description provided for @adminFleetDriver.
+  ///
+  /// In pt, this message translates to:
+  /// **'Motorista'**
+  String get adminFleetDriver;
+
+  /// No description provided for @adminTransportTypesTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipos de transporte'**
+  String get adminTransportTypesTitle;
+
+  /// No description provided for @adminTransportTypesDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar e gerir tipos disponíveis.'**
+  String get adminTransportTypesDesc;
+
+  /// No description provided for @adminTransportTypesEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem tipos de transporte'**
+  String get adminTransportTypesEmpty;
+
+  /// No description provided for @adminTripPackagesTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pacotes de viagem'**
+  String get adminTripPackagesTitle;
+
+  /// No description provided for @adminTripPackagesDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pacotes pré-pagos com destino e preço fixos.'**
+  String get adminTripPackagesDesc;
+
+  /// No description provided for @adminTripPackagesEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem pacotes de viagem'**
+  String get adminTripPackagesEmpty;
+
+  /// No description provided for @adminTariffsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tarifas'**
+  String get adminTariffsTitle;
+
+  /// No description provided for @adminTariffsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definir preços, regras e ajustes sazonais.'**
+  String get adminTariffsDesc;
+
+  /// No description provided for @adminTariffAdminDefault.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tarifa admin default'**
+  String get adminTariffAdminDefault;
+
+  /// No description provided for @adminTariffPublicDefault.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tarifa public default'**
+  String get adminTariffPublicDefault;
+
+  /// No description provided for @adminBalancesTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vendas'**
+  String get adminBalancesTitle;
+
+  /// No description provided for @adminBalancesDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Controlar saldos, limites e operações pendentes.'**
+  String get adminBalancesDesc;
+
+  /// No description provided for @adminBalancesEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem saldos'**
+  String get adminBalancesEmpty;
+
+  /// No description provided for @adminBalancesDebt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dívida'**
+  String get adminBalancesDebt;
+
+  /// No description provided for @adminBalancesCredit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crédito'**
+  String get adminBalancesCredit;
+
+  /// No description provided for @adminBalanceCurrent.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo atual'**
+  String get adminBalanceCurrent;
+
+  /// No description provided for @adminBalanceDebtLimit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Limite de dívida'**
+  String get adminBalanceDebtLimit;
+
+  /// No description provided for @adminBalanceAdjustAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajustar saldo'**
+  String get adminBalanceAdjustAction;
+
+  /// No description provided for @adminBalanceAdjustTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuste manual de saldo'**
+  String get adminBalanceAdjustTitle;
+
+  /// No description provided for @adminBalanceCredit.
+  ///
+  /// In pt, this message translates to:
+  /// **'Crédito'**
+  String get adminBalanceCredit;
+
+  /// No description provided for @adminBalanceDebt.
+  ///
+  /// In pt, this message translates to:
+  /// **'Débito'**
+  String get adminBalanceDebt;
+
+  /// No description provided for @adminBalanceAmountLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Valor (EUR)'**
+  String get adminBalanceAmountLabel;
+
+  /// No description provided for @adminBalanceAmountRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza um valor válido.'**
+  String get adminBalanceAmountRequired;
+
+  /// No description provided for @adminBalanceReasonLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Motivo'**
+  String get adminBalanceReasonLabel;
+
+  /// No description provided for @adminBalanceReasonRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza um motivo.'**
+  String get adminBalanceReasonRequired;
+
+  /// No description provided for @adminBalanceConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confirmar ajuste'**
+  String get adminBalanceConfirm;
+
+  /// No description provided for @adminBalanceAdjustSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Saldo atualizado'**
+  String get adminBalanceAdjustSuccess;
+
+  /// No description provided for @adminVehicleCreateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova viatura'**
+  String get adminVehicleCreateTitle;
+
+  /// No description provided for @adminVehicleEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar viatura'**
+  String get adminVehicleEditTitle;
+
+  /// No description provided for @adminVehicleCreateAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar viatura'**
+  String get adminVehicleCreateAction;
+
+  /// No description provided for @adminVehicleCreateSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Viatura criada'**
+  String get adminVehicleCreateSuccess;
+
+  /// No description provided for @adminVehicleAddPhoto.
+  ///
+  /// In pt, this message translates to:
+  /// **'Adicionar foto'**
+  String get adminVehicleAddPhoto;
+
+  /// No description provided for @adminVehiclePlateLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Matrícula'**
+  String get adminVehiclePlateLabel;
+
+  /// No description provided for @adminVehicleModelLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Modelo'**
+  String get adminVehicleModelLabel;
+
+  /// No description provided for @adminVehicleCapacityLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Capacidade'**
+  String get adminVehicleCapacityLabel;
+
+  /// No description provided for @adminVehicleTransportTypeLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo de transporte predefinido'**
+  String get adminVehicleTransportTypeLabel;
+
+  /// No description provided for @adminVehicleNoPreference.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem preferência'**
+  String get adminVehicleNoPreference;
+
+  /// No description provided for @adminVehicleNotesLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Notas'**
+  String get adminVehicleNotesLabel;
+
+  /// No description provided for @adminVehicleActiveLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Viatura ativa'**
+  String get adminVehicleActiveLabel;
+
+  /// No description provided for @adminVehicleRequiredFields.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preencha matrícula e modelo.'**
+  String get adminVehicleRequiredFields;
+
+  /// No description provided for @adminTransportTypeCreateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Novo tipo de transporte'**
+  String get adminTransportTypeCreateTitle;
+
+  /// No description provided for @adminTransportTypeEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar tipo de transporte'**
+  String get adminTransportTypeEditTitle;
+
+  /// No description provided for @adminTransportTypeCreateAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar tipo'**
+  String get adminTransportTypeCreateAction;
+
+  /// No description provided for @adminTransportTypeCreateSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipo de transporte criado'**
+  String get adminTransportTypeCreateSuccess;
+
+  /// No description provided for @adminTransportTypeNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome'**
+  String get adminTransportTypeNameLabel;
+
+  /// No description provided for @adminTransportTypeNameRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza um nome.'**
+  String get adminTransportTypeNameRequired;
+
+  /// No description provided for @adminTransportTypeBaseFareLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tarifa base inicial'**
+  String get adminTransportTypeBaseFareLabel;
+
+  /// No description provided for @adminTransportTypeMultiplierLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ajuste de preço do package'**
+  String get adminTransportTypeMultiplierLabel;
+
+  /// No description provided for @adminTransportTypeDescriptionLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descrição'**
+  String get adminTransportTypeDescriptionLabel;
+
+  /// No description provided for @adminTripPackagesOpsTab.
+  ///
+  /// In pt, this message translates to:
+  /// **'Operação'**
+  String get adminTripPackagesOpsTab;
+
+  /// No description provided for @adminTripPackagesCatalogTab.
+  ///
+  /// In pt, this message translates to:
+  /// **'Catálogo'**
+  String get adminTripPackagesCatalogTab;
+
+  /// No description provided for @adminTripPackagesOpsEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem reservas na fila de operação.'**
+  String get adminTripPackagesOpsEmpty;
+
+  /// No description provided for @adminTripPackagesCatalogHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Catálogo de packages'**
+  String get adminTripPackagesCatalogHeading;
+
+  /// No description provided for @adminTripPackagesCatalogSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerir produtos comerciais com destino fixo, preço fixo e tipos de transporte permitidos.'**
+  String get adminTripPackagesCatalogSubtitle;
+
+  /// No description provided for @adminPackageCreateTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar package'**
+  String get adminPackageCreateTitle;
+
+  /// No description provided for @adminPackageEditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar package'**
+  String get adminPackageEditTitle;
+
+  /// No description provided for @adminPackageCreateAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar package'**
+  String get adminPackageCreateAction;
+
+  /// No description provided for @adminPackageEditAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar package'**
+  String get adminPackageEditAction;
+
+  /// No description provided for @adminPackageCreateSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Package guardado'**
+  String get adminPackageCreateSuccess;
+
+  /// No description provided for @adminPackageNameLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nome do package'**
+  String get adminPackageNameLabel;
+
+  /// No description provided for @adminPackageNameMin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza um nome com pelo menos 3 caracteres.'**
+  String get adminPackageNameMin;
+
+  /// No description provided for @adminPackageDestinationLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Destino fixo'**
+  String get adminPackageDestinationLabel;
+
+  /// No description provided for @adminPackageDescriptionLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descrição'**
+  String get adminPackageDescriptionLabel;
+
+  /// No description provided for @adminPackageDescriptionMin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza uma descrição com pelo menos 10 caracteres.'**
+  String get adminPackageDescriptionMin;
+
+  /// No description provided for @adminPackagePriceLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Preço fixo (EUR)'**
+  String get adminPackagePriceLabel;
+
+  /// No description provided for @adminPackagePriceInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza um preço válido.'**
+  String get adminPackagePriceInvalid;
+
+  /// No description provided for @adminPackageTransportRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Selecione pelo menos um tipo de transporte.'**
+  String get adminPackageTransportRequired;
+
+  /// No description provided for @adminPackageSalesActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vendas ativas'**
+  String get adminPackageSalesActive;
+
+  /// No description provided for @adminPackageSalesActiveHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Quando desativado, o package deixa de aparecer para novas compras.'**
+  String get adminPackageSalesActiveHint;
+
+  /// No description provided for @adminPackageAllowedTransport.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tipos de transporte permitidos'**
+  String get adminPackageAllowedTransport;
+
+  /// No description provided for @adminSupportReplyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Responder ao pedido'**
+  String get adminSupportReplyTitle;
+
+  /// No description provided for @adminSupportReplyLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mensagem'**
+  String get adminSupportReplyLabel;
+
+  /// No description provided for @adminSupportReplyHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Escreva a sua resposta ao cliente...'**
+  String get adminSupportReplyHint;
+
+  /// No description provided for @adminSupportRequestedAt.
+  ///
+  /// In pt, this message translates to:
+  /// **'pedido em {date}'**
+  String adminSupportRequestedAt(String date);
+
+  /// No description provided for @adminSupportReplyAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Responder'**
+  String get adminSupportReplyAction;
+
+  /// No description provided for @adminSupportReplyRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza uma mensagem.'**
+  String get adminSupportReplyRequired;
+
+  /// No description provided for @adminSupportReplySuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resposta enviada'**
+  String get adminSupportReplySuccess;
+
+  /// No description provided for @adminSupportResolveAction.
+  ///
+  /// In pt, this message translates to:
+  /// **'Marcar como resolvido'**
+  String get adminSupportResolveAction;
+
+  /// No description provided for @adminSupportResolveSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pedido resolvido'**
+  String get adminSupportResolveSuccess;
+
+  /// No description provided for @adminReportsTabOverview.
+  ///
+  /// In pt, this message translates to:
+  /// **'Panorama operacional'**
+  String get adminReportsTabOverview;
+
+  /// No description provided for @adminReportsTabClient.
+  ///
+  /// In pt, this message translates to:
+  /// **'Extrato do cliente'**
+  String get adminReportsTabClient;
+
+  /// No description provided for @adminReportsTabDriver.
+  ///
+  /// In pt, this message translates to:
+  /// **'Extrato do motorista'**
+  String get adminReportsTabDriver;
+
+  /// No description provided for @adminReportsTabComingSoon.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta vista carregará dados de viagens e ajustes de saldo do Firebase.'**
+  String get adminReportsTabComingSoon;
+
+  /// No description provided for @adminCurrencyTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definições de moeda'**
+  String get adminCurrencyTitle;
+
+  /// No description provided for @adminCurrencyDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Taxas FX usadas para CVE, EUR e USD.'**
+  String get adminCurrencyDesc;
+
+  /// No description provided for @adminCurrencyHeading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definições de moeda'**
+  String get adminCurrencyHeading;
+
+  /// No description provided for @adminCurrencySubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definir taxas de câmbio em config/currency.'**
+  String get adminCurrencySubtitle;
+
+  /// No description provided for @adminCurrencyCveToEur.
+  ///
+  /// In pt, this message translates to:
+  /// **'CVE para EUR'**
+  String get adminCurrencyCveToEur;
+
+  /// No description provided for @adminCurrencyCveToUsd.
+  ///
+  /// In pt, this message translates to:
+  /// **'CVE para USD'**
+  String get adminCurrencyCveToUsd;
+
+  /// No description provided for @adminCurrencySaveSuccess.
+  ///
+  /// In pt, this message translates to:
+  /// **'Definições de moeda guardadas'**
+  String get adminCurrencySaveSuccess;
+
+  /// No description provided for @adminCurrencyInvalidRate.
+  ///
+  /// In pt, this message translates to:
+  /// **'Introduza taxas de câmbio válidas superiores a zero'**
+  String get adminCurrencyInvalidRate;
+
+  /// No description provided for @adminReportsDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Analisar métricas de operação e desempenho.'**
+  String get adminReportsDesc;
+
+  /// No description provided for @adminAuditTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Auditoria'**
+  String get adminAuditTitle;
+
+  /// No description provided for @adminAuditDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver quem ajustou saldos e tarifas.'**
+  String get adminAuditDesc;
+
+  /// No description provided for @adminAuditEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sem entradas de auditoria'**
+  String get adminAuditEmpty;
 
   /// No description provided for @deliveryDeliverTo.
   ///
@@ -1525,8 +2941,8 @@ abstract class AppLocalizations {
   /// No description provided for @premiumHomeFromPrice.
   ///
   /// In pt, this message translates to:
-  /// **'Desde 45€'**
-  String get premiumHomeFromPrice;
+  /// **'Desde {price}'**
+  String premiumHomeFromPrice(String price);
 
   /// No description provided for @premiumHomeIslandGuideTitle.
   ///
@@ -1647,6 +3063,18 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Carregar mais veículos'**
   String get rentalLoadMore;
+
+  /// No description provided for @rentalLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar veículos do Firebase.'**
+  String get rentalLoadError;
+
+  /// No description provided for @rentalNoVehicles.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum veículo ativo encontrado no Firebase.'**
+  String get rentalNoVehicles;
 
   /// No description provided for @rentalVehicleDetails.
   ///
@@ -1912,6 +3340,36 @@ abstract class AppLocalizations {
   /// **'Cancelada'**
   String get tripHistoryStatusCancelled;
 
+  /// No description provided for @tripHistoryStatusInProgress.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em curso'**
+  String get tripHistoryStatusInProgress;
+
+  /// No description provided for @tripHistoryStatusScheduled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agendada'**
+  String get tripHistoryStatusScheduled;
+
+  /// No description provided for @tripHistoryEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda sem viagens'**
+  String get tripHistoryEmpty;
+
+  /// No description provided for @tripHistoryEmptyBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'As suas viagens do Firebase aparecem aqui depois de pedir uma corrida.'**
+  String get tripHistoryEmptyBody;
+
+  /// No description provided for @tripHistoryLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar viagens do Firebase.'**
+  String get tripHistoryLoadError;
+
   /// No description provided for @tripHistoryNoDetails.
   ///
   /// In pt, this message translates to:
@@ -2104,6 +3562,24 @@ abstract class AppLocalizations {
   /// **'Cancelar Viagem'**
   String get driverSearchCancelTrip;
 
+  /// No description provided for @driverSearchCancelling.
+  ///
+  /// In pt, this message translates to:
+  /// **'A cancelar...'**
+  String get driverSearchCancelling;
+
+  /// No description provided for @driverSearchCancelFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível cancelar a viagem.'**
+  String get driverSearchCancelFailed;
+
+  /// No description provided for @driverSearchNoDrivers.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum motorista disponível. Tente novamente.'**
+  String get driverSearchNoDrivers;
+
   /// No description provided for @driverSearchOptimizing.
   ///
   /// In pt, this message translates to:
@@ -2188,6 +3664,12 @@ abstract class AppLocalizations {
   /// **'SUGESTÃO DE HOJE'**
   String get tripDestinationTodaySuggestion;
 
+  /// No description provided for @tripDestinationSuggestionTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Belém e Monumentos'**
+  String get tripDestinationSuggestionTitle;
+
   /// No description provided for @tripDestinationViewFullMap.
   ///
   /// In pt, this message translates to:
@@ -2211,6 +3693,30 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Confirmar viagem'**
   String get tripConfirmTrip;
+
+  /// No description provided for @tripConfirmSessionInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sessão inválida. Inicie sessão novamente.'**
+  String get tripConfirmSessionInvalid;
+
+  /// No description provided for @tripConfirmRouteLoading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aguarde o carregamento do percurso.'**
+  String get tripConfirmRouteLoading;
+
+  /// No description provided for @tripConfirmCreateFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível criar a viagem. Tente novamente.'**
+  String get tripConfirmCreateFailed;
+
+  /// No description provided for @tripConfirmPermissionDenied.
+  ///
+  /// In pt, this message translates to:
+  /// **'A criação da viagem foi bloqueada pelas regras Firebase. Publique as regras actualizadas e inicie sessão como cliente.'**
+  String get tripConfirmPermissionDenied;
 
   /// No description provided for @tripConfirmPickupPoint.
   ///
@@ -2278,11 +3784,23 @@ abstract class AppLocalizations {
   /// **'Ganhos de Hoje'**
   String get driverTodayEarnings;
 
-  /// No description provided for @driverEarningsChange.
+  /// No description provided for @driverEarningsVsYesterday.
   ///
   /// In pt, this message translates to:
-  /// **'+12% vs. ontem'**
-  String get driverEarningsChange;
+  /// **'{change} vs. ontem'**
+  String driverEarningsVsYesterday(String change);
+
+  /// No description provided for @driverNoRecentTrips.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda sem viagens concluídas'**
+  String get driverNoRecentTrips;
+
+  /// No description provided for @driverNoVehicleAssigned.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum veículo atribuído'**
+  String get driverNoVehicleAssigned;
 
   /// No description provided for @driverTripsLabel.
   ///

@@ -8,6 +8,9 @@ extension AuthExceptionLocalization on AuthException {
       AuthFailureCode.profileNotFound => l10n.authErrorProfileNotFound,
       AuthFailureCode.accountInactive => l10n.authErrorAccountInactive,
       AuthFailureCode.roleMismatch => l10n.authErrorRoleMismatch,
+      AuthFailureCode.emailAlreadyInUse => l10n.authErrorEmailInUse,
+      AuthFailureCode.weakPassword => l10n.authErrorWeakPassword,
+      AuthFailureCode.registrationFailed => l10n.authErrorRegistrationFailed,
       AuthFailureCode.unknown => l10n.authErrorUnexpected,
     };
   }

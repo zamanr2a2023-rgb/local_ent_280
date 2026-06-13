@@ -27,26 +27,26 @@ abstract final class TripDestinationData {
 
   static const recentPlaces = [
     TripPlace(
-      title: 'Aeroporto de Lisboa (LIS)',
+      title: 'Lisbon Airport (LIS)',
       subtitle: 'Alameda das Comunidades Portuguesas',
       icon: Icons.history,
     ),
     TripPlace(
-      title: 'Gare do Oriente',
-      subtitle: 'Edifício Gare do Oriente, Piso 1',
+      title: 'Oriente Station',
+      subtitle: 'Orient Station Building, Floor 1',
       icon: Icons.history,
     ),
   ];
 
   static const favorites = [
     TripPlace(
-      title: 'Casa',
+      title: 'Home',
       subtitle: 'Rua Rosa Araújo, 12',
       icon: Icons.home,
       filledIcon: true,
     ),
     TripPlace(
-      title: 'Trabalho',
+      title: 'Work',
       subtitle: 'Avenida Fontes Pereira de Melo, 40',
       icon: Icons.work,
       filledIcon: true,

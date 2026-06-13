@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
 import 'package:local_ent_280/features/rental/data/rental_vehicle_repository.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
@@ -661,18 +663,34 @@ class _CheckListItem extends StatelessWidget {
 }
 
 class _BookingSummaryCard extends StatelessWidget {
-  const _BookingSummaryCard({required this.decoration});
+  const _BookingSummaryCard({
+    required this.decoration,
+    this.pricePerDayEur,
+    this.rentalDays = 3,
+  });
 
   final BoxDecoration decoration;
-
-  static const _lineItems = [
-    ('Rental (3 days)', '450,00 €', false),
-    ('Seguro Premium', 'Incluído', true),
-    ('Airport Fees', '25,50 €', false),
-  ];
+  final double? pricePerDayEur;
+  final int rentalDays;
 
   @override
   Widget build(BuildContext context) {
+    final formatter = AppCurrencyFormatter.instance;
+    final perDay = pricePerDayEur ?? RentalBookingDraft.instance.pricePerDayEur;
+    final days = rentalDays;
+    final rentalTotal = perDay * days;
+    final airportFees = perDay * 0.056;
+    final total = rentalTotal + airportFees;
+    final lineItems = <(String, String, bool)>[
+      (
+        'Rental ($days days)',
+        formatter.formatEurMajor(rentalTotal),
+        false,
+      ),
+      ('Seguro Premium', 'Incluído', true),
+      ('Airport Fees', formatter.formatEurMajor(airportFees), false),
+    ];
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: decoration.copyWith(
@@ -697,7 +715,7 @@ class _BookingSummaryCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
-          for (final item in _lineItems) ...[
+          for (final item in lineItems) ...[
             Row(
               children: [
                 Expanded(
@@ -740,7 +758,7 @@ class _BookingSummaryCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '475,50 €',
+                      formatter.formatEurMajor(total),
                       style: GoogleFonts.manrope(
                         fontSize: 32.sp,
                         fontWeight: FontWeight.w700,
@@ -752,7 +770,7 @@ class _BookingSummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '158,50 € / dia',
+                formatter.formatEurMajorWithSuffix(perDay, ' / dia'),
                 style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
@@ -885,6 +903,10 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final draft = RentalBookingDraft.instance;
+    final totalLabel =
+        AppCurrencyFormatter.instance.formatEurMajor(draft.estimatedTotalEur);
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppLayout.marginMobile,
@@ -923,7 +945,7 @@ class _BottomActionBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '475,50 €',
+                  totalLabel,
                   style: GoogleFonts.manrope(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
@@ -1026,7 +1048,7 @@ class _FirebaseVehicleDetailBody extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  '${vehicle.pricePerDay}€/dia · ${vehicle.seats} lugares · ${vehicle.transmissionLabel}',
+                  '${AppCurrencyFormatter.instance.formatEurMajorWithSuffix(vehicle.pricePerDay.toDouble(), '/dia')} · ${vehicle.seats} lugares · ${vehicle.transmissionLabel}',
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     color: AppColors.onSurfaceVariant,
@@ -1057,7 +1079,12 @@ class _FirebaseVehicleDetailBody extends StatelessWidget {
             width: double.infinity,
             height: 52.h,
             child: FilledButton(
-              onPressed: () => AppNavigation.toReservationReview(context),
+              onPressed: () => AppNavigation.toReservationReview(
+                context,
+                vehicleId: vehicle.id,
+                vehicleLabel: vehicle.name,
+                pricePerDayEur: vehicle.pricePerDay.toDouble(),
+              ),
               child: Text(context.l10n.rentalContinueToPayment),
             ),
           ),

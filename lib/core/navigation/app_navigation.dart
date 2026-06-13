@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
 import 'package:local_ent_280/features/balance/data/balance_repository.dart';
+import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
 import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
@@ -10,6 +11,7 @@ import 'package:local_ent_280/presentation/admin/screens/admin_hub_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_incident_detail_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_manager_permissions_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_module_screens.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_tariff_editor_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_operational_incidents_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_support_requests_screen.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_users_screen.dart';
@@ -249,7 +251,7 @@ abstract final class AppNavigation {
 
   static void toAdminTariffs(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const AdminTariffsScreen()),
+      MaterialPageRoute<void>(builder: (_) => const AdminTariffEditorScreen()),
     );
   }
 
@@ -361,30 +363,93 @@ abstract final class AppNavigation {
   }
 
   /// Motorista encontrado → a aguardar confirmação.
-  static void toDriverFound(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const DriverFoundScreen()),
+  static void toDriverFound(
+    BuildContext context, {
+    String? tripId,
+    TripRecord? trip,
+    TripRepository? tripRepository,
+  }) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => DriverFoundScreen(
+          tripId: tripId,
+          trip: trip,
+          tripRepository: tripRepository,
+        ),
+      ),
     );
   }
 
   /// Motorista confirmado → a caminho.
-  static void toDriverEnRoute(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const DriverEnRouteScreen()),
+  static void toDriverEnRoute(
+    BuildContext context, {
+    String? tripId,
+    TripRecord? trip,
+    TripRepository? tripRepository,
+  }) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => DriverEnRouteScreen(
+          tripId: tripId,
+          trip: trip,
+          tripRepository: tripRepository,
+        ),
+      ),
     );
   }
 
   /// Viagem iniciada → em curso.
-  static void toTripInProgress(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const TripInProgressScreen()),
+  static void toTripInProgress(
+    BuildContext context, {
+    String? tripId,
+    TripRecord? trip,
+    TripRepository? tripRepository,
+  }) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => TripInProgressScreen(
+          tripId: tripId,
+          trip: trip,
+          tripRepository: tripRepository,
+        ),
+      ),
     );
   }
 
   /// Terminar viagem → viagem concluída.
-  static void toTripCompleted(BuildContext context) {
+  static void toTripCompleted(
+    BuildContext context, {
+    String? tripId,
+    TripRecord? trip,
+    TripRepository? tripRepository,
+  }) {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const TripCompletedScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => TripCompletedScreen(
+          tripId: tripId,
+          trip: trip,
+          tripRepository: tripRepository,
+        ),
+      ),
+    );
+  }
+
+  /// Lista → revisão de reserva (aluguer).
+  static void toReservationReview(
+    BuildContext context, {
+    String? vehicleId,
+    String? vehicleLabel,
+    double? pricePerDayEur,
+  }) {
+    if (vehicleId != null) {
+      RentalBookingDraft.instance.setVehicle(
+        id: vehicleId,
+        label: vehicleLabel ?? 'Vehicle',
+        pricePerDayEur: pricePerDayEur,
+      );
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ReservationReviewScreen()),
     );
   }
 
@@ -448,15 +513,6 @@ abstract final class AppNavigation {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const PremiumHomeScreen()),
       (_) => false,
-    );
-  }
-
-  /// Pesquisa → Revisão da Reserva.
-  static void toReservationReview(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const ReservationReviewScreen(),
-      ),
     );
   }
 
@@ -547,10 +603,14 @@ abstract final class AppNavigation {
     );
   }
 
-  /// Tab Viagens (motorista) → histórico de viagens.
+  /// Tab Viagens (motorista) → histórico de viagens do motorista.
   static void toDriverTripHistory(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => const TripHistoryScreen(
+          audience: TripHistoryAudience.driver,
+        ),
+      ),
       (_) => false,
     );
   }
@@ -568,12 +628,14 @@ abstract final class AppNavigation {
     }
   }
 
-  /// Driver bottom nav (Home + Profile only): local index 0 = Home, 1 = Profile.
+  /// Driver bottom nav: 0 = Home, 1 = Trips, 2 = Profile.
   static void onDriverBottomNavLocalTap(BuildContext context, int localIndex) {
     switch (localIndex) {
       case 0:
         onDriverBottomNavTap(context, AppNavIndex.inicio);
       case 1:
+        onDriverBottomNavTap(context, AppNavIndex.viagens);
+      case 2:
         onDriverBottomNavTap(context, AppNavIndex.perfil);
     }
   }

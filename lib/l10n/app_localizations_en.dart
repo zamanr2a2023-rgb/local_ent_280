@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get save => 'Save';
+
+  @override
   String get signOut => 'Sign out';
 
   @override
@@ -126,6 +129,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorSignInFailed => 'Could not sign in. Please try again.';
 
   @override
+  String get authErrorEmailInUse => 'This email is already registered.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Password is too weak. Use at least 6 characters.';
+
+  @override
+  String get authErrorRegistrationFailed =>
+      'Could not create account. Please try again.';
+
+  @override
+  String get registerSubtitle =>
+      'Create your account as a client or professional driver.';
+
+  @override
+  String get registerNameLabel => 'Full name';
+
+  @override
+  String get registerNameHint => 'e.g. John Smith';
+
+  @override
+  String get registerPhoneLabel => 'Phone (optional)';
+
+  @override
+  String get registerPhoneHint => 'e.g. +351910000000';
+
+  @override
+  String get registerConfirmPasswordLabel => 'Confirm password';
+
+  @override
+  String get registerFillRequiredFields => 'Fill in name, email, and password.';
+
+  @override
+  String get registerPasswordTooShort =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get registerPasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get registerAlreadyHaveAccount => 'Already have an account? ';
+
+  @override
+  String get registerSignInNow => 'Sign in now';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -231,7 +280,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileLoadFailed => 'Could not load profile. Please try again.';
 
   @override
-  String get profileRoleClient => 'User';
+  String get profileRoleClient => 'Client';
 
   @override
   String get profileRoleDriver => 'Driver';
@@ -276,6 +325,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGoToLogin => 'Go to login';
 
   @override
+  String get profileChangePhoto => 'Change profile photo';
+
+  @override
+  String get profilePhotoFromGallery => 'Choose from gallery';
+
+  @override
+  String get profilePhotoTakePhoto => 'Take photo';
+
+  @override
+  String get profilePhotoUpdated => 'Profile photo updated';
+
+  @override
+  String get profilePhotoUpdateFailed =>
+      'Could not update profile photo. Try again.';
+
+  @override
+  String get profilePhotoPermissionDenied =>
+      'Photo upload blocked. Publish Storage rules from roles/storage.rules in Firebase Console.';
+
+  @override
+  String get profilePhotoUploading => 'Uploading photo...';
+
+  @override
+  String get profileEditName => 'Edit name';
+
+  @override
+  String get profileNameHint => 'Your name';
+
+  @override
+  String get profileNameUpdated => 'Name updated';
+
+  @override
+  String get profileNameUpdateFailed => 'Could not update name. Try again.';
+
+  @override
+  String get profileNamePermissionDenied =>
+      'Name update blocked. Publish Firestore rules from roles/firestore.rules in Firebase Console.';
+
+  @override
+  String get profileNameEmpty => 'Please enter your name.';
+
+  @override
   String get homeAvailableBalance => 'Available balance';
 
   @override
@@ -297,6 +388,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeActionBalance => 'Balance';
 
   @override
+  String get clientBalanceTitle => 'Balance';
+
+  @override
+  String get clientBalanceSubtitle =>
+      'Live wallet from Firebase balances collection.';
+
+  @override
+  String get clientBalanceDebtLimit => 'Debt limit';
+
+  @override
+  String get clientBalanceLastUpdated => 'Last updated';
+
+  @override
+  String get clientBalanceHistoryTitle => 'Recent adjustments';
+
+  @override
+  String get clientBalanceHistoryEmpty => 'No adjustments yet';
+
+  @override
+  String get clientBalanceHistoryEmptyBody =>
+      'Admin balance changes will appear here.';
+
+  @override
+  String get clientBalanceAdjustmentDefault => 'Balance adjustment';
+
+  @override
+  String get clientBalanceDebtWarningTitle => 'Debt limit reached';
+
+  @override
+  String get clientBalanceDebtWarningBody =>
+      'Top up your balance to continue booking trips.';
+
+  @override
+  String get clientBalanceTopUpComingSoon =>
+      'Online top-up will be available soon. Contact support for help.';
+
+  @override
+  String get clientBalanceUnavailable => 'Balance unavailable';
+
+  @override
   String get homeWhereToday => 'Where are we going today?';
 
   @override
@@ -310,6 +441,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeConfirmRoute => 'Confirm route';
+
+  @override
+  String get homeLocationLoading => 'Getting your location...';
+
+  @override
+  String get homeLocationUnavailable => 'Unable to get your location';
+
+  @override
+  String get homeRefreshLocation => 'Refresh location';
+
+  @override
+  String get homeLocationPermissionTitle => 'Allow location access';
+
+  @override
+  String get homeLocationPermissionMessage =>
+      'Local Transport needs your location to set your pickup point automatically.';
+
+  @override
+  String get homeLocationPermissionAllow => 'Allow';
+
+  @override
+  String get homeLocationPermissionDeny => 'Not now';
+
+  @override
+  String get homeLocationPermissionSettingsMessage =>
+      'Location permission is disabled. Open settings to allow access.';
+
+  @override
+  String get homeLocationOpenSettings => 'Open settings';
+
+  @override
+  String get homeLocationServicesDisabled =>
+      'Turn on location services on your device to use your current address.';
 
   @override
   String get reservationsTitle => 'Reservations';
@@ -491,6 +655,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPendingDebtorsSubtitle => '3 overdue invoices';
 
   @override
+  String adminPendingDebtorsCount(int count) {
+    return '$count overdue invoices';
+  }
+
+  @override
+  String adminActiveTripsTrendDynamic(String change) {
+    return '$change vs. yesterday';
+  }
+
+  @override
+  String get adminNoFleetVehicles => 'No vehicles in fleet yet';
+
+  @override
+  String get adminNoReportActivities => 'No completed trips yet';
+
+  @override
+  String adminBaseRateLive(String multiplier) {
+    return 'Dynamic: Active ($multiplier)';
+  }
+
+  @override
   String get adminMonthlyReportsTitle => 'Monthly Reports';
 
   @override
@@ -498,6 +683,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminActivityMapTitle => 'Activity Map';
+
+  @override
+  String get adminActivityMapWaiting =>
+      'Waiting for live trips and driver locations';
 
   @override
   String get adminRatesTitle => 'Rates & Market';
@@ -527,6 +716,571 @@ class AppLocalizationsEn extends AppLocalizations {
   String adminFleetDriverPrefix(String name) {
     return 'Driver: $name';
   }
+
+  @override
+  String get adminHubTitle => 'Administration area';
+
+  @override
+  String get adminHubHeading => 'Administration area';
+
+  @override
+  String get adminHubSubtitle =>
+      'Manage operations, fleet, pricing and support.';
+
+  @override
+  String get adminUsersTitle => 'Users';
+
+  @override
+  String get adminUsersDesc => 'Account and permissions management.';
+
+  @override
+  String get adminUsersHeading => 'Account and permissions management';
+
+  @override
+  String get adminUsersSubtitle => 'Manage team profiles, roles and access.';
+
+  @override
+  String get adminUsersSearchHint => 'Search by name, email, phone, or ID';
+
+  @override
+  String get adminUsersEmpty => 'No users found';
+
+  @override
+  String get adminUsersCreateTitle => 'Add user';
+
+  @override
+  String get adminUsersCreateSubtitle =>
+      'Create a client, driver, manager, or admin account.';
+
+  @override
+  String get adminUsersCreateAction => 'Create user';
+
+  @override
+  String get adminUsersCreateSuccess => 'User created successfully';
+
+  @override
+  String get adminUsersCreateFailed => 'Could not create user';
+
+  @override
+  String get adminUsersRoleLabel => 'Role';
+
+  @override
+  String get adminUsersAddTooltip => 'Add user';
+
+  @override
+  String get adminStatusActive => 'Active';
+
+  @override
+  String get adminStatusInactive => 'Inactive';
+
+  @override
+  String get adminStatusOpen => 'Open';
+
+  @override
+  String get adminStatusResolved => 'Resolved';
+
+  @override
+  String get adminStatusConfigured => 'Configured';
+
+  @override
+  String get adminManagerPermissionsTitle => 'Manager permissions';
+
+  @override
+  String get adminManagerPermissionsDesc =>
+      'Configure operational permission flags per manager.';
+
+  @override
+  String get adminManagerPermissionsHeading =>
+      'Operational permission configuration';
+
+  @override
+  String get adminManagerPermissionsSubtitle =>
+      'Configure, per manager, the allowed modules and operational actions.';
+
+  @override
+  String get adminManagersEmpty => 'No manager accounts found';
+
+  @override
+  String get adminStatusUnconfigured => 'Not configured';
+
+  @override
+  String get adminManagerPermissionsSaveAction => 'Save permissions';
+
+  @override
+  String get adminManagerPermissionsSaveSuccess => 'Manager permissions saved';
+
+  @override
+  String get adminManagerPermissionsSaveError =>
+      'Could not save manager permissions';
+
+  @override
+  String get managerPermissionViewTrips => 'View trips';
+
+  @override
+  String get managerPermissionViewReports => 'View reports';
+
+  @override
+  String get managerPermissionViewAudit => 'View audit';
+
+  @override
+  String get managerPermissionViewDrivers => 'View drivers';
+
+  @override
+  String get managerPermissionViewClients => 'View clients';
+
+  @override
+  String get managerPermissionViewSupportRequests => 'View support requests';
+
+  @override
+  String get managerPermissionManageClientChats => 'Manage client chats';
+
+  @override
+  String get managerPermissionCancelTripBySupport => 'Cancel trip by support';
+
+  @override
+  String get managerPermissionUpdateTripSupport => 'Update trip support';
+
+  @override
+  String get managerPermissionResolvePasswordHelpRequest =>
+      'Resolve password help requests';
+
+  @override
+  String get managerPermissionManageEvents => 'Manage events';
+
+  @override
+  String get managerPermissionAssignVehicleToDriver => 'Assign vehicle';
+
+  @override
+  String get managerPermissionEditDriverStatus => 'Edit driver status';
+
+  @override
+  String get managerPermissionManageTariffs => 'Manage tariffs';
+
+  @override
+  String get managerPermissionManageTripPackages => 'Manage trip packages';
+
+  @override
+  String get adminSupportRequestsTitle => 'Support tickets';
+
+  @override
+  String get adminSupportRequestsDesc =>
+      'Password-help and support ticket inbox.';
+
+  @override
+  String get adminSupportEmpty => 'No support requests';
+
+  @override
+  String get adminIncidentsTitle => 'Operational incidents';
+
+  @override
+  String get adminIncidentsDesc => 'Driver monitoring incidents and approvals.';
+
+  @override
+  String get adminIncidentsEmpty => 'No operational incidents';
+
+  @override
+  String get adminIncidentDetailTitle => 'Incident details';
+
+  @override
+  String get adminIncidentCurrentState => 'Current state';
+
+  @override
+  String get adminIncidentTrip => 'Trip';
+
+  @override
+  String get adminIncidentStarted => 'Started';
+
+  @override
+  String get adminIncidentRouteSummary => 'Route summary';
+
+  @override
+  String get adminIncidentKmSummary => 'Km summary';
+
+  @override
+  String get adminMonitoringTitle => 'Monitoring settings';
+
+  @override
+  String get adminMonitoringDesc => 'Thresholds for operational monitoring.';
+
+  @override
+  String get adminMonitoringHeading => 'Operational monitoring';
+
+  @override
+  String get adminMonitoringSubtitle =>
+      'Review monitoring thresholds stored in Firebase.';
+
+  @override
+  String get adminMonitoringConfig => 'Current configuration';
+
+  @override
+  String get adminMonitoringLoading => 'Loading monitoring configuration...';
+
+  @override
+  String get adminMonitoringEnabled => 'Monitoring enabled';
+
+  @override
+  String get adminMonitoringEnabledHint =>
+      'Operational monitoring runs only when enabled.';
+
+  @override
+  String get adminMonitoringBaseGeofence => 'Base geofence';
+
+  @override
+  String get adminMonitoringServiceGeofences => 'Service geofences';
+
+  @override
+  String adminMonitoringServiceGeofenceCount(int count) {
+    return '$count configured';
+  }
+
+  @override
+  String get adminMonitoringLastUpdated => 'Last updated';
+
+  @override
+  String get adminMonitoringSaveSuccess => 'Monitoring settings saved';
+
+  @override
+  String get adminReservationsTitle => 'Operational reservations';
+
+  @override
+  String get adminReservationsDesc => 'Schedule future rides for clients.';
+
+  @override
+  String get adminReservationsEmpty => 'No reservations';
+
+  @override
+  String get adminSupportSettingsTitle => 'Support contact';
+
+  @override
+  String get adminSupportSettingsDesc =>
+      'Official support phone for password recovery.';
+
+  @override
+  String get adminSupportSettingsHeading => 'Support contact';
+
+  @override
+  String get adminSupportSettingsSubtitle =>
+      'Define the official contact number.';
+
+  @override
+  String get adminSupportPhoneLabel => 'Support phone';
+
+  @override
+  String get adminEventsTitle => 'Events and alerts';
+
+  @override
+  String get adminEventsDesc => 'Send reminders and warnings to drivers.';
+
+  @override
+  String get adminEventsEmpty => 'No scheduled events';
+
+  @override
+  String get adminFleetTitle => 'Fleet';
+
+  @override
+  String get adminFleetDesc => 'Track vehicles, status and availability.';
+
+  @override
+  String get adminFleetNoDriver => 'No driver assigned';
+
+  @override
+  String get adminFleetDriver => 'Driver';
+
+  @override
+  String get adminTransportTypesTitle => 'Types of transport';
+
+  @override
+  String get adminTransportTypesDesc => 'Create and manage available types.';
+
+  @override
+  String get adminTransportTypesEmpty => 'No transport types';
+
+  @override
+  String get adminTripPackagesTitle => 'Trip packages';
+
+  @override
+  String get adminTripPackagesDesc =>
+      'Prepaid packages with fixed destination and price.';
+
+  @override
+  String get adminTripPackagesEmpty => 'No trip packages';
+
+  @override
+  String get adminTariffsTitle => 'Tariffs';
+
+  @override
+  String get adminTariffsDesc => 'Set prices, rules and seasonal adjustments.';
+
+  @override
+  String get adminTariffAdminDefault => 'Admin default tariff';
+
+  @override
+  String get adminTariffPublicDefault => 'Public default tariff';
+
+  @override
+  String get adminBalancesTitle => 'Sales';
+
+  @override
+  String get adminBalancesDesc =>
+      'Control balances, limits and pending operations.';
+
+  @override
+  String get adminBalancesEmpty => 'No balances';
+
+  @override
+  String get adminBalancesDebt => 'Debt';
+
+  @override
+  String get adminBalancesCredit => 'Credit';
+
+  @override
+  String get adminBalanceCurrent => 'Current balance';
+
+  @override
+  String get adminBalanceDebtLimit => 'Debt limit';
+
+  @override
+  String get adminBalanceAdjustAction => 'Adjust balance';
+
+  @override
+  String get adminBalanceAdjustTitle => 'Manual balance adjustment';
+
+  @override
+  String get adminBalanceCredit => 'Credit';
+
+  @override
+  String get adminBalanceDebt => 'Debt';
+
+  @override
+  String get adminBalanceAmountLabel => 'Value (EUR)';
+
+  @override
+  String get adminBalanceAmountRequired => 'Enter a valid amount.';
+
+  @override
+  String get adminBalanceReasonLabel => 'Reason';
+
+  @override
+  String get adminBalanceReasonRequired => 'Enter a reason.';
+
+  @override
+  String get adminBalanceConfirm => 'Confirm adjustment';
+
+  @override
+  String get adminBalanceAdjustSuccess => 'Balance updated';
+
+  @override
+  String get adminVehicleCreateTitle => 'New vehicle';
+
+  @override
+  String get adminVehicleEditTitle => 'Edit vehicle';
+
+  @override
+  String get adminVehicleCreateAction => 'Create vehicle';
+
+  @override
+  String get adminVehicleCreateSuccess => 'Vehicle created';
+
+  @override
+  String get adminVehicleAddPhoto => 'Add photo';
+
+  @override
+  String get adminVehiclePlateLabel => 'Registration';
+
+  @override
+  String get adminVehicleModelLabel => 'Model';
+
+  @override
+  String get adminVehicleCapacityLabel => 'Capacity';
+
+  @override
+  String get adminVehicleTransportTypeLabel => 'Default transport type';
+
+  @override
+  String get adminVehicleNoPreference => 'No preference';
+
+  @override
+  String get adminVehicleNotesLabel => 'Notes';
+
+  @override
+  String get adminVehicleActiveLabel => 'Active vehicle';
+
+  @override
+  String get adminVehicleRequiredFields => 'Fill registration and model.';
+
+  @override
+  String get adminTransportTypeCreateTitle => 'New type of transport';
+
+  @override
+  String get adminTransportTypeEditTitle => 'Edit transport type';
+
+  @override
+  String get adminTransportTypeCreateAction => 'Create type';
+
+  @override
+  String get adminTransportTypeCreateSuccess => 'Transport type created';
+
+  @override
+  String get adminTransportTypeNameLabel => 'Name';
+
+  @override
+  String get adminTransportTypeNameRequired => 'Enter a name.';
+
+  @override
+  String get adminTransportTypeBaseFareLabel => 'Initial base rate';
+
+  @override
+  String get adminTransportTypeMultiplierLabel => 'Package price adjustment';
+
+  @override
+  String get adminTransportTypeDescriptionLabel => 'Description';
+
+  @override
+  String get adminTripPackagesOpsTab => 'Operation';
+
+  @override
+  String get adminTripPackagesCatalogTab => 'Catalog';
+
+  @override
+  String get adminTripPackagesOpsEmpty =>
+      'No bookings in the operations queue.';
+
+  @override
+  String get adminTripPackagesCatalogHeading => 'Package catalog';
+
+  @override
+  String get adminTripPackagesCatalogSubtitle =>
+      'Manage commercial products with fixed destination, fixed price, and allowed transport types.';
+
+  @override
+  String get adminPackageCreateTitle => 'Create package';
+
+  @override
+  String get adminPackageEditTitle => 'Edit package';
+
+  @override
+  String get adminPackageCreateAction => 'Create package';
+
+  @override
+  String get adminPackageEditAction => 'Edit package';
+
+  @override
+  String get adminPackageCreateSuccess => 'Package saved';
+
+  @override
+  String get adminPackageNameLabel => 'Package name';
+
+  @override
+  String get adminPackageNameMin => 'Enter a name with at least 3 characters.';
+
+  @override
+  String get adminPackageDestinationLabel => 'Fixed destination';
+
+  @override
+  String get adminPackageDescriptionLabel => 'Description';
+
+  @override
+  String get adminPackageDescriptionMin =>
+      'Enter a description with at least 10 characters.';
+
+  @override
+  String get adminPackagePriceLabel => 'Fixed price (EUR)';
+
+  @override
+  String get adminPackagePriceInvalid => 'Enter a valid price.';
+
+  @override
+  String get adminPackageTransportRequired =>
+      'Select at least one transport type.';
+
+  @override
+  String get adminPackageSalesActive => 'Sales active';
+
+  @override
+  String get adminPackageSalesActiveHint =>
+      'When disabled, the package no longer appears for new purchases.';
+
+  @override
+  String get adminPackageAllowedTransport => 'Allowed transport types';
+
+  @override
+  String get adminSupportReplyTitle => 'Reply to ticket';
+
+  @override
+  String get adminSupportReplyLabel => 'Message';
+
+  @override
+  String get adminSupportReplyHint => 'Write your reply to the client...';
+
+  @override
+  String adminSupportRequestedAt(String date) {
+    return 'requested at $date';
+  }
+
+  @override
+  String get adminSupportReplyAction => 'Reply';
+
+  @override
+  String get adminSupportReplyRequired => 'Enter a message.';
+
+  @override
+  String get adminSupportReplySuccess => 'Reply sent';
+
+  @override
+  String get adminSupportResolveAction => 'Mark as resolved';
+
+  @override
+  String get adminSupportResolveSuccess => 'Ticket resolved';
+
+  @override
+  String get adminReportsTabOverview => 'Operational Overview';
+
+  @override
+  String get adminReportsTabClient => 'Customer Statement';
+
+  @override
+  String get adminReportsTabDriver => 'Driver\'s Statement';
+
+  @override
+  String get adminReportsTabComingSoon =>
+      'This report view will load statement data from Firebase trips and balance adjustments.';
+
+  @override
+  String get adminCurrencyTitle => 'Currency settings';
+
+  @override
+  String get adminCurrencyDesc => 'FX rates used for CVE, EUR and USD.';
+
+  @override
+  String get adminCurrencyHeading => 'Currency settings';
+
+  @override
+  String get adminCurrencySubtitle => 'Set exchange rates in config/currency.';
+
+  @override
+  String get adminCurrencyCveToEur => 'CVE to EUR';
+
+  @override
+  String get adminCurrencyCveToUsd => 'CVE to USD';
+
+  @override
+  String get adminCurrencySaveSuccess => 'Currency settings saved';
+
+  @override
+  String get adminCurrencyInvalidRate =>
+      'Enter valid exchange rates greater than zero';
+
+  @override
+  String get adminReportsDesc => 'Analyze operation and performance metrics.';
+
+  @override
+  String get adminAuditTitle => 'Audit';
+
+  @override
+  String get adminAuditDesc => 'See who adjusted balances and rates.';
+
+  @override
+  String get adminAuditEmpty => 'No audit entries';
 
   @override
   String get deliveryDeliverTo => 'Deliver to: Av. da Liberdade, Lisbon';
@@ -749,7 +1503,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Explore crystal-clear waters with our new premium rental service.';
 
   @override
-  String get premiumHomeFromPrice => 'From €45';
+  String premiumHomeFromPrice(String price) {
+    return 'From $price';
+  }
 
   @override
   String get premiumHomeIslandGuideTitle => 'Exclusive Island Guide';
@@ -814,6 +1570,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rentalLoadMore => 'Load more vehicles';
+
+  @override
+  String get rentalLoadError => 'Could not load vehicles from Firebase.';
+
+  @override
+  String get rentalNoVehicles => 'No active vehicles found in Firebase.';
 
   @override
   String get rentalVehicleDetails => 'Vehicle Details';
@@ -953,6 +1715,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripHistoryStatusCancelled => 'Cancelled';
 
   @override
+  String get tripHistoryStatusInProgress => 'In progress';
+
+  @override
+  String get tripHistoryStatusScheduled => 'Scheduled';
+
+  @override
+  String get tripHistoryEmpty => 'No trips yet';
+
+  @override
+  String get tripHistoryEmptyBody =>
+      'Your Firebase trips will appear here after you request a ride.';
+
+  @override
+  String get tripHistoryLoadError => 'Could not load trips from Firebase.';
+
+  @override
   String get tripHistoryNoDetails => 'No details';
 
   @override
@@ -1051,6 +1829,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driverSearchCancelTrip => 'Cancel Trip';
 
   @override
+  String get driverSearchCancelling => 'Cancelling...';
+
+  @override
+  String get driverSearchCancelFailed => 'Unable to cancel the trip.';
+
+  @override
+  String get driverSearchNoDrivers => 'No drivers available. Please try again.';
+
+  @override
   String get driverSearchOptimizing => 'Optimizing route in real time...';
 
   @override
@@ -1095,6 +1882,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDestinationTodaySuggestion => 'TODAY\'S SUGGESTION';
 
   @override
+  String get tripDestinationSuggestionTitle => 'Belém & Monuments';
+
+  @override
   String get tripDestinationViewFullMap => 'View Full Map';
 
   @override
@@ -1107,6 +1897,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripConfirmTrip => 'Confirm trip';
+
+  @override
+  String get tripConfirmSessionInvalid =>
+      'Invalid session. Please sign in again.';
+
+  @override
+  String get tripConfirmRouteLoading =>
+      'Please wait for the route to finish loading.';
+
+  @override
+  String get tripConfirmCreateFailed =>
+      'Unable to create the trip. Please try again.';
+
+  @override
+  String get tripConfirmPermissionDenied =>
+      'Trip creation is blocked by Firebase rules. Publish the updated rules and sign in as a client.';
 
   @override
   String get tripConfirmPickupPoint => 'PICKUP POINT';
@@ -1142,7 +1948,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driverTodayEarnings => 'Today\'s Earnings';
 
   @override
-  String get driverEarningsChange => '+12% vs. yesterday';
+  String driverEarningsVsYesterday(String change) {
+    return '$change vs. yesterday';
+  }
+
+  @override
+  String get driverNoRecentTrips => 'No completed trips yet';
+
+  @override
+  String get driverNoVehicleAssigned => 'No vehicle assigned';
 
   @override
   String get driverTripsLabel => 'Trips';

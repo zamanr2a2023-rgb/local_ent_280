@@ -5,52 +5,160 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_ent_280/core/data/driver_home_data.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/core/services/current_location_service.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/driver/data/models/driver_dashboard_stats.dart';
+import 'package:local_ent_280/features/driver/data/models/driver_vehicle.dart';
+import 'package:local_ent_280/features/driver/data/driver_location_tracker.dart';
+import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/presentation/driver/driver_drawer.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Página Inicial — Motorista (dashboard com disponibilidade e ganhos).
 class DriverHomeScreen extends StatefulWidget {
-  const DriverHomeScreen({super.key});
+  const DriverHomeScreen({super.key, this.driverRepository});
+
+  final DriverRepository? driverRepository;
 
   @override
   State<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
-  bool _isAvailable = true;
-  Timer? _requestSimulationTimer;
+  late final DriverRepository _driverRepository;
+  final _locationService = CurrentLocationService();
+
+  StreamSubscription? _statusSubscription;
+  StreamSubscription? _pendingSubscription;
+  StreamSubscription? _offerSubscription;
+  StreamSubscription? _activeSubscription;
+  StreamSubscription? _statsSubscription;
+  StreamSubscription? _vehicleSubscription;
+
+  bool _isAvailable = false;
+  bool _handlingTripNavigation = false;
+  DriverDashboardStats _stats = DriverDashboardStats.empty;
+  DriverVehicle? _vehicle;
+  String _locationLabel = '';
+
+  String? get _driverId => UserSession.instance.profile?.uid;
 
   @override
   void initState() {
     super.initState();
-    _scheduleTripRequestSimulation();
+    _driverRepository = widget.driverRepository ?? DriverRepository();
+    _loadLocationLabel();
+    _bindFirebase();
+  }
+
+  Future<void> _loadLocationLabel() async {
+    final location = await _locationService.getLastKnownLocation() ??
+        await _locationService.getCurrentLocation();
+    if (!mounted || location == null) return;
+    setState(() => _locationLabel = location.address);
+  }
+
+  void _bindFirebase() {
+    final driverId = _driverId;
+    if (driverId == null || _driverRepository.disabled) return;
+
+    _statusSubscription =
+        _driverRepository.watchDriverStatus(driverId).listen((status) {
+      if (!mounted) return;
+      final available = status?.isAvailable ?? false;
+      setState(() => _isAvailable = available);
+      if (available) {
+        DriverLocationTracker.instance.start(driverId);
+      } else {
+        DriverLocationTracker.instance.stop();
+      }
+    });
+
+    _activeSubscription =
+        _driverRepository.watchActiveDriverTrip(driverId).listen((trip) {
+      if (!mounted || trip == null || _handlingTripNavigation) return;
+      _handlingTripNavigation = true;
+      AppNavigation.toDriverActiveTrip(
+        context,
+        tripId: trip.id,
+        trip: trip,
+        driverRepository: _driverRepository,
+      );
+    });
+
+    _pendingSubscription =
+        _driverRepository.watchPendingAcceptanceTrip(driverId).listen((trip) {
+      if (!mounted || trip == null || _handlingTripNavigation) return;
+      _handlingTripNavigation = true;
+      AppNavigation.toDriverTripRequest(
+        context,
+        tripId: trip.id,
+        trip: trip,
+        driverRepository: _driverRepository,
+      );
+    });
+
+    _offerSubscription = _driverRepository.watchOpenTripOffer().listen((trip) async {
+      if (!mounted || trip == null || !_isAvailable || _handlingTripNavigation) {
+        return;
+      }
+      final claimed = await _driverRepository.claimTrip(driverId, trip.id);
+      if (!mounted || !claimed) return;
+      _handlingTripNavigation = true;
+      AppNavigation.toDriverTripRequest(
+        context,
+        tripId: trip.id,
+        trip: trip,
+        driverRepository: _driverRepository,
+      );
+    });
+
+    _statsSubscription =
+        _driverRepository.watchDriverDashboardStats(driverId).listen((stats) {
+      if (!mounted) return;
+      setState(() => _stats = stats);
+    });
+
+    _vehicleSubscription =
+        _driverRepository.watchAssignedVehicle(driverId).listen((vehicle) {
+      if (!mounted) return;
+      setState(() => _vehicle = vehicle);
+    });
   }
 
   @override
   void dispose() {
-    _requestSimulationTimer?.cancel();
+    _statusSubscription?.cancel();
+    _pendingSubscription?.cancel();
+    _offerSubscription?.cancel();
+    _activeSubscription?.cancel();
+    _statsSubscription?.cancel();
+    _vehicleSubscription?.cancel();
     super.dispose();
   }
 
-  void _scheduleTripRequestSimulation() {
-    _requestSimulationTimer?.cancel();
-    if (!_isAvailable) return;
-    _requestSimulationTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted || !_isAvailable) return;
-      AppNavigation.toDriverTripRequest(context);
-    });
-  }
-
-  void _setAvailability(bool value) {
+  Future<void> _setAvailability(bool value) async {
+    final driverId = _driverId;
+    if (driverId == null) return;
     setState(() => _isAvailable = value);
-    if (value) {
-      _scheduleTripRequestSimulation();
-    } else {
-      _requestSimulationTimer?.cancel();
+    try {
+      await _driverRepository.setAvailability(driverId, value);
+      if (value) {
+        await DriverLocationTracker.instance.start(driverId);
+      } else {
+        await DriverLocationTracker.instance.stop();
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.tryAgain)),
+        );
+      }
     }
   }
 
@@ -83,17 +191,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     onChanged: _setAvailability,
                   ),
                   SizedBox(height: 16.h),
-                  const _MapPreview(),
+                  _MapPreview(locationLabel: _locationLabel),
                   SizedBox(height: 20.h),
                   const _FleetStatusSection(),
                   SizedBox(height: 16.h),
-                  const _VehicleCard(),
+                  _VehicleCard(vehicle: _vehicle),
                   SizedBox(height: 20.h),
-                  const _EarningsCard(),
+                  _EarningsCard(stats: _stats),
                   SizedBox(height: 12.h),
-                  const _StatsRow(),
+                  _StatsRow(
+                    tripsCount: _stats.todayTripCountFormatted,
+                    distance: _stats.todayDistanceFormatted,
+                  ),
                   SizedBox(height: 24.h),
-                  const _RecentTripsSection(),
+                  _RecentTripsSection(trips: _stats.recentTrips),
                 ],
               ),
             ),
@@ -232,53 +343,52 @@ class _ToggleOption extends StatelessWidget {
 }
 
 class _MapPreview extends StatelessWidget {
-  const _MapPreview();
+  const _MapPreview({required this.locationLabel});
+
+  final String locationLabel;
 
   @override
   Widget build(BuildContext context) {
+    final label = locationLabel.trim().isNotEmpty
+        ? locationLabel
+        : context.l10n.driverLocationCity;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16.r),
       child: SizedBox(
         height: 140.h,
         width: double.infinity,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              DriverHomeData.mapImage,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => ColoredBox(
-                color: AppColors.surfaceContainer,
-                child: Icon(Icons.map, size: 40.sp, color: AppColors.outline),
+        child: DriverMapLayer(
+          initialZoom: 12,
+          overlay: Positioned(
+            left: 12.w,
+            bottom: 12.h,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(8.r),
               ),
-            ),
-            Positioned(
-              left: 12.w,
-              bottom: 12.h,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.my_location, size: 14.sp, color: AppColors.accent),
-                    SizedBox(width: 4.w),
-                    Text(
-                      context.l10n.driverLocationCity,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.my_location, size: 14.sp, color: AppColors.accent),
+                  SizedBox(width: 4.w),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTypography.inter(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -324,11 +434,24 @@ class _FleetStatusSection extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard();
+  const _VehicleCard({required this.vehicle});
+
+  final DriverVehicle? vehicle;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final model = vehicle?.model.trim().isNotEmpty == true
+        ? vehicle!.model.trim()
+        : l10n.driverNoVehicleAssigned;
+    final plate = vehicle?.plate.trim().isNotEmpty == true
+        ? vehicle!.plate.trim()
+        : '—';
+    final statusLabel = vehicle?.isActive == true
+        ? l10n.driverInOperation
+        : l10n.driverUnavailable;
+    final battery = vehicle?.batteryLabel ?? '—';
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -353,7 +476,7 @@ class _VehicleCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  DriverHomeData.vehicleModel,
+                  model,
                   style: AppTypography.manrope(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w700,
@@ -362,7 +485,7 @@ class _VehicleCard extends StatelessWidget {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  '${DriverHomeData.licensePlate} • ${l10n.driverInOperation}',
+                  '$plate • $statusLabel',
                   style: AppTypography.inter(
                     fontSize: 13.sp,
                     color: AppColors.onSurfaceVariant,
@@ -376,7 +499,7 @@ class _VehicleCard extends StatelessWidget {
             children: [
               Icon(Icons.battery_charging_full, color: AppColors.accent, size: 20.sp),
               Text(
-                DriverHomeData.batteryLevel,
+                battery,
                 style: AppTypography.inter(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
@@ -392,11 +515,16 @@ class _VehicleCard extends StatelessWidget {
 }
 
 class _EarningsCard extends StatelessWidget {
-  const _EarningsCard();
+  const _EarningsCard({required this.stats});
+
+  final DriverDashboardStats stats;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final trendIcon = stats.earningsTrendingUp
+        ? Icons.trending_up
+        : Icons.trending_down;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
@@ -417,7 +545,7 @@ class _EarningsCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            DriverHomeData.todayEarnings,
+            stats.todayEarningsFormatted,
             style: AppTypography.manrope(
               fontSize: 32.sp,
               fontWeight: FontWeight.w700,
@@ -427,10 +555,10 @@ class _EarningsCard extends StatelessWidget {
           SizedBox(height: 4.h),
           Row(
             children: [
-              Icon(Icons.trending_up, size: 14.sp, color: AppColors.primaryFixed),
+              Icon(trendIcon, size: 14.sp, color: AppColors.primaryFixed),
               SizedBox(width: 4.w),
               Text(
-                l10n.driverEarningsChange,
+                l10n.driverEarningsVsYesterday(stats.earningsChangePercent),
                 style: AppTypography.inter(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
@@ -446,7 +574,10 @@ class _EarningsCard extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow();
+  const _StatsRow({required this.tripsCount, required this.distance});
+
+  final String tripsCount;
+  final String distance;
 
   @override
   Widget build(BuildContext context) {
@@ -455,7 +586,7 @@ class _StatsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _StatCard(
-            value: DriverHomeData.tripsCount,
+            value: tripsCount,
             label: l10n.driverTripsLabel,
             icon: Icons.directions_car_outlined,
           ),
@@ -463,7 +594,7 @@ class _StatsRow extends StatelessWidget {
         SizedBox(width: 12.w),
         Expanded(
           child: _StatCard(
-            value: DriverHomeData.distanceValue,
+            value: distance,
             label: l10n.driverDistanceLabel,
             icon: Icons.route_outlined,
           ),
@@ -520,7 +651,9 @@ class _StatCard extends StatelessWidget {
 }
 
 class _RecentTripsSection extends StatelessWidget {
-  const _RecentTripsSection();
+  const _RecentTripsSection({required this.trips});
+
+  final List<DriverRecentTrip> trips;
 
   @override
   Widget build(BuildContext context) {
@@ -536,10 +669,30 @@ class _RecentTripsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 12.h),
-        for (final trip in DriverHomeData.recentTrips) ...[
-          _RecentTripTile(trip: trip),
-          SizedBox(height: 8.h),
-        ],
+        if (trips.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Text(
+              context.l10n.driverNoRecentTrips,
+              style: AppTypography.inter(
+                fontSize: 13.sp,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          for (final trip in trips) ...[
+            _RecentTripTile(trip: trip),
+            SizedBox(height: 8.h),
+          ],
       ],
     );
   }

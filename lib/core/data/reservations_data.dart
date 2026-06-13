@@ -59,7 +59,7 @@ abstract final class ReservationsData {
       id: 'res-1',
       date: '15 de Outubro, 2023',
       timeMeta: '14:30 · Partida prevista',
-      pickup: 'Aeroporto de Lisboa (LIS)',
+      pickup: 'Lisbon Airport (LIS)',
       destination: 'Avenida da Liberdade, 120',
       status: ReservationStatus.confirmada,
       vehicleInfo: 'Executivo · Tesla Model S',
@@ -69,7 +69,7 @@ abstract final class ReservationsData {
       date: '18 de Outubro, 2023',
       timeMeta: '09:00 · Aguardando motorista',
       pickup: 'Hotel Altis Grand',
-      destination: 'Gare do Oriente',
+      destination: 'Oriente Station',
       status: ReservationStatus.pendente,
     ),
   ];

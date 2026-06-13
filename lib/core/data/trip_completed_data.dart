@@ -10,7 +10,7 @@ abstract final class TripCompletedData {
 
   static const summaryTitle = 'Resumo da Viagem';
   static const finalPriceLabel = 'Preço Final';
-  static const finalPrice = '12,45€';
+  static const finalPriceEur = 12.45;
   static const distance = '8.4 km';
   static const duration = '18 min';
   static const routeBadge = 'Trajeto otimizado';

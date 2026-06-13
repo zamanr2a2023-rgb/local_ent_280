@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/features/rental/data/rental_vehicle_repository.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
@@ -22,7 +23,7 @@ class VehicleSearchResultsScreen extends StatefulWidget {
 class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen> {
   late final RentalVehicleRepository _repository;
   String _carType = 'Todos os tipos';
-  String _maxPrice = 'Qualquer preço';
+  String _maxPrice = 'any';
   String _transmission = 'Todas';
 
   static const _carTypes = [
@@ -32,13 +33,18 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
     'Executivo',
     'Elétrico',
   ];
-  static const _maxPrices = [
-    'Qualquer preço',
-    'Até 50€/dia',
-    'Até 100€/dia',
-    'Até 200€/dia',
-  ];
+  static const _maxPriceKeys = ['any', 'max_50', 'max_100', 'max_200'];
   static const _transmissions = ['Todas', 'Automático', 'Manual'];
+
+  List<String> _maxPriceLabels() {
+    final formatter = AppCurrencyFormatter.instance;
+    return [
+      'Qualquer preço',
+      'Até ${formatter.formatEurMajorWithSuffix(50, '/dia')}',
+      'Até ${formatter.formatEurMajorWithSuffix(100, '/dia')}',
+      'Até ${formatter.formatEurMajorWithSuffix(200, '/dia')}',
+    ];
+  }
 
   @override
   void initState() {
@@ -105,7 +111,8 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                           maxPrice: _maxPrice,
                           transmission: _transmission,
                           carTypes: _carTypes,
-                          maxPrices: _maxPrices,
+                          maxPrices: _maxPriceLabels(),
+                          maxPriceKeys: _maxPriceKeys,
                           transmissions: _transmissions,
                           onCarTypeChanged: (v) => setState(() => _carType = v),
                           onMaxPriceChanged: (v) => setState(() => _maxPrice = v),
@@ -206,6 +213,7 @@ class _FilterCard extends StatelessWidget {
     required this.transmission,
     required this.carTypes,
     required this.maxPrices,
+    required this.maxPriceKeys,
     required this.transmissions,
     required this.onCarTypeChanged,
     required this.onMaxPriceChanged,
@@ -217,10 +225,17 @@ class _FilterCard extends StatelessWidget {
   final String transmission;
   final List<String> carTypes;
   final List<String> maxPrices;
+  final List<String> maxPriceKeys;
   final List<String> transmissions;
   final ValueChanged<String> onCarTypeChanged;
   final ValueChanged<String> onMaxPriceChanged;
   final ValueChanged<String> onTransmissionChanged;
+
+  String _maxPriceLabel() {
+    final index = maxPriceKeys.indexOf(maxPrice);
+    if (index < 0 || index >= maxPrices.length) return maxPrices.first;
+    return maxPrices[index];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,9 +264,14 @@ class _FilterCard extends StatelessWidget {
           SizedBox(height: 16.h),
           _FilterDropdown(
             label: context.l10n.rentalMaxPrice,
-            value: maxPrice,
+            value: _maxPriceLabel(),
             items: maxPrices,
-            onChanged: onMaxPriceChanged,
+            onChanged: (label) {
+              final index = maxPrices.indexOf(label);
+              if (index >= 0 && index < maxPriceKeys.length) {
+                onMaxPriceChanged(maxPriceKeys[index]);
+              }
+            },
           ),
           SizedBox(height: 16.h),
           _FilterDropdown(
@@ -497,7 +517,9 @@ class _PremiumVehicleCard extends StatelessWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '${vehicle.pricePerDay}€',
+                            text: AppCurrencyFormatter.instance.formatEurMajor(
+                              vehicle.pricePerDay.toDouble(),
+                            ),
                             style: GoogleFonts.manrope(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w700,
@@ -650,7 +672,9 @@ class _StandardVehicleCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${vehicle.pricePerDay}€',
+                          AppCurrencyFormatter.instance.formatEurMajor(
+                            vehicle.pricePerDay.toDouble(),
+                          ),
                           style: GoogleFonts.manrope(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w700,

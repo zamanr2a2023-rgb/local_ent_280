@@ -82,6 +82,86 @@ class AuthRepository implements AuthSigning {
     }
   }
 
+  @override
+  Future<AppUserProfile> signUp({
+    required String name,
+    required String email,
+    required String password,
+    required String phone,
+    required LoginSelectedRole selectedRole,
+  }) async {
+    User? createdUser;
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      createdUser = credential.user;
+      final uid = createdUser?.uid;
+      if (uid == null) {
+        throw const AuthException(
+          code: AuthFailureCode.registrationFailed,
+          message: 'Não foi possível criar a conta.',
+        );
+      }
+
+      final role = selectedRole.expectedAppRole.firestoreValue;
+      await _firestore.collection('users').doc(uid).set({
+        'role': role,
+        'name': name.trim(),
+        'phone': phone.trim(),
+        'email': email.trim(),
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (selectedRole == LoginSelectedRole.professional) {
+        await _firestore.collection('driverStatus').doc(uid).set({
+          'isActive': true,
+          'isAvailable': false,
+          'availabilityEnabled': false,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      final profile = await fetchUserProfile(uid);
+      if (profile == null) {
+        throw const AuthException(
+          code: AuthFailureCode.registrationFailed,
+          message: 'Perfil não foi criado.',
+        );
+      }
+
+      UserSession.instance.setProfile(profile);
+      return profile;
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(
+        code: _mapRegistrationAuthCode(e.code),
+        message: _mapRegistrationAuthError(e),
+      );
+    } on AuthException {
+      await _rollbackCreatedUser(createdUser);
+      rethrow;
+    } catch (_) {
+      await _rollbackCreatedUser(createdUser);
+      throw const AuthException(
+        code: AuthFailureCode.registrationFailed,
+        message: 'Não foi possível criar a conta.',
+      );
+    }
+  }
+
+  Future<void> _rollbackCreatedUser(User? user) async {
+    if (user == null) return;
+    try {
+      await user.delete();
+    } catch (_) {}
+    try {
+      await _auth.signOut();
+    } catch (_) {}
+  }
+
   Future<AppUserProfile?> restoreSession() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -98,6 +178,24 @@ class AuthRepository implements AuthSigning {
   Future<void> signOut() {
     UserSession.instance.clear();
     return _auth.signOut();
+  }
+
+  AuthFailureCode _mapRegistrationAuthCode(String code) {
+    return switch (code) {
+      'email-already-in-use' => AuthFailureCode.emailAlreadyInUse,
+      'weak-password' => AuthFailureCode.weakPassword,
+      'invalid-email' => AuthFailureCode.invalidCredentials,
+      _ => AuthFailureCode.registrationFailed,
+    };
+  }
+
+  String _mapRegistrationAuthError(FirebaseAuthException e) {
+    return switch (e.code) {
+      'email-already-in-use' => 'Este e-mail já está registado.',
+      'weak-password' => 'A palavra-passe é demasiado fraca.',
+      'invalid-email' => 'E-mail inválido.',
+      _ => 'Não foi possível criar a conta.',
+    };
   }
 
   String _mapFirebaseAuthError(FirebaseAuthException e) {

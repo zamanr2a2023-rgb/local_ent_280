@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:local_ent_280/core/data/trip_details_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/core/data/trip_history_data.dart';
+import 'package:local_ent_280/features/trips/data/trip_history_mapper.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Detalhes da Viagem — `roles/details.md`.
 class TripDetailsScreen extends StatelessWidget {
-  const TripDetailsScreen({super.key});
+  const TripDetailsScreen({
+    super.key,
+    this.tripId,
+    this.tripRepository,
+  });
+
+  final String? tripId;
+  final TripRepository? tripRepository;
 
   static String _fareLineLabel(AppLocalizations l10n, int index) {
     return switch (index) {
@@ -33,6 +46,56 @@ class TripDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final repository = tripRepository ?? TripRepository();
+    if (tripId != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: StreamBuilder<TripRecord?>(
+            stream: repository.watchTrip(tripId!),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final trip = snapshot.data;
+              if (trip == null) {
+                return Center(
+                  child: Text(
+                    context.l10n.tripHistoryEmpty,
+                    style: AppTypography.inter(fontSize: 14.sp),
+                  ),
+                );
+              }
+              return Column(
+                children: [
+                  _DetailsAppBar(onBack: () => AppNavigation.back(context)),
+                  Expanded(
+                    child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        AppLayout.marginMobile,
+                        12.h,
+                        AppLayout.marginMobile,
+                        24.h,
+                      ),
+                      children: [
+                        _FirebaseSummaryCard(trip: trip),
+                        SizedBox(height: 16.h),
+                        _FirebaseInvoiceCard(trip: trip),
+                        if (trip.driverSummary != null) ...[
+                          SizedBox(height: 16.h),
+                          _FirebaseDriverCard(trip: trip),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -545,7 +608,9 @@ class _InvoiceCard extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        TripDetailsData.totalAmount,
+                        AppCurrencyFormatter.instance.formatEurMinor(
+                          TripDetailsData.totalAmountMinor,
+                        ),
                         style: AppTypography.manrope(
                           fontSize: 32.sp,
                           fontWeight: FontWeight.w700,
@@ -666,7 +731,9 @@ class _FareLineRow extends StatelessWidget {
         ),
         SizedBox(width: 8.w),
         Text(
-          line.amount,
+          line.isDiscount
+              ? '-${AppCurrencyFormatter.instance.formatEurMinor(line.amountMinor)}'
+              : AppCurrencyFormatter.instance.formatEurMinor(line.amountMinor),
           style: AppTypography.inter(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
@@ -875,6 +942,245 @@ class _SupportActionRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FirebaseSummaryCard extends StatelessWidget {
+  const _FirebaseSummaryCard({required this.trip});
+
+  final TripRecord trip;
+
+  String _statusLabel(BuildContext context) {
+    final l10n = context.l10n;
+    final mapped = TripHistoryMapper.fromTripRecord(trip).status;
+    return switch (mapped) {
+      TripHistoryStatus.cancelada => l10n.tripHistoryStatusCancelled,
+      TripHistoryStatus.concluida => l10n.tripDetailsStatusCompleted,
+      TripHistoryStatus.agendada => l10n.tripHistoryStatusScheduled,
+      TripHistoryStatus.emCurso => l10n.tripHistoryStatusInProgress,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final createdAt = trip.createdAt;
+    final dateLabel = createdAt == null
+        ? '—'
+        : DateFormat('d MMM, yyyy • HH:mm', 'en').format(createdAt.toLocal());
+
+    return _CardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.tripDetailsSummary,
+                      style: AppTypography.manrope(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      dateLabel,
+                      style: AppTypography.inter(
+                        fontSize: 12.sp,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryContainer,
+                  borderRadius: BorderRadius.circular(999.r),
+                ),
+                child: Text(
+                  _statusLabel(context),
+                  style: AppTypography.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          _TimelineRow(
+            icon: Icons.location_on,
+            iconColor: AppColors.secondary,
+            title: trip.pickup.address,
+            subtitle: trip.transportType.name,
+          ),
+          SizedBox(height: 12.h),
+          _TimelineRow(
+            icon: Icons.trip_origin,
+            iconColor: AppColors.primary,
+            title: trip.destination.address,
+            subtitle: '${trip.meteringSnapshot.totalDistanceKm.toStringAsFixed(1)} km',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FirebaseInvoiceCard extends StatelessWidget {
+  const _FirebaseInvoiceCard({required this.trip});
+
+  final TripRecord trip;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = trip.fareFormatted;
+    final minutes = trip.meteringSnapshot.totalMinutes;
+    final distance = trip.meteringSnapshot.totalDistanceKm;
+
+    return _CardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.tripDetailsDigitalInvoice,
+            style: AppTypography.manrope(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          _InvoiceLine(
+            label: context.l10n.tripDetailsFareDistance,
+            amount: '${distance.toStringAsFixed(1)} km',
+          ),
+          _InvoiceLine(
+            label: context.l10n.tripDetailsFareTime,
+            amount: '$minutes min',
+          ),
+          SizedBox(height: 8.h),
+          Container(height: 1, color: AppColors.surfaceVariant),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.l10n.tripDetailsTotalPaid,
+                  style: AppTypography.manrope(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              Text(
+                total,
+                style: AppTypography.manrope(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FirebaseDriverCard extends StatelessWidget {
+  const _FirebaseDriverCard({required this.trip});
+
+  final TripRecord trip;
+
+  @override
+  Widget build(BuildContext context) {
+    final driver = trip.driverSummary!;
+    return _CardContainer(
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24.r,
+            backgroundColor: AppColors.surfaceContainerHigh,
+            backgroundImage: driver.photoUrl == null || driver.photoUrl!.isEmpty
+                ? null
+                : NetworkImage(driver.photoUrl!),
+            child: driver.photoUrl == null || driver.photoUrl!.isEmpty
+                ? Icon(Icons.person, color: AppColors.primary, size: 24.sp)
+                : null,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  driver.displayName,
+                  style: AppTypography.manrope(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                if (driver.phone?.isNotEmpty ?? false)
+                  Text(
+                    driver.phone!,
+                    style: AppTypography.inter(
+                      fontSize: 13.sp,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InvoiceLine extends StatelessWidget {
+  const _InvoiceLine({required this.label, required this.amount});
+
+  final String label;
+  final String amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.inter(
+                fontSize: 14.sp,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Text(
+            amount,
+            style: AppTypography.inter(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

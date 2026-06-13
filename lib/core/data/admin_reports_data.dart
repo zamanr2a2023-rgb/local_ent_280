@@ -14,22 +14,7 @@ abstract final class AdminReportsData {
 
   static const fleetEfficiencyPercent = 85;
 
-  static const activities = [
-    AdminReportActivity(
-      title: 'Regional Delivery Porto',
-      reference: 'VTR-402',
-      time: '14:20h',
-      amount: '84.20 €',
-      iconName: 'shipping',
-    ),
-    AdminReportActivity(
-      title: 'Executive Transfer Lisbon',
-      reference: 'VTR-108',
-      time: '11:45h',
-      amount: '125.00 €',
-      iconName: 'commute',
-    ),
-  ];
+  static const activities = <AdminReportActivity>[];
 }
 
 class AdminReportActivity {

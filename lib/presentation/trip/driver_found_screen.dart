@@ -1,17 +1,31 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/driver_found_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_watcher.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Motorista encontrado — a aguardar confirmação (`roles/details.md`).
 class DriverFoundScreen extends StatefulWidget {
-  const DriverFoundScreen({super.key});
+  const DriverFoundScreen({
+    super.key,
+    this.tripId,
+    this.trip,
+    this.tripRepository,
+  });
+
+  final String? tripId;
+  final TripRecord? trip;
+  final TripRepository? tripRepository;
 
   @override
   State<DriverFoundScreen> createState() => _DriverFoundScreenState();
@@ -20,30 +34,43 @@ class DriverFoundScreen extends StatefulWidget {
 class _DriverFoundScreenState extends State<DriverFoundScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _hourglassController;
-  Timer? _enRouteNavigationTimer;
+  late final ClientTripWatcher _tripWatcher;
+  TripRecord? _trip;
+
+  String get _tripId =>
+      widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
   @override
   void initState() {
     super.initState();
+    _trip = widget.trip ?? ActiveTripSession.instance.trip;
     _hourglassController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
-    _enRouteNavigationTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      AppNavigation.toDriverEnRoute(context);
+    _tripWatcher = ClientTripWatcher(
+      screen: ClientTripScreen.driverFound,
+      repository: widget.tripRepository,
+      onTripChanged: (trip) => setState(() => _trip = trip),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tripId = _tripId;
+      if (tripId.isNotEmpty && mounted) {
+        _tripWatcher.start(tripId: tripId, context: context);
+      }
     });
   }
 
   @override
   void dispose() {
-    _enRouteNavigationTimer?.cancel();
+    _tripWatcher.dispose();
     _hourglassController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final trip = _trip;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -53,7 +80,15 @@ class _DriverFoundScreenState extends State<DriverFoundScreen>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const _MapBackground(),
+                if (trip?.pickup != null && trip?.destination != null)
+                  DriverMapLayer(
+                    pickup: trip!.pickup,
+                    destination: trip.destination,
+                    showRoute: true,
+                    myLocationEnabled: false,
+                  )
+                else
+                  const _MapBackground(),
                 Positioned(
                   top: 24.h,
                   left: AppLayout.marginMobile,
@@ -78,6 +113,7 @@ class _DriverFoundScreenState extends State<DriverFoundScreen>
                   right: 0,
                   bottom: 0,
                   child: _DriverAssignmentSheet(
+                    trip: trip,
                     onCancel: () => AppNavigation.back(context),
                   ),
                 ),
@@ -314,12 +350,25 @@ class _MapFabButton extends StatelessWidget {
 }
 
 class _DriverAssignmentSheet extends StatelessWidget {
-  const _DriverAssignmentSheet({required this.onCancel});
+  const _DriverAssignmentSheet({required this.trip, required this.onCancel});
 
+  final TripRecord? trip;
   final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
+    final driverName =
+        trip?.driverSummary?.displayName ?? DriverFoundData.driverName;
+    final vehicleInfo = trip?.transportType.name.trim().isNotEmpty == true
+        ? trip!.transportType.name
+        : DriverFoundData.vehicleInfo;
+    final serviceTier = trip?.tripTypeLabel ?? DriverFoundData.serviceTier;
+    final estimatedTime = trip == null
+        ? DriverFoundData.estimatedTime
+        : '${trip!.meteringSnapshot.totalMinutes} min';
+    final fare = trip?.fareFormatted ??
+        AppCurrencyFormatter.instance.formatEurMajor(DriverFoundData.fareEur);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -357,14 +406,14 @@ class _DriverAssignmentSheet extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      _DriverAvatar(),
+                      _DriverAvatar(photoUrl: trip?.driverSummary?.photoUrl),
                       SizedBox(width: 16.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              DriverFoundData.driverName,
+                              driverName,
                               style: GoogleFonts.manrope(
                                 fontSize: 20.sp,
                                 fontWeight: FontWeight.w600,
@@ -373,7 +422,7 @@ class _DriverAssignmentSheet extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              DriverFoundData.vehicleInfo,
+                              vehicleInfo,
                               style: GoogleFonts.inter(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w400,
@@ -394,7 +443,7 @@ class _DriverAssignmentSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    DriverFoundData.serviceTier,
+                    serviceTier,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -407,7 +456,10 @@ class _DriverAssignmentSheet extends StatelessWidget {
               ],
             ),
             SizedBox(height: 24.h),
-            _RideSummaryCard(),
+            _RideSummaryCard(
+              estimatedTime: estimatedTime,
+              fare: fare,
+            ),
             SizedBox(height: 8.h),
             SizedBox(
               width: double.infinity,
@@ -462,8 +514,13 @@ class _DriverAssignmentSheet extends StatelessWidget {
 }
 
 class _DriverAvatar extends StatelessWidget {
+  const _DriverAvatar({this.photoUrl});
+
+  final String? photoUrl;
+
   @override
   Widget build(BuildContext context) {
+    final imageUrl = photoUrl ?? DriverFoundData.driverPhotoImage;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -476,7 +533,7 @@ class _DriverAvatar extends StatelessWidget {
           ),
           child: ClipOval(
             child: Image.network(
-              DriverFoundData.driverPhotoImage,
+              imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => ColoredBox(
                 color: AppColors.surfaceContainerLow,
@@ -519,6 +576,14 @@ class _DriverAvatar extends StatelessWidget {
 }
 
 class _RideSummaryCard extends StatelessWidget {
+  const _RideSummaryCard({
+    required this.estimatedTime,
+    required this.fare,
+  });
+
+  final String estimatedTime;
+  final String fare;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -534,14 +599,14 @@ class _RideSummaryCard extends StatelessWidget {
             child: _SummaryStat(
               label: context.l10n.driverFoundEstimatedTime,
               icon: Icons.timer_outlined,
-              value: DriverFoundData.estimatedTime,
+              value: estimatedTime,
             ),
           ),
           Expanded(
             child: _SummaryStat(
               label: context.l10n.driverFoundFare,
               icon: Icons.payments_outlined,
-              value: DriverFoundData.fare,
+              value: fare,
             ),
           ),
         ],

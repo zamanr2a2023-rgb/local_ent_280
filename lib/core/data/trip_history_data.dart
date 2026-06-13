@@ -1,7 +1,7 @@
 import 'package:local_ent_280/core/constants/app_assets.dart';
 
 /// Status de uma viagem no histórico — `roles/details.md`.
-enum TripHistoryStatus { concluida, cancelada }
+enum TripHistoryStatus { concluida, cancelada, emCurso, agendada }
 
 /// Item individual no Histórico de Viagens.
 class TripHistoryItem {
@@ -15,6 +15,9 @@ class TripHistoryItem {
     required this.duration,
     required this.status,
     required this.imageUrl,
+    required this.createdAt,
+    required this.costMinor,
+    required this.statusCode,
   });
 
   final String id;
@@ -26,6 +29,9 @@ class TripHistoryItem {
   final String duration;
   final TripHistoryStatus status;
   final String imageUrl;
+  final DateTime? createdAt;
+  final int costMinor;
+  final String statusCode;
 
   bool get isCancelled => status == TripHistoryStatus.cancelada;
 }
@@ -59,42 +65,51 @@ abstract final class TripHistoryData {
 
   static const totalTrips = '24';
   static const totalTripsLabel = 'Viagens';
-  static const monthSpend = '128€';
+  static const monthSpendMinor = 12800;
   static const monthSpendLabel = 'Este Mês';
 
   static const trips = <TripHistoryItem>[
     TripHistoryItem(
       id: 'trip-1',
-      date: '12 Out, 2023',
+      date: '12 Oct, 2023',
       title: 'Lisboa Marina Hotel',
       location: 'Doca de Belém, Lisboa',
-      price: '24,50€',
-      tier: 'Executivo',
+      price: '',
+      tier: 'Executive',
       duration: '18 min',
       status: TripHistoryStatus.concluida,
       imageUrl: AppAssets.tripHistoryMarinaImage,
+      createdAt: null,
+      costMinor: 2450,
+      statusCode: 'COMPLETED',
     ),
     TripHistoryItem(
       id: 'trip-2',
-      date: '08 Out, 2023',
-      title: 'Aeroporto de Lisboa (LIS)',
+      date: '08 Oct, 2023',
+      title: 'Lisbon Airport (LIS)',
       location: 'Terminal 1, Partidas',
-      price: '12,80€',
-      tier: 'Conforto',
+      price: '',
+      tier: 'Comfort',
       duration: '25 min',
       status: TripHistoryStatus.concluida,
       imageUrl: AppAssets.tripHistoryAirportImage,
+      createdAt: null,
+      costMinor: 1280,
+      statusCode: 'COMPLETED',
     ),
     TripHistoryItem(
       id: 'trip-3',
-      date: '05 Out, 2023',
+      date: '05 Oct, 2023',
       title: 'Torre Vasco da Gama',
       location: 'Parque das Nações',
-      price: '0,00€',
-      tier: 'Executivo',
+      price: '',
+      tier: 'Executive',
       duration: '',
       status: TripHistoryStatus.cancelada,
       imageUrl: AppAssets.tripHistoryTorreImage,
+      createdAt: null,
+      costMinor: 0,
+      statusCode: 'CANCELLED_BY_CLIENT',
     ),
   ];
 }

@@ -5,7 +5,7 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
-/// Client: Home, Trips, Reservations, Profile. Driver: Home, Profile only.
+/// Client: Home, Trips, Reservations, Profile. Driver: Home, Trips, Profile.
 enum AppBottomNavMode { full, driver }
 
 /// Shared bottom navigation — same layout on every tab/screen.
@@ -17,7 +17,7 @@ class AppBottomNav extends StatelessWidget {
     this.mode = AppBottomNavMode.full,
   });
 
-  /// For [AppBottomNavMode.full], uses [AppNavIndex]. For driver mode, 0 = Home, 1 = Profile.
+  /// For [AppBottomNavMode.full], uses [AppNavIndex]. Driver mode: 0 Home, 1 Trips, 2 Profile.
   final int selectedIndex;
   final ValueChanged<int>? onItemTap;
   final AppBottomNavMode mode;
@@ -31,6 +31,7 @@ class AppBottomNav extends StatelessWidget {
 
   static const _driverIcons = [
     Icons.home,
+    Icons.directions_car,
     Icons.person,
   ];
 
@@ -40,7 +41,7 @@ class AppBottomNav extends StatelessWidget {
     final isDriver = mode == AppBottomNavMode.driver;
     final icons = isDriver ? _driverIcons : _fullIcons;
     final labels = isDriver
-        ? [l10n.navHome, l10n.navProfile]
+        ? [l10n.navHome, l10n.navTrips, l10n.navProfile]
         : [
             l10n.navHome,
             l10n.navTrips,

@@ -1,16 +1,35 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/trip_in_progress_data.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/features/driver/data/driver_location_repository.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_watcher.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Viagem em curso — `roles/details.md`.
 class TripInProgressScreen extends StatefulWidget {
-  const TripInProgressScreen({super.key});
+  const TripInProgressScreen({
+    super.key,
+    this.tripId,
+    this.trip,
+    this.tripRepository,
+  });
+
+  final String? tripId;
+  final TripRecord? trip;
+  final TripRepository? tripRepository;
 
   @override
   State<TripInProgressScreen> createState() => _TripInProgressScreenState();
@@ -19,24 +38,71 @@ class TripInProgressScreen extends StatefulWidget {
 class _TripInProgressScreenState extends State<TripInProgressScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _carPulseController;
+  late final ClientTripWatcher _tripWatcher;
+  final _driverLocationRepository = DriverLocationRepository();
+  StreamSubscription<DriverLocationSnapshot?>? _driverLocationSubscription;
+  TripRecord? _trip;
+  DriverLocationSnapshot? _driverLocation;
+
+  String get _tripId =>
+      widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
   @override
   void initState() {
     super.initState();
+    _trip = widget.trip ?? ActiveTripSession.instance.trip;
     _carPulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
+    _tripWatcher = ClientTripWatcher(
+      screen: ClientTripScreen.tripInProgress,
+      repository: widget.tripRepository,
+      onTripChanged: (trip) {
+        setState(() => _trip = trip);
+        _watchDriverLocation(trip.assignedDriverId);
+      },
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tripId = _tripId;
+      if (tripId.isNotEmpty && mounted) {
+        _tripWatcher.start(tripId: tripId, context: context);
+      }
+      _watchDriverLocation(_trip?.assignedDriverId);
+    });
+  }
+
+  void _watchDriverLocation(String? driverId) {
+    if (driverId == null || driverId.isEmpty) return;
+    _driverLocationSubscription?.cancel();
+    _driverLocationSubscription =
+        _driverLocationRepository.watchLocation(driverId).listen((location) {
+      if (!mounted || location == null) return;
+      setState(() => _driverLocation = location);
+    });
   }
 
   @override
   void dispose() {
+    _tripWatcher.dispose();
+    _driverLocationSubscription?.cancel();
     _carPulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final trip = _trip;
+    final driverMarker = _driverLocation == null
+        ? const <({double latitude, double longitude, bool isDriver})>[]
+        : [
+            (
+              latitude: _driverLocation!.latitude,
+              longitude: _driverLocation!.longitude,
+              isDriver: true,
+            ),
+          ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -46,8 +112,19 @@ class _TripInProgressScreenState extends State<TripInProgressScreen>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const _MapLayer(),
-                Center(child: _VehicleMarker(pulse: _carPulseController)),
+                if (trip?.pickup != null && trip?.destination != null)
+                  DriverMapLayer(
+                    pickup: trip!.pickup,
+                    destination: trip.destination,
+                    showRoute: true,
+                    myLocationEnabled: true,
+                    extraMarkers: driverMarker,
+                    fitToExtraMarkers: driverMarker.isNotEmpty,
+                  )
+                else
+                  const _MapLayer(),
+                if (trip == null || _driverLocation == null)
+                  Center(child: _VehicleMarker(pulse: _carPulseController)),
                 Positioned(
                   top: 16.h,
                   right: AppLayout.marginMobile,
@@ -64,7 +141,7 @@ class _TripInProgressScreenState extends State<TripInProgressScreen>
                   right: 0,
                   bottom: 0,
                   child: _InTripBottomSheet(
-                    onEndTrip: () => AppNavigation.toTripCompleted(context),
+                    trip: trip,
                     onSupport: () {},
                   ),
                 ),
@@ -232,15 +309,25 @@ class _MapFabButton extends StatelessWidget {
 
 class _InTripBottomSheet extends StatelessWidget {
   const _InTripBottomSheet({
-    required this.onEndTrip,
+    required this.trip,
     required this.onSupport,
   });
 
-  final VoidCallback onEndTrip;
+  final TripRecord? trip;
   final VoidCallback onSupport;
 
   @override
   Widget build(BuildContext context) {
+    final arrivalTime = trip == null
+        ? TripInProgressData.arrivalTime
+        : '${trip!.meteringSnapshot.totalMinutes} min';
+    final destinationAddress =
+        trip?.destination.address ?? TripInProgressData.destinationAddress;
+    final estimatedCost = trip?.fareFormatted ??
+        AppCurrencyFormatter.instance.formatEurMajor(
+          TripInProgressData.estimatedCostEur,
+        );
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -342,7 +429,7 @@ class _InTripBottomSheet extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          TripInProgressData.arrivalTime,
+                          arrivalTime,
                           style: GoogleFonts.manrope(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w600,
@@ -362,7 +449,7 @@ class _InTripBottomSheet extends StatelessWidget {
               iconBackground: AppColors.secondaryContainer,
               iconColor: AppColors.onSecondaryContainer,
               label: context.l10n.destination,
-              value: TripInProgressData.destinationAddress,
+              value: destinationAddress,
             ),
             SizedBox(height: 12.h),
             _InfoCard(
@@ -370,41 +457,9 @@ class _InTripBottomSheet extends StatelessWidget {
               iconBackground: AppColors.tertiaryContainer,
               iconColor: AppColors.onTertiaryContainer,
               label: context.l10n.tripInProgressCostLabel,
-              value: TripInProgressData.estimatedCost,
+              value: estimatedCost,
             ),
             SizedBox(height: 16.h),
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: FilledButton(
-                onPressed: onEndTrip,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: AppColors.onError,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.close, size: 20.sp),
-                    SizedBox(width: 8.w),
-                    Text(
-                      context.l10n.tripInProgressEndTrip,
-                      style: GoogleFonts.inter(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        height: 20 / 14,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 12.h),
             SizedBox(
               width: double.infinity,
               height: 56.h,

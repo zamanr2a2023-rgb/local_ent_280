@@ -24,37 +24,33 @@ class SplashScreen extends StatelessWidget {
         children: [
           const _BackgroundGradient(),
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    AppLayout.marginMobile,
-                    16.h,
-                    AppLayout.marginMobile,
-                    16.h,
-                  ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const _Header(),
-                          SizedBox(height: 24.h),
-                          const _HeroCard(),
-                          SizedBox(height: 20.h),
-                          const _InstantBookingCard(),
-                          SizedBox(height: 16.h),
-                          const _DriverCard(),
-                          const Spacer(),
-                          const _FooterPanel(),
-                        ],
-                      ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      AppLayout.marginMobile,
+                      16.h,
+                      AppLayout.marginMobile,
+                      16.h,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _Header(),
+                        SizedBox(height: 24.h),
+                        const _HeroCard(),
+                        SizedBox(height: 20.h),
+                        const _InstantBookingCard(),
+                        SizedBox(height: 16.h),
+                        const _DriverCard(),
+                      ],
                     ),
                   ),
-                );
-              },
+                ),
+                const _FooterPanel(),
+              ],
             ),
           ),
         ],
@@ -546,6 +542,10 @@ class _FooterPanel extends StatelessWidget {
     AppNavigation.toLogin(context);
   }
 
+  void _goToRegister(BuildContext context) {
+    AppNavigation.toRegister(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -564,9 +564,9 @@ class _FooterPanel extends StatelessWidget {
         ),
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-            0,
+            AppLayout.marginMobile,
             20.h,
-            0,
+            AppLayout.marginMobile,
             16.h,
           ),
         child: Column(
@@ -626,7 +626,7 @@ class _FooterPanel extends StatelessWidget {
               width: double.infinity,
               height: 54.h,
               child: OutlinedButton(
-                onPressed: () => _goToLogin(context),
+                onPressed: () => _goToRegister(context),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: AppColors.background,
                   foregroundColor: AppColors.primary,

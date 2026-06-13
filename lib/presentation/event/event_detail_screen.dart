@@ -5,18 +5,18 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class EventDetailScreen extends StatefulWidget {
   const EventDetailScreen({super.key});
 
-    static double get _heroHeight => 353.h;
-  static const double _ticketPrice = 45.0;
-  static const double _serviceFee = 2.5;
+  static double get _heroHeight => 353.h;
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
@@ -24,11 +24,31 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   int _quantity = 1;
+  double _ticketPriceEur = 0;
+  double _serviceFeeEur = 0;
+  final _catalog = CatalogRepository();
 
-  double get _subtotal => _quantity * EventDetailScreen._ticketPrice;
-  double get _total => _subtotal + EventDetailScreen._serviceFee;
+  @override
+  void initState() {
+    super.initState();
+    _catalog.watchActivePackages().first.then((packages) {
+      if (!mounted) return;
+      setState(() {
+        _ticketPriceEur =
+            packages.isEmpty ? 0 : packages.first.priceEur;
+      });
+    });
+    _catalog.watchEventServiceFeeMinor().first.then((feeMinor) {
+      if (!mounted) return;
+      setState(() => _serviceFeeEur = feeMinor / 100);
+    });
+  }
 
-  String _formatPrice(double value) => '${value.toStringAsFixed(2)}€';
+  double get _subtotal => _quantity * _ticketPriceEur;
+  double get _total => _subtotal + _serviceFeeEur;
+
+  String _formatPrice(double value) =>
+      AppCurrencyFormatter.instance.formatEurMajor(value);
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +78,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           SizedBox(height: 24.h),
                           _TicketCard(
                             quantity: _quantity,
+                            ticketPriceEur: _ticketPriceEur,
+                            serviceFeeEur: _serviceFeeEur,
                             subtotal: _subtotal,
                             total: _total,
                             formatPrice: _formatPrice,
@@ -480,6 +502,8 @@ class _MapCard extends StatelessWidget {
 class _TicketCard extends StatelessWidget {
   const _TicketCard({
     required this.quantity,
+    required this.ticketPriceEur,
+    required this.serviceFeeEur,
     required this.subtotal,
     required this.total,
     required this.formatPrice,
@@ -488,6 +512,8 @@ class _TicketCard extends StatelessWidget {
   });
 
   final int quantity;
+  final double ticketPriceEur;
+  final double serviceFeeEur;
   final double subtotal;
   final double total;
   final String Function(double) formatPrice;
@@ -529,7 +555,7 @@ class _TicketCard extends StatelessWidget {
                 ),
               ),
               Text(
-                formatPrice(EventDetailScreen._ticketPrice),
+                formatPrice(ticketPriceEur),
                 style: GoogleFonts.manrope(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
@@ -588,7 +614,7 @@ class _TicketCard extends StatelessWidget {
           SizedBox(height: 4.h),
           _PriceRow(
             label: context.l10n.eventServiceFee,
-            value: formatPrice(EventDetailScreen._serviceFee),
+            value: formatPrice(serviceFeeEur),
           ),
           SizedBox(height: 8.h),
           _PriceRow(

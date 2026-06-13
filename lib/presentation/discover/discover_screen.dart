@@ -7,6 +7,8 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class DiscoverScreen extends StatelessWidget {
@@ -494,98 +496,96 @@ class _ExperienceCard extends StatelessWidget {
 class _EventsSection extends StatelessWidget {
   const _EventsSection();
 
-  static const _events = [
-    (
-      image: AppAssets.discoverEventSunsetImage,
-      day: '15',
-      month: 'AGO',
-      venue: 'Blue Horizon Beach Club',
-      title: 'Sunset Ritual: Deep House',
-      description:
-          'Uma jornada musical inesquecível enquanto o sol se põe sobre o mar.',
-      price: '45,00€',
-    ),
-    (
-      image: AppAssets.discoverEventJazzImage,
-      day: '18',
-      month: 'AGO',
-      venue: 'Palácio das Oliveiras',
-      title: 'Noites de Jazz & Vinho',
-      description:
-          'Degustação premium acompanhada pelo melhor jazz contemporâneo.',
-      price: '30,00€',
-    ),
+  static const _fallbackImages = [
+    AppAssets.discoverEventSunsetImage,
+    AppAssets.discoverEventJazzImage,
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppLayout.marginMobile,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.discoverUpcomingEvents,
-                  style: GoogleFonts.manrope(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w600,
-                    height: 28 / 20,
-                    color: AppColors.primary,
-                  ),
-                ),
+    return StreamBuilder<List<CatalogPackage>>(
+      stream: CatalogRepository().watchActivePackages(),
+      builder: (context, snapshot) {
+        final packages = snapshot.data ?? const [];
+        if (packages.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final formatter = AppCurrencyFormatter.instance;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppLayout.marginMobile,
               ),
-              Row(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _CircleNavButton(icon: Icons.chevron_left, onTap: () {}),
-                  SizedBox(width: 4.w),
-                  _CircleNavButton(icon: Icons.chevron_right, onTap: () {}),
+                  Expanded(
+                    child: Text(
+                      context.l10n.discoverUpcomingEvents,
+                      style: GoogleFonts.manrope(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w600,
+                        height: 28 / 20,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _CircleNavButton(icon: Icons.chevron_left, onTap: () {}),
+                      SizedBox(width: 4.w),
+                      _CircleNavButton(icon: Icons.chevron_right, onTap: () {}),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        SizedBox(height: 24.h),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppLayout.marginMobile,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < _events.length; i++) ...[
-                if (i > 0) SizedBox(width: 24.w),
-                Builder(
-                  builder: (context) {
-                    final event = _events[i];
-                    return _EventCard(
-                      imageUrl: event.image,
-                      day: event.day,
-                      month: event.month,
-                      venue: event.venue,
-                      title: event.title,
-                      description: event.description,
-                      price: event.price,
-                      onTickets: () {
-                        AppNavigation.toEventBooking(context);
+            ),
+            SizedBox(height: 24.h),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppLayout.marginMobile,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < packages.length && i < 6; i++) ...[
+                    if (i > 0) SizedBox(width: 24.w),
+                    Builder(
+                      builder: (context) {
+                        final item = packages[i];
+                        final scheduled = item.destination.trim().isNotEmpty
+                            ? item.destination
+                            : '—';
+                        return _EventCard(
+                          imageUrl: item.photoUrl ??
+                              _fallbackImages[i % _fallbackImages.length],
+                          day: '${(i + 1) * 5}',
+                          month: '—',
+                          venue: scheduled,
+                          title: item.title,
+                          description: item.description,
+                          price: formatter.formatEurMajor(item.priceEur),
+                          onTickets: () {
+                            AppNavigation.toEventBooking(context);
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
+
 
 class _CircleNavButton extends StatelessWidget {
   const _CircleNavButton({required this.icon, required this.onTap});
