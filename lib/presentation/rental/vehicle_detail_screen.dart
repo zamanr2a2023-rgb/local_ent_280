@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
+import 'package:local_ent_280/features/rental/data/rental_vehicle_repository.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
-/// Detalhes do Veículo — `roles/details.md` mockup (Porsche Taycan 4S).
+/// Detalhes do Veículo — Firebase `vehicles/{id}` when [vehicleId] is set.
 class VehicleDetailScreen extends StatelessWidget {
-  const VehicleDetailScreen({super.key});
+  const VehicleDetailScreen({
+    super.key,
+    this.vehicleId,
+    this.repository,
+  });
+
+  final String? vehicleId;
+  final RentalVehicleRepository? repository;
 
   static final _cardDecoration = BoxDecoration(
     color: AppColors.surfaceContainerLowest,
@@ -27,6 +35,40 @@ class VehicleDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final repository = this.repository ?? RentalVehicleRepository();
+    if (vehicleId != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: StreamBuilder<RentalVehicleRecord?>(
+          stream: repository.watchVehicle(vehicleId!),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final vehicle = snapshot.data;
+            if (vehicle == null) {
+              return SafeArea(
+                child: Column(
+                  children: [
+                    const _DetailAppBar(),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          context.l10n.rentalNoVehicles,
+                          style: GoogleFonts.inter(fontSize: 14.sp),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return _FirebaseVehicleDetailBody(vehicle: vehicle);
+          },
+        ),
+      );
+    }
+
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
@@ -624,9 +666,9 @@ class _BookingSummaryCard extends StatelessWidget {
   final BoxDecoration decoration;
 
   static const _lineItems = [
-    ('Aluguer (3 dias)', '450,00 €', false),
+    ('Rental (3 days)', '450,00 €', false),
     ('Seguro Premium', 'Incluído', true),
-    ('Taxas de Aeroporto', '25,50 €', false),
+    ('Airport Fees', '25,50 €', false),
   ];
 
   @override
@@ -722,7 +764,7 @@ class _BookingSummaryCard extends StatelessWidget {
           SizedBox(height: 16.h),
           _InfoPill(icon: Icons.event, text: '12 Out — 15 Out 2023'),
           SizedBox(height: 8.h),
-          _InfoPill(icon: Icons.location_on, text: 'Aeroporto de Lisboa, LIS'),
+          _InfoPill(icon: Icons.location_on, text: 'Lisbon Airport, LIS'),
         ],
       ),
     );
@@ -931,6 +973,96 @@ class _BottomActionBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FirebaseVehicleDetailBody extends StatelessWidget {
+  const _FirebaseVehicleDetailBody({required this.vehicle});
+
+  final RentalVehicleRecord vehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Column(
+      children: [
+        const _DetailAppBar(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppLayout.marginMobile,
+              16.h,
+              AppLayout.marginMobile,
+              100.h + bottomInset,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Image.network(
+                    vehicle.imageUrl,
+                    height: 220.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => ColoredBox(
+                      color: AppColors.surfaceContainerHigh,
+                      child: SizedBox(
+                        height: 220.h,
+                        child: Icon(Icons.directions_car, size: 48.sp),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  vehicle.name,
+                  style: GoogleFonts.manrope(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  '${vehicle.pricePerDay}€/dia · ${vehicle.seats} lugares · ${vehicle.transmissionLabel}',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                if (vehicle.notes.trim().isNotEmpty) ...[
+                  SizedBox(height: 16.h),
+                  Text(
+                    vehicle.notes.trim(),
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppLayout.marginMobile,
+            8.h,
+            AppLayout.marginMobile,
+            16.h + bottomInset,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            height: 52.h,
+            child: FilledButton(
+              onPressed: () => AppNavigation.toReservationReview(context),
+              child: Text(context.l10n.rentalContinueToPayment),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

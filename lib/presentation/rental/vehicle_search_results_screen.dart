@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_ent_280/core/data/vehicle_listings.dart';
+import 'package:local_ent_280/features/rental/data/rental_vehicle_repository.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
@@ -10,7 +10,9 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Resultados da pesquisa de veículos — `roles/details.md`.
 class VehicleSearchResultsScreen extends StatefulWidget {
-  const VehicleSearchResultsScreen({super.key});
+  const VehicleSearchResultsScreen({super.key, this.repository});
+
+  final RentalVehicleRepository? repository;
 
   @override
   State<VehicleSearchResultsScreen> createState() =>
@@ -18,6 +20,7 @@ class VehicleSearchResultsScreen extends StatefulWidget {
 }
 
 class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen> {
+  late final RentalVehicleRepository _repository;
   String _carType = 'Todos os tipos';
   String _maxPrice = 'Qualquer preço';
   String _transmission = 'Todas';
@@ -38,6 +41,12 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
   static const _transmissions = ['Todas', 'Automático', 'Manual'];
 
   @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? RentalVehicleRepository();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,80 +54,112 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
         children: [
           const _ResultsAppBar(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 24.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppLayout.marginMobile,
-                      24.h,
-                      AppLayout.marginMobile,
-                      0,
-                    ),
-                    child: _FilterCard(
-                      carType: _carType,
-                      maxPrice: _maxPrice,
-                      transmission: _transmission,
-                      carTypes: _carTypes,
-                      maxPrices: _maxPrices,
-                      transmissions: _transmissions,
-                      onCarTypeChanged: (v) => setState(() => _carType = v),
-                      onMaxPriceChanged: (v) => setState(() => _maxPrice = v),
-                      onTransmissionChanged: (v) =>
-                          setState(() => _transmission = v),
-                    ),
-                  ),
-                  SizedBox(height: 32.h),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppLayout.marginMobile,
-                    ),
-                    child: _PremiumSection(
-                      vehicles: VehicleListings.premium,
-                      onViewDetails: () =>
-                          AppNavigation.toVehicleDetail(context),
-                    ),
-                  ),
-                  SizedBox(height: 32.h),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppLayout.marginMobile,
-                    ),
-                    child: _StandardSection(
-                      vehicles: VehicleListings.standard,
-                      onViewDetails: () =>
-                          AppNavigation.toVehicleDetail(context),
-                    ),
-                  ),
-                  SizedBox(height: 32.h),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.surfaceContainerHigh,
-                        foregroundColor: AppColors.onSurface,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 48.w,
-                          vertical: 14.h,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999.r),
-                        ),
-                      ),
+            child: StreamBuilder<List<RentalVehicleRecord>>(
+              stream: _repository.watchActiveVehicles(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppLayout.marginMobile),
                       child: Text(
-                        context.l10n.rentalLoadMore,
+                        context.l10n.rentalLoadError,
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
                     ),
+                  );
+                }
+
+                final allVehicles = snapshot.data ?? const [];
+                final filtered = RentalVehicleRepository.applyFilters(
+                  allVehicles,
+                  carType: _carType,
+                  maxPrice: _maxPrice,
+                  transmission: _transmission,
+                );
+                final premium =
+                    filtered.where((vehicle) => vehicle.isPremium).toList();
+                final standard =
+                    filtered.where((vehicle) => !vehicle.isPremium).toList();
+
+                return SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: 24.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppLayout.marginMobile,
+                          24.h,
+                          AppLayout.marginMobile,
+                          0,
+                        ),
+                        child: _FilterCard(
+                          carType: _carType,
+                          maxPrice: _maxPrice,
+                          transmission: _transmission,
+                          carTypes: _carTypes,
+                          maxPrices: _maxPrices,
+                          transmissions: _transmissions,
+                          onCarTypeChanged: (v) => setState(() => _carType = v),
+                          onMaxPriceChanged: (v) => setState(() => _maxPrice = v),
+                          onTransmissionChanged: (v) =>
+                              setState(() => _transmission = v),
+                        ),
+                      ),
+                      SizedBox(height: 32.h),
+                      if (filtered.isEmpty)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppLayout.marginMobile,
+                            vertical: 32.h,
+                          ),
+                          child: Text(
+                            context.l10n.rentalNoVehicles,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        if (premium.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppLayout.marginMobile,
+                            ),
+                            child: _PremiumSection(
+                              vehicles: premium,
+                              onViewDetails: (id) =>
+                                  AppNavigation.toVehicleDetail(context, vehicleId: id),
+                            ),
+                          ),
+                        if (premium.isNotEmpty && standard.isNotEmpty)
+                          SizedBox(height: 32.h),
+                        if (standard.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppLayout.marginMobile,
+                            ),
+                            child: _StandardSection(
+                              vehicles: standard,
+                              onViewDetails: (id) =>
+                                  AppNavigation.toVehicleDetail(context, vehicleId: id),
+                            ),
+                          ),
+                      ],
+                      SizedBox(height: 16.h),
+                    ],
                   ),
-                  SizedBox(height: 16.h),
-                ],
-              ),
+                );
+              },
             ),
           ),
           AppBottomNav(
@@ -142,47 +183,16 @@ class _ResultsAppBar extends StatelessWidget {
         height: 56.h,
         color: AppColors.background,
         padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.menu, color: AppColors.primary, size: 24.sp),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Text(
-                context.l10n.appNameLocalTransport,
-                style: GoogleFonts.manrope(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w700,
-                  height: 32 / 24,
-                  color: AppColors.primary,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Container(
-              width: 32.w,
-              height: 32.h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  VehicleListings.resultsProfileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.person,
-                    size: 18.sp,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        alignment: Alignment.centerLeft,
+        child: Text(
+          context.l10n.appNameLocalTransport,
+          style: GoogleFonts.manrope(
+            fontSize: 24.sp,
+            fontWeight: FontWeight.w700,
+            height: 32 / 24,
+            color: AppColors.primary,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -345,8 +355,8 @@ class _PremiumSection extends StatelessWidget {
     required this.onViewDetails,
   });
 
-  final List<VehicleListing> vehicles;
-  final VoidCallback onViewDetails;
+  final List<RentalVehicleRecord> vehicles;
+  final ValueChanged<String> onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -367,7 +377,7 @@ class _PremiumSection extends StatelessWidget {
               ),
             ),
             Text(
-              context.l10n.rentalResultsFound('2'),
+              context.l10n.rentalResultsFound('${vehicles.length}'),
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -381,7 +391,7 @@ class _PremiumSection extends StatelessWidget {
           if (i > 0) SizedBox(height: 16.h),
           _PremiumVehicleCard(
             vehicle: vehicles[i],
-            onViewDetails: onViewDetails,
+            onViewDetails: () => onViewDetails(vehicles[i].id),
           ),
         ],
       ],
@@ -395,7 +405,7 @@ class _PremiumVehicleCard extends StatelessWidget {
     required this.onViewDetails,
   });
 
-  final VehicleListing vehicle;
+  final RentalVehicleRecord vehicle;
   final VoidCallback onViewDetails;
 
   @override
@@ -546,8 +556,8 @@ class _StandardSection extends StatelessWidget {
     required this.onViewDetails,
   });
 
-  final List<VehicleListing> vehicles;
-  final VoidCallback onViewDetails;
+  final List<RentalVehicleRecord> vehicles;
+  final ValueChanged<String> onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -568,7 +578,7 @@ class _StandardSection extends StatelessWidget {
           if (i > 0) SizedBox(height: 16.h),
           _StandardVehicleCard(
             vehicle: vehicles[i],
-            onViewDetails: onViewDetails,
+            onViewDetails: () => onViewDetails(vehicles[i].id),
           ),
         ],
       ],
@@ -582,7 +592,7 @@ class _StandardVehicleCard extends StatelessWidget {
     required this.onViewDetails,
   });
 
-  final VehicleListing vehicle;
+  final RentalVehicleRecord vehicle;
   final VoidCallback onViewDetails;
 
   @override
@@ -694,7 +704,7 @@ class _StandardVehicleCard extends StatelessWidget {
 class _VehicleSpecsRow extends StatelessWidget {
   const _VehicleSpecsRow({required this.vehicle, this.compact = false});
 
-  final VehicleListing vehicle;
+  final RentalVehicleRecord vehicle;
   final bool compact;
 
   @override

@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
+import 'package:local_ent_280/features/balance/data/balance_repository.dart';
+import 'package:local_ent_280/features/trips/data/trip_repository.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/presentation/admin/admin_home_screen.dart';
 import 'package:local_ent_280/presentation/admin/admin_reports_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_hub_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_incident_detail_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_manager_permissions_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_module_screens.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_operational_incidents_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_support_requests_screen.dart';
+import 'package:local_ent_280/presentation/admin/screens/admin_users_screen.dart';
+import 'package:local_ent_280/presentation/balance/client_balance_screen.dart';
 import 'package:local_ent_280/presentation/discover/discover_screen.dart';
 import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
 import 'package:local_ent_280/presentation/home/home_screen.dart';
@@ -11,6 +21,7 @@ import 'package:local_ent_280/presentation/home/premium_home_screen.dart';
 import 'package:local_ent_280/presentation/delivery/delivery_screen.dart';
 import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
+import 'package:local_ent_280/presentation/login/register_screen.dart';
 import 'package:local_ent_280/presentation/reservation/reservation_review_screen.dart';
 import 'package:local_ent_280/presentation/reservations/reservations_screen.dart';
 import 'package:local_ent_280/presentation/rental/vehicle_detail_screen.dart';
@@ -26,12 +37,15 @@ import 'package:local_ent_280/presentation/trip/trip_completed_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_in_progress_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_found_screen.dart';
 import 'package:local_ent_280/presentation/trip/driver_search_screen.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
 import 'package:local_ent_280/presentation/trip/trip_confirm_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_destination_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_details_screen.dart';
 import 'package:local_ent_280/presentation/profile/profile_screen.dart';
 import 'package:local_ent_280/presentation/settings/settings_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
+import 'package:local_ent_280/features/driver/data/driver_repository.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 
 /// Bottom navigation indices (Fluxo do Utilizador).
 abstract final class AppNavIndex {
@@ -43,9 +57,19 @@ abstract final class AppNavIndex {
 
 /// Central navigation matching the product user-flow diagram.
 abstract final class AppNavigation {
+  /// Optional overrides for widget/integration tests (do not use in production).
+  static BalanceRepository? balanceRepositoryOverride;
+  static TripRepository? tripHistoryRepositoryOverride;
+
   static void toLogin(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  static void toRegister(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
     );
   }
 
@@ -140,6 +164,125 @@ abstract final class AppNavigation {
     );
   }
 
+  static void toAdminHub(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminHubScreen()),
+    );
+  }
+
+  static void toAdminUsers(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminUsersScreen()),
+    );
+  }
+
+  static void toAdminManagerPermissions(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminManagerPermissionsScreen(),
+      ),
+    );
+  }
+
+  static void toAdminSupportRequests(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminSupportRequestsScreen()),
+    );
+  }
+
+  static void toAdminIncidents(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminOperationalIncidentsScreen(),
+      ),
+    );
+  }
+
+  static void toAdminIncidentDetail(
+    BuildContext context, {
+    required String incidentId,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminIncidentDetailScreen(incidentId: incidentId),
+      ),
+    );
+  }
+
+  static void toAdminFleet(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminFleetScreen()),
+    );
+  }
+
+  static void toAdminBalances(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminBalancesScreen()),
+    );
+  }
+
+  static void toAdminReservations(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminReservationsScreen()),
+    );
+  }
+
+  static void toAdminEvents(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminEventsScreen()),
+    );
+  }
+
+  static void toAdminTransportTypes(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminTransportTypesScreen(),
+      ),
+    );
+  }
+
+  static void toAdminTripPackages(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminTripPackagesScreen()),
+    );
+  }
+
+  static void toAdminTariffs(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminTariffsScreen()),
+    );
+  }
+
+  static void toAdminCurrencySettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminCurrencySettingsScreen(),
+      ),
+    );
+  }
+
+  static void toAdminSupportSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminSupportSettingsScreen(),
+      ),
+    );
+  }
+
+  static void toAdminMonitoringSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdminMonitoringSettingsScreen(),
+      ),
+    );
+  }
+
+  static void toAdminAudit(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminAuditScreen()),
+    );
+  }
+
   /// Mapa / planeamento de viagem (ecrã legado).
   static void toTripMap(BuildContext context) {
     Navigator.of(context).push(
@@ -161,11 +304,10 @@ abstract final class AppNavigation {
     );
   }
 
-  /// Tab Reservas → pesquisa de aluguer de veículos.
+  /// Home quick action → vehicle rental search.
   static void toVehicleRental(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
+    Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const VehicleRentalScreen()),
-      (_) => false,
     );
   }
 
@@ -194,16 +336,27 @@ abstract final class AppNavigation {
   }
 
   /// Ver Mapa Completo → confirmação de viagem.
-  static void toTripConfirm(BuildContext context) {
+  static void toTripConfirm(BuildContext context, [TripRouteDraft? route]) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const TripConfirmScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => TripConfirmScreen(route: route ?? TripRouteDraft.demo()),
+      ),
     );
   }
 
   /// Confirmar viagem → a procurar motorista.
-  static void toDriverSearch(BuildContext context) {
+  static void toDriverSearch(
+    BuildContext context, {
+    String? tripId,
+    TripRepository? tripRepository,
+  }) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const DriverSearchScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => DriverSearchScreen(
+          tripId: tripId,
+          tripRepository: tripRepository,
+        ),
+      ),
     );
   }
 
@@ -236,9 +389,25 @@ abstract final class AppNavigation {
   }
 
   /// Histórico de viagens → detalhes da viagem.
-  static void toTripDetails(BuildContext context) {
+  static void toTripDetails(BuildContext context, {String? tripId}) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const TripDetailsScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => TripDetailsScreen(
+          tripId: tripId,
+          tripRepository: tripHistoryRepositoryOverride,
+        ),
+      ),
+    );
+  }
+
+  /// Home → saldo do cliente (Firebase balances).
+  static void toClientBalance(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ClientBalanceScreen(
+          balanceRepository: balanceRepositoryOverride,
+        ),
+      ),
     );
   }
 
@@ -258,10 +427,12 @@ abstract final class AppNavigation {
     );
   }
 
-  /// Lista → detalhes do veículo (Porsche Taycan 4S).
-  static void toVehicleDetail(BuildContext context) {
+  /// Lista → detalhes do veículo (Firebase vehicles).
+  static void toVehicleDetail(BuildContext context, {String? vehicleId}) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const VehicleDetailScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => VehicleDetailScreen(vehicleId: vehicleId),
+      ),
     );
   }
 
@@ -307,37 +478,71 @@ abstract final class AppNavigation {
   }
 
   /// Motorista — novo pedido de viagem.
-  static void toDriverTripRequest(BuildContext context) {
+  static void toDriverTripRequest(
+    BuildContext context, {
+    required String tripId,
+    TripRecord? trip,
+    DriverRepository? driverRepository,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const DriverTripRequestScreen(),
+        builder: (_) => DriverTripRequestScreen(
+          tripId: tripId,
+          trip: trip,
+          driverRepository: driverRepository,
+        ),
       ),
     );
   }
 
   /// Motorista — pedido aceite.
-  static void toDriverTripAccepted(BuildContext context) {
+  static void toDriverTripAccepted(
+    BuildContext context, {
+    required String tripId,
+    TripRecord? trip,
+    DriverRepository? driverRepository,
+  }) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => const DriverTripAcceptedScreen(),
+        builder: (_) => DriverTripAcceptedScreen(
+          tripId: tripId,
+          trip: trip,
+          driverRepository: driverRepository,
+        ),
       ),
     );
   }
 
   /// Motorista — pedido expirado.
-  static void toDriverRequestExpired(BuildContext context) {
+  static void toDriverRequestExpired(
+    BuildContext context, {
+    String? tripId,
+    DriverRepository? driverRepository,
+  }) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => const DriverRequestExpiredScreen(),
+        builder: (_) => DriverRequestExpiredScreen(
+          tripId: tripId,
+          driverRepository: driverRepository,
+        ),
       ),
     );
   }
 
   /// Motorista — viagem ativa.
-  static void toDriverActiveTrip(BuildContext context) {
+  static void toDriverActiveTrip(
+    BuildContext context, {
+    required String tripId,
+    TripRecord? trip,
+    DriverRepository? driverRepository,
+  }) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => const DriverActiveTripScreen(),
+        builder: (_) => DriverActiveTripScreen(
+          tripId: tripId,
+          trip: trip,
+          driverRepository: driverRepository,
+        ),
       ),
     );
   }
@@ -394,14 +599,22 @@ abstract final class AppNavigation {
   /// Tab Início → mapa / planeamento de viagem.
   static void _goHome(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => HomeScreen(
+          balanceRepository: balanceRepositoryOverride,
+        ),
+      ),
       (_) => false,
     );
   }
 
   static void _goTripHistory(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const TripHistoryScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => TripHistoryScreen(
+          tripRepository: tripHistoryRepositoryOverride,
+        ),
+      ),
       (_) => false,
     );
   }

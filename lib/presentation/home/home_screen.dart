@@ -9,10 +9,20 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
+import 'package:local_ent_280/core/services/current_location_service.dart';
+import 'package:local_ent_280/core/services/places_autocomplete_service.dart';
+import 'package:local_ent_280/core/services/location_permission_helper.dart';
+import 'package:local_ent_280/presentation/widgets/address_autocomplete_field.dart';
+import 'package:local_ent_280/presentation/widgets/current_location_field.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/balance/data/balance_repository.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.balanceRepository});
+
+  final BalanceRepository? balanceRepository;
 
   static double get _sheetTopRadius => 30.r;
   static double get _gapActionsToSheet => 20.h;
@@ -22,10 +32,113 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _pickupController = TextEditingController();
   final _destinationController = TextEditingController();
+  final _locationService = CurrentLocationService();
+
+  String? _currentAddress;
+  double? _pickupLat;
+  double? _pickupLng;
+  String? _destinationPlaceId;
+  bool _isLoadingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationAccess();
+    });
+  }
+
+  Future<void> _requestLocationAccess() async {
+    if (!mounted) return;
+    setState(() => _isLoadingLocation = true);
+
+    final granted = await LocationPermissionHelper.ensureGranted(context);
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() {
+        _isLoadingLocation = false;
+        _currentAddress = null;
+        _pickupLat = null;
+        _pickupLng = null;
+        _pickupController.clear();
+      });
+      return;
+    }
+
+    await _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+
+    // Show cached GPS quickly, then refresh with a live fix.
+    final cached = await _locationService.getLastKnownLocation();
+    if (mounted && cached != null) {
+      setState(() {
+        _currentAddress = cached.address;
+        _pickupLat = cached.latitude;
+        _pickupLng = cached.longitude;
+        _pickupController.text = cached.address;
+      });
+    }
+
+    final location = await _locationService.getCurrentLocation();
+    if (!mounted) return;
+    setState(() {
+      _isLoadingLocation = false;
+      _currentAddress = location?.address ?? _currentAddress;
+      _pickupLat = location?.latitude ?? _pickupLat;
+      _pickupLng = location?.longitude ?? _pickupLng;
+      _pickupController.text = location?.address ?? _pickupController.text;
+    });
+  }
+
+  void _onDestinationSelected(PlacePrediction prediction) {
+    _destinationPlaceId = prediction.placeId;
+  }
+
+  void _confirmRoute(BuildContext context) {
+    final l10n = context.l10n;
+    final pickup = _currentAddress?.trim();
+    final destination = _destinationController.text.trim();
+
+    if (pickup == null || pickup.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeLocationUnavailable)),
+      );
+      return;
+    }
+    if (destination.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeDestinationHint)),
+      );
+      return;
+    }
+    if (_pickupLat == null || _pickupLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeLocationUnavailable)),
+      );
+      return;
+    }
+
+    AppNavigation.toTripConfirm(
+      context,
+      TripRouteDraft(
+        pickupAddress: pickup,
+        pickupLat: _pickupLat!,
+        pickupLng: _pickupLng!,
+        destinationAddress: destination,
+        destinationPlaceId: _destinationPlaceId,
+      ),
+    );
+  }
 
   @override
   void dispose() {
+    _pickupController.dispose();
     _destinationController.dispose();
     super.dispose();
   }
@@ -48,7 +161,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.symmetric(
                   horizontal: AppLayout.marginMobile,
                 ),
-                child: _BalanceCard(),
+                child: _BalanceCard(
+                  clientId: UserSession.instance.profile?.uid,
+                  balanceRepository:
+                      widget.balanceRepository ?? BalanceRepository(),
+                ),
               ),
               const Spacer(),
             ],
@@ -67,14 +184,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: _QuickActionsRow(
                     onPedir: () => AppNavigation.toTripDestination(context),
-                    onReservar: () => AppNavigation.toEventBooking(context),
+                    onReservar: () => AppNavigation.toReservations(context),
                     onAlugar: () => AppNavigation.toVehicleRental(context),
-                    onHistorico: () => AppNavigation.toDelivery(context),
-                    onSaldo: () {},
+                    onHistorico: () => AppNavigation.toTripHistory(context),
+                    onSaldo: () => AppNavigation.toClientBalance(context),
                   ),
                 ),
                 SizedBox(height: HomeScreen._gapActionsToSheet),
-                _TripBottomSheet(destinationController: _destinationController),
+                _TripBottomSheet(
+                  currentAddress: _currentAddress,
+                  isLoadingLocation: _isLoadingLocation,
+                  onRefreshLocation: _requestLocationAccess,
+                  destinationController: _destinationController,
+                  onDestinationSelected: _onDestinationSelected,
+                  onConfirmRoute: () => _confirmRoute(context),
+                ),
                 AppBottomNav(
                   selectedIndex: AppNavIndex.inicio,
                   onItemTap: (index) =>
@@ -198,11 +322,18 @@ class _HomeAppBar extends StatelessWidget {
 }
 
 class _BalanceCard extends StatelessWidget {
-  const _BalanceCard();
+  _BalanceCard({
+    required this.clientId,
+    required this.balanceRepository,
+  });
+
+  final String? clientId;
+  final BalanceRepository balanceRepository;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final uid = clientId;
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -235,20 +366,37 @@ class _BalanceCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  '42,50 €',
-                  style: GoogleFonts.manrope(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w600,
-                    height: 28 / 20,
-                    color: AppColors.primary,
-                  ),
-                ),
+                uid == null
+                    ? Text(
+                        '—',
+                        style: GoogleFonts.manrope(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w600,
+                          height: 28 / 20,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : StreamBuilder(
+                        stream: balanceRepository.watchClientBalance(uid),
+                        builder: (context, snapshot) {
+                          final balance = snapshot.data;
+                          final label = balance?.formattedAmount ?? '0,00 EUR';
+                          return Text(
+                            label,
+                            style: GoogleFonts.manrope(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w600,
+                              height: 28 / 20,
+                              color: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
               ],
             ),
           ),
           FilledButton(
-            onPressed: () {},
+            onPressed: () => AppNavigation.toClientBalance(context),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: AppColors.onAccent,
@@ -412,9 +560,21 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _TripBottomSheet extends StatefulWidget {
-  const _TripBottomSheet({required this.destinationController});
+  const _TripBottomSheet({
+    required this.currentAddress,
+    required this.isLoadingLocation,
+    required this.onRefreshLocation,
+    required this.destinationController,
+    required this.onDestinationSelected,
+    required this.onConfirmRoute,
+  });
 
+  final String? currentAddress;
+  final bool isLoadingLocation;
+  final VoidCallback onRefreshLocation;
   final TextEditingController destinationController;
+  final ValueChanged<PlacePrediction> onDestinationSelected;
+  final VoidCallback onConfirmRoute;
 
   @override
   State<_TripBottomSheet> createState() => _TripBottomSheetState();
@@ -529,12 +689,18 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
             duration: _animDuration,
             curve: _animCurve,
             alignment: Alignment.topCenter,
-            child: ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: _expanded ? 1.0 : 0.0,
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: _expanded ? 1.0 : 0.0,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
                 child: _ExpandedSheetContent(
+                  currentAddress: widget.currentAddress,
+                  isLoadingLocation: widget.isLoadingLocation,
+                  onRefreshLocation: widget.onRefreshLocation,
                   destinationController: widget.destinationController,
+                  onDestinationSelected: widget.onDestinationSelected,
+                  onConfirmRoute: widget.onConfirmRoute,
                 ),
               ),
             ),
@@ -546,9 +712,21 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
 }
 
 class _ExpandedSheetContent extends StatelessWidget {
-  const _ExpandedSheetContent({required this.destinationController});
+  const _ExpandedSheetContent({
+    required this.currentAddress,
+    required this.isLoadingLocation,
+    required this.onRefreshLocation,
+    required this.destinationController,
+    required this.onDestinationSelected,
+    required this.onConfirmRoute,
+  });
 
+  final String? currentAddress;
+  final bool isLoadingLocation;
+  final VoidCallback onRefreshLocation;
   final TextEditingController destinationController;
+  final ValueChanged<PlacePrediction> onDestinationSelected;
+  final VoidCallback onConfirmRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -570,21 +748,19 @@ class _ExpandedSheetContent extends StatelessWidget {
             ),
             Column(
               children: [
-                _LocationField(
-                  icon: Icons.my_location,
-                  iconColor: AppColors.accent,
-                  label: l10n.homeCurrentLocation,
-                  labelColor: AppColors.accent,
-                  value: 'Av. da Liberdade, Lisboa',
-                  readOnly: true,
+                CurrentLocationField(
+                  address: currentAddress,
+                  isLoading: isLoadingLocation,
+                  onRefresh: onRefreshLocation,
                 ),
                 SizedBox(height: 12.h),
-                _LocationField(
+                AddressAutocompleteField(
                   icon: Icons.location_on,
                   iconColor: AppColors.outline,
                   label: l10n.homeDestination,
-                  hint: l10n.homeDestinationHint,
                   controller: destinationController,
+                  hint: l10n.homeDestinationHint,
+                  onPlaceSelected: onDestinationSelected,
                 ),
               ],
             ),
@@ -594,7 +770,7 @@ class _ExpandedSheetContent extends StatelessWidget {
         SizedBox(
           height: 48.h,
           child: ElevatedButton(
-            onPressed: () => AppNavigation.toTripConfirm(context),
+            onPressed: onConfirmRoute,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: AppColors.onAccent,
@@ -619,92 +795,3 @@ class _ExpandedSheetContent extends StatelessWidget {
   }
 }
 
-class _LocationField extends StatelessWidget {
-  const _LocationField({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    this.labelColor,
-    this.value,
-    this.hint,
-    this.controller,
-    this.readOnly = false,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final Color? labelColor;
-  final String? value;
-  final String? hint;
-  final TextEditingController? controller;
-  final bool readOnly;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.inputFill,
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(icon, color: iconColor, size: 22.sp),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                    color: labelColor ?? AppColors.labelMuted,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                if (readOnly)
-                  Text(
-                    value ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w400,
-                      height: 1.25,
-                      color: AppColors.onSurface,
-                    ),
-                  )
-                else
-                  TextField(
-                    controller: controller,
-                    style: GoogleFonts.inter(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w400,
-                      height: 1.25,
-                      color: AppColors.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      hintText: hint,
-                      hintStyle: GoogleFonts.inter(
-                        fontSize: 15.sp,
-                        color: AppColors.outline,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

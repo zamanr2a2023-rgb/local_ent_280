@@ -18,13 +18,13 @@ class VehicleRentalScreen extends StatefulWidget {
 
 class _VehicleRentalScreenState extends State<VehicleRentalScreen> {
   static const _driverAgeOptions = [
-    '18 - 25 anos',
-    '26 - 65 anos',
-    '+ 65 anos',
+    '18 - 25 years',
+    '26 - 65 years',
+    '65+ years',
   ];
 
-  final _pickupController = TextEditingController(text: 'Aeroporto de Lisboa, PT');
-  final _dropoffController = TextEditingController(text: 'Mesmo local de recolha');
+  final _pickupController = TextEditingController(text: 'Lisbon Airport, PT');
+  final _dropoffController = TextEditingController(text: 'Same pickup location');
 
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _rangeStart = DateTime(DateTime.now().year, DateTime.now().month, 1);
@@ -268,7 +268,7 @@ class _SearchFormCard extends StatelessWidget {
             label: context.l10n.rentalPickupLocation,
             icon: Icons.location_on_outlined,
             controller: pickupController,
-            hint: 'Aeroporto de Lisboa, PT',
+            hint: 'Lisbon Airport, PT',
           ),
           SizedBox(height: 16.h),
           _LocationField(
