@@ -20,6 +20,7 @@
   "navHome": "Início",
   "navTrips": "Viagens",
   "navReservations": "Reservas",
+  "navBalance": "Saldo",
   "navProfile": "Perfil",
   "loginSubtitle": "Inicie sessão para gerir as suas viagens.",
   "loginSettingsTooltip": "Definições",
@@ -124,23 +125,23 @@
   "profilePhotoTakePhoto": "Tirar foto",
   "profilePhotoUpdated": "Foto de perfil actualizada",
   "profilePhotoUpdateFailed": "Não foi possível actualizar a foto. Tente novamente.",
-  "profilePhotoPermissionDenied": "Envio de foto bloqueado. Publique as regras Storage (roles/storage.rules) na Consola Firebase.",
+  "profilePhotoPermissionDenied": "Sem permissão para enviar a foto. Contacte o suporte se o problema persistir.",
   "profilePhotoUploading": "A enviar foto...",
   "profileEditName": "Editar nome",
   "profileNameHint": "O seu nome",
   "profileNameUpdated": "Nome atualizado",
   "profileNameUpdateFailed": "Não foi possível atualizar o nome. Tente novamente.",
-  "profileNamePermissionDenied": "Actualização do nome bloqueada. Publique as regras Firestore (roles/firestore.rules) na Consola Firebase.",
+  "profileNamePermissionDenied": "Não foi possível actualizar o nome. Verifique a sua sessão ou contacte o suporte.",
   "profileNameEmpty": "Introduza o seu nome.",
   "homeAvailableBalance": "Saldo Disponível",
-  "homeTopUp": "Carregar",
+  "homeTopUp": "Ver saldo",
   "homeActionRequest": "Pedir",
   "homeActionBook": "Reservar",
   "homeActionRent": "Alugar",
   "homeActionHistory": "Histórico",
   "homeActionBalance": "Saldo",
   "clientBalanceTitle": "Saldo",
-  "clientBalanceSubtitle": "Carteira em tempo real na coleção balances do Firebase.",
+  "clientBalanceSubtitle": "Saldo da sua conta actualizado em tempo real.",
   "clientBalanceDebtLimit": "Limite de dívida",
   "clientBalanceLastUpdated": "Última atualização",
   "clientBalanceHistoryTitle": "Ajustes recentes",
@@ -148,8 +149,13 @@
   "clientBalanceHistoryEmptyBody": "Alterações de saldo feitas pelo admin aparecem aqui.",
   "clientBalanceAdjustmentDefault": "Ajuste de saldo",
   "clientBalanceDebtWarningTitle": "Limite de dívida atingido",
-  "clientBalanceDebtWarningBody": "Carregue o saldo para continuar a pedir viagens.",
-  "clientBalanceTopUpComingSoon": "Carregamento online em breve. Contacte o suporte se precisar de ajuda.",
+  "clientBalanceDebtWarningBody": "Contacte o suporte para carregar o saldo e continuar a pedir viagens.",
+  "clientBalanceTopUpTitle": "Como carregar",
+  "clientBalanceTopUpBody": "O carregamento do saldo é gerido pelo suporte. Ligue para pedir crédito — aparecerá aqui após aprovação do administrador.",
+  "clientBalanceContactSupport": "Contactar suporte",
+  "clientBalanceSupportUnavailable": "Telefone de suporte indisponível. Contacte a equipa de apoio.",
+  "clientBalanceSupportCallFailed": "Não foi possível abrir o marcador telefónico neste dispositivo.",
+  "tripConfirmLimitExceededCallSupport": "Ligar para suporte",
   "clientBalanceUnavailable": "Saldo indisponível",
   "homeWhereToday": "Para onde vamos hoje?",
   "homeCurrentLocation": "Localização Atual",
@@ -159,6 +165,9 @@
   "homeLocationLoading": "A obter a sua localização...",
   "homeLocationUnavailable": "Não foi possível obter a localização",
   "homeRefreshLocation": "Atualizar localização",
+  "homeSelectLocationOnMap": "Selecionar no mapa",
+  "homeSelectLocationOnMapHint": "Mova o mapa ou toque no botão de localização para usar a posição atual.",
+  "homeUseMapLocation": "Usar esta localização",
   "homeLocationPermissionTitle": "Permitir localização",
   "homeLocationPermissionMessage": "O Local Transport precisa da sua localização para definir automaticamente o ponto de recolha.",
   "homeLocationPermissionAllow": "Permitir",
@@ -193,7 +202,7 @@
   "support": "Suporte",
   "destination": "Destino",
   "details": "Detalhes",
-  "premiumMobility": "Mobilidade Premium",
+  "premiumMobility": "Local Transport",
   "seeAll": "Ver todos",
   "edit": "Editar",
   "total": "Total",
@@ -215,7 +224,7 @@
   "splashInstantBookingTitle": "Reservas Instantâneas",
   "splashInstantBookingSubtitle": "Planeie a sua viagem em segundos com a nossa rede exclusiva.",
   "splashDriverOfToday": "MOTORISTA DE HOJE",
-  "adminAppBarTitle": "Mobilidade Premium",
+  "adminAppBarTitle": "Local Transport",
   "adminFleetStatusTitle": "Estado da Frota",
   "adminFleetStatusUpdated": "Atualizado: Agora",
   "adminActiveTripsLabel": "Viagens Ativas",
@@ -325,7 +334,7 @@
   "adminMonitoringTitle": "Definições de monitorização",
   "adminMonitoringDesc": "Limites para monitorização operacional.",
   "adminMonitoringHeading": "Monitorização operacional",
-  "adminMonitoringSubtitle": "Rever limites guardados no Firebase.",
+  "adminMonitoringSubtitle": "Rever limites de monitorização operacional.",
   "adminMonitoringConfig": "Configuração atual",
   "adminMonitoringLoading": "A carregar configuração de monitorização...",
   "adminMonitoringEnabled": "Monitorização ativa",
@@ -357,6 +366,10 @@
   "adminFleetDesc": "Acompanhar viaturas, estado e disponibilidade.",
   "adminFleetNoDriver": "Sem motorista atribuído",
   "adminFleetDriver": "Motorista",
+  "adminFleetAssignDriverTitle": "Atribuir motorista",
+  "adminFleetAssignDriverDesc": "Selecione um motorista para esta viatura.",
+  "adminFleetAssignDriverEmpty": "Nenhum motorista ativo encontrado.",
+  "adminFleetAssignDriverSuccess": "Motorista atribuído com sucesso.",
   "adminTransportTypesTitle": "Tipos de transporte",
   "adminTransportTypesDesc": "Criar e gerir tipos disponíveis.",
   "adminTransportTypesEmpty": "Sem tipos de transporte",
@@ -446,11 +459,11 @@
   "adminReportsTabOverview": "Panorama operacional",
   "adminReportsTabClient": "Extrato do cliente",
   "adminReportsTabDriver": "Extrato do motorista",
-  "adminReportsTabComingSoon": "Esta vista carregará dados de viagens e ajustes de saldo do Firebase.",
+  "adminReportsTabComingSoon": "Relatórios de viagens e movimentos de saldo estarão disponíveis em breve.",
   "adminCurrencyTitle": "Definições de moeda",
   "adminCurrencyDesc": "Taxas FX usadas para CVE, EUR e USD.",
   "adminCurrencyHeading": "Definições de moeda",
-  "adminCurrencySubtitle": "Definir taxas de câmbio em config/currency.",
+  "adminCurrencySubtitle": "Definir taxas de câmbio para a visualização em EUR, CVE e USD.",
   "adminCurrencyCveToEur": "CVE para EUR",
   "adminCurrencyCveToUsd": "CVE para USD",
   "adminCurrencySaveSuccess": "Definições de moeda guardadas",
@@ -565,8 +578,8 @@
   "rentalPremiumChoice": "Premium Choice",
   "rentalAllCars": "Todos os Carros",
   "rentalLoadMore": "Carregar mais veículos",
-  "rentalLoadError": "Não foi possível carregar veículos do Firebase.",
-  "rentalNoVehicles": "Nenhum veículo ativo encontrado no Firebase.",
+  "rentalLoadError": "Não foi possível carregar veículos. Tente novamente.",
+  "rentalNoVehicles": "Nenhum veículo disponível de momento.",
   "rentalVehicleDetails": "Detalhes do Veículo",
   "rentalRating": "Classificação",
   "rentalPowertrain": "Motorização",
@@ -621,8 +634,8 @@
   "tripHistoryStatusInProgress": "Em curso",
   "tripHistoryStatusScheduled": "Agendada",
   "tripHistoryEmpty": "Ainda sem viagens",
-  "tripHistoryEmptyBody": "As suas viagens do Firebase aparecem aqui depois de pedir uma corrida.",
-  "tripHistoryLoadError": "Não foi possível carregar viagens do Firebase.",
+  "tripHistoryEmptyBody": "As suas viagens aparecem aqui depois de pedir uma corrida.",
+  "tripHistoryLoadError": "Não foi possível carregar viagens. Tente novamente.",
   "tripHistoryNoDetails": "Sem detalhes",
   "tripDetailsRateExperience": "Avalie a sua experiência",
   "tripDetailsDigitalInvoice": "Fatura Digital",
@@ -652,12 +665,33 @@
   "tripInProgressArrivalLabel": "Chegada prevista",
   "tripInProgressCostLabel": "Custo Estimado",
   "driverSearchSubtitle": "Estamos a ligar-te aos veículos mais próximos em Lisboa Central.",
+  "driverSearchSubtitleFallback": "A ligar aos veículos disponíveis mais próximos.",
+  "driverSearchSubtitleArea": "A ligar aos veículos mais próximos perto de {area}.",
+  "@driverSearchSubtitleArea": {
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "driverSearchOrigin": "ORIGEM",
   "driverSearchEstimate": "ESTIMATIVA",
+  "driverSearchWaitEstimate": "3–5 min",
+  "driverSearchWaitMinutes": "{minutes} min",
+  "@driverSearchWaitMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "driverSearchCancelTrip": "Cancelar Viagem",
   "driverSearchCancelling": "A cancelar...",
   "driverSearchCancelFailed": "Não foi possível cancelar a viagem.",
   "driverSearchNoDrivers": "Nenhum motorista disponível. Tente novamente.",
+  "driverSearchNoDriversNearby": "Nenhum motorista perto do local de recolha. O motorista tem de estar disponível num raio de 100 km.",
+  "driverSearchNoDriversMissingVehicle": "Motoristas próximos não têm viatura atribuída. Peça ao admin para atribuir uma viatura.",
+  "homePickupOutsideServiceArea": "A recolha está fora da área de serviço. Use uma localização em Cabo Verde (ou Portugal em testes dev).",
   "driverSearchOptimizing": "Otimizando percurso em tempo real...",
   "driverFoundWaiting": "A aguardar confirmação...",
   "driverFoundEstimatedTime": "Tempo estimado",
@@ -687,7 +721,13 @@
   "tripConfirmSessionInvalid": "Sessão inválida. Inicie sessão novamente.",
   "tripConfirmRouteLoading": "Aguarde o carregamento do percurso.",
   "tripConfirmCreateFailed": "Não foi possível criar a viagem. Tente novamente.",
-  "tripConfirmPermissionDenied": "A criação da viagem foi bloqueada pelas regras Firebase. Publique as regras actualizadas e inicie sessão como cliente.",
+  "tripConfirmPermissionDenied": "Não foi possível criar a viagem. Verifique o seu saldo e sessão, ou contacte o suporte.",
+  "tripConfirmDestinationFailed": "Não foi possível localizar o destino. Verifique o endereço ou escolha uma sugestão da lista.",
+  "tripConfirmDirectionsFailed": "Não foi possível calcular o percurso. Verifique a ligação e as definições da API Google Maps.",
+  "tripConfirmTransportTypesFailed": "Tipos de transporte indisponíveis. Tente novamente dentro de momentos.",
+  "tripConfirmPriceUnavailable": "Preço da viagem indisponível. Aguarde o carregamento do percurso ou escolha outro destino.",
+  "tripConfirmLimitExceeded": "Saldo insuficiente para pedir esta viagem. Carregue a conta e tente novamente.",
+  "tripConfirmDirectionsApproximate": "Percurso exacto indisponível. Distância e preço são aproximados.",
   "tripConfirmPickupPoint": "PONTO DE RECOLHA",
   "tripConfirmFinalDestination": "DESTINO FINAL",
   "tripConfirmTransportPremium": "Premium",
@@ -713,7 +753,8 @@
   "driverTripsLabel": "Viagens",
   "driverDistanceLabel": "Distância",
   "driverRecentTrips": "Últimas Viagens",
-  "driverLocationCity": "Lisboa, PT",
+  "driverLocationCity": "Praia, CV",
+  "driverLocationLoading": "A localizar...",
   "driverHoursAgo": "há {hours}h",
   "@driverHoursAgo": {
     "placeholders": {
@@ -782,5 +823,127 @@
   "adminReportsEfficiencyFooter": "A sua frota está a operar 15% acima da média do setor neste trimestre.",
   "adminDrawerFleetManager": "Gestor de Frota",
   "adminDrawerFleetSubtitle": "Frota Central Lisboa",
-  "adminDrawerRoleBadge": "Admin"
+  "adminDrawerRoleBadge": "Admin",
+  "adminTariffNoTransportTypes": "Configure primeiro os tipos de transporte.",
+  "adminTariffInvalidAmounts": "Introduza valores válidos.",
+  "adminTariffInvalidBaseFare": "Tarifa base inválida para {typeName}.",
+  "@adminTariffInvalidBaseFare": {
+    "placeholders": {
+      "typeName": {
+        "type": "String"
+      }
+    }
+  },
+  "rentalAc": "AC",
+  "rentalElectric": "Elétrico",
+  "rentalAllTypes": "Todos os tipos",
+  "rentalCarTypeSedan": "Sedan",
+  "rentalCarTypeSuv": "SUV",
+  "rentalCarTypeExecutive": "Executivo",
+  "rentalCarTypeElectric": "Elétrico",
+  "rentalTransmissionAll": "Todas",
+  "rentalTransmissionAutomatic": "Automático",
+  "rentalTransmissionManual": "Manual",
+  "rentalAnyPrice": "Qualquer preço",
+  "rentalPriceUpTo": "Até {price}",
+  "@rentalPriceUpTo": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "driverEnRouteEtaAt": "ETA • {time}",
+  "@driverEnRouteEtaAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rentalWeekdaySun": "DOM",
+  "rentalWeekdayMon": "SEG",
+  "rentalWeekdayTue": "TER",
+  "rentalWeekdayWed": "QUA",
+  "rentalWeekdayThu": "QUI",
+  "rentalWeekdayFri": "SEX",
+  "rentalWeekdaySat": "SÁB",
+  "rentalDemoPickupLocation": "Aeroporto de Lisboa, PT",
+  "rentalDriverAgeYoung": "18 - 25 anos",
+  "rentalDriverAgeStandard": "26 - 65 anos",
+  "rentalDriverAgeSenior": "65+ anos",
+  "rentalDemoSportPremium": "DESPORTIVO PREMIUM",
+  "rentalDemoVehicleName": "Porsche Taycan 4S",
+  "rentalInsuranceDescription": "Proteção total contra danos próprios e assistência em viagem 24/7 sem custos adicionais.",
+  "rentalInsuranceFranchiseWaiver": "Isenção de Franquia",
+  "rentalInsuranceCdw": "Danos de Colisão (CDW)",
+  "rentalFuelPolicyElectric": "Política de Cheio/Cheio ou devolução com carga superior a 80% para veículos elétricos.",
+  "rentalBookingRentalDays": "Aluguer ({days} dias)",
+  "@rentalBookingRentalDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "rentalBookingPremiumInsurance": "Seguro Premium",
+  "rentalBookingIncluded": "Incluído",
+  "rentalBookingAirportFees": "Taxas de aeroporto",
+  "rentalDemoAirportLocation": "Aeroporto de Lisboa, LIS",
+  "rentalSpecPower": "Potência",
+  "rentalSpecPowerValue": "530 cv",
+  "rentalSpecRange": "Autonomia WLTP",
+  "rentalSpecRangeValue": "463 km",
+  "rentalSpecDrive": "Tração",
+  "rentalSpecDriveValue": "Integral (AWD)",
+  "rentalVehicleSummary": "{price} · {seats} · {transmission}",
+  "@rentalVehicleSummary": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "String"
+      },
+      "transmission": {
+        "type": "String"
+      }
+    }
+  },
+  "eventDemoGenre": "MÚSICA ELETRÓNICA",
+  "eventDemoTitle": "Gala de Verão: Porto Sunset",
+  "eventDemoDescription": "Prepare-se para a noite mais exclusiva do ano. A Gala de Verão no Porto combina o melhor da música eletrónica melódica com uma vista deslumbrante sobre o Rio Douro. O evento contará com serviço de catering premium, áreas lounge VIP e uma experiência audiovisual imersiva sem precedentes na cidade.",
+  "eventDemoVenue": "Alfândega do Porto",
+  "eventPaymentMbway": "MBWAY",
+  "discoverMapRestaurantLabel": "Restaurante Maré",
+  "discoverMapBeachLabel": "Praia Secreta",
+  "reservationDemoVehicleName": "Tesla Model 3 Performance",
+  "reservationDemoVehicleSpecs": "{powertrain} • {seats} • {transmission}",
+  "@reservationDemoVehicleSpecs": {
+    "placeholders": {
+      "powertrain": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "String"
+      },
+      "transmission": {
+        "type": "String"
+      }
+    }
+  },
+  "reservationDemoAirport": "Aeroporto de Lisboa (LIS)",
+  "reservationDemoPickupDateTime": "15 Out, 2023 às 10:00",
+  "reservationDemoReturnDateTime": "20 Out, 2023 às 18:00",
+  "reservationRentalDaysLine": "Aluguer ({days} dias)",
+  "@reservationRentalDaysLine": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reservationInsuranceLine": "Seguro total",
+  "reservationDefaultVehicle": "Veículo",
+  "reservationDefaultCity": "Lisboa"
 }

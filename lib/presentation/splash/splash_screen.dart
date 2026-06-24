@@ -122,11 +122,6 @@ class _Header extends StatelessWidget {
           width: 44.w,
           height: 44.h,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, Color(0xFF0A2D5C)],
-            ),
             borderRadius: BorderRadius.circular(14.r),
             boxShadow: [
               BoxShadow(
@@ -136,10 +131,14 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            Icons.directions_car_filled_rounded,
-            color: AppColors.onPrimary,
-            size: 24.sp,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14.r),
+            child: Image.asset(
+              AppAssets.appIcon,
+              width: 44.w,
+              height: 44.h,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         SizedBox(width: 12.w),

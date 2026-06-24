@@ -10,6 +10,7 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
+import 'package:intl/intl.dart';
 import 'package:local_ent_280/features/reservations/data/reservation_repository.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
@@ -56,11 +57,11 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
       await _reservationRepository.createVehicleRentalReservation(
         clientId: profile.uid,
         vehicleId: vehicleId,
-        vehicleLabel: _draft.vehicleLabel ?? 'Vehicle',
+        vehicleLabel: _draft.vehicleLabel ?? context.l10n.reservationDefaultVehicle,
         scheduledAt:
             _draft.pickupDate ?? DateTime.now().add(const Duration(days: 1)),
-        pickupAddress: _draft.pickupLocation ?? 'Lisbon',
-        returnAddress: _draft.returnLocation ?? 'Lisbon',
+        pickupAddress: _draft.pickupLocation ?? context.l10n.reservationDefaultCity,
+        returnAddress: _draft.returnLocation ?? context.l10n.reservationDefaultCity,
         totalEur: _draft.estimatedTotalEur,
         fullInsurance: _draft.fullInsurance,
       );
@@ -69,7 +70,7 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.reservationConfirmAndPay)),
       );
-      AppNavigation.toReservations(context);
+      AppNavigation.toClientBalance(context);
     } on FirebaseException catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,9 +99,9 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _VehicleCard(decoration: _cardDecoration),
+                  _VehicleCard(decoration: _cardDecoration, draft: _draft),
                   SizedBox(height: 24.h),
-                  _ItineraryCard(decoration: _cardDecoration),
+                  _ItineraryCard(decoration: _cardDecoration, draft: _draft),
                   SizedBox(height: 16.h),
                   const _SecurityBanner(),
                   SizedBox(height: 24.h),
@@ -184,12 +185,23 @@ class _ReservationAppBar extends StatelessWidget {
 }
 
 class _VehicleCard extends StatelessWidget {
-  const _VehicleCard({required this.decoration});
+  const _VehicleCard({required this.decoration, required this.draft});
 
   final BoxDecoration decoration;
+  final RentalBookingDraft draft;
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = draft.vehicleImageUrl ?? AppAssets.reservationTeslaImage;
+    final vehicleName =
+        draft.vehicleLabel ?? context.l10n.reservationDefaultVehicle;
+    final powertrain = draft.vehicleIsElectric
+        ? context.l10n.rentalElectric
+        : (draft.vehicleCategory ?? context.l10n.rentalCarTypeSedan);
+    final seats = context.l10n.rentalSeats('${draft.vehicleSeats ?? 5}');
+    final transmission =
+        draft.vehicleTransmission ?? context.l10n.rentalTransmissionAutomatic;
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: decoration,
@@ -199,7 +211,7 @@ class _VehicleCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8.r),
             child: Image.network(
-              AppAssets.reservationTeslaImage,
+              imageUrl,
               height: 180.h,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -218,7 +230,7 @@ class _VehicleCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tesla Model 3 Performance',
+                      vehicleName,
                       style: GoogleFonts.manrope(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
@@ -228,7 +240,11 @@ class _VehicleCard extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'Elétrico • 5 Lugares • Automático',
+                      context.l10n.reservationDemoVehicleSpecs(
+                        powertrain,
+                        seats,
+                        transmission,
+                      ),
                       style: GoogleFonts.inter(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w400,
@@ -247,7 +263,9 @@ class _VehicleCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
-                  context.l10n.premium,
+                  draft.vehicleIsPremium
+                      ? context.l10n.premium
+                      : (draft.vehicleCategory ?? context.l10n.rentalCarTypeSedan),
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -292,12 +310,22 @@ class _VehicleCard extends StatelessWidget {
 }
 
 class _ItineraryCard extends StatelessWidget {
-  const _ItineraryCard({required this.decoration});
+  const _ItineraryCard({required this.decoration, required this.draft});
 
   final BoxDecoration decoration;
+  final RentalBookingDraft draft;
+
+  String _formatDateTime(BuildContext context, DateTime? value) {
+    if (value == null) return '—';
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.yMMMd(locale).add_Hm().format(value);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pickupPlace = draft.pickupLocation ?? context.l10n.reservationDefaultCity;
+    final returnPlace = draft.returnLocation ?? pickupPlace;
+
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: decoration,
@@ -318,16 +346,16 @@ class _ItineraryCard extends StatelessWidget {
             icon: Icons.location_on,
             iconColor: AppColors.secondary,
             label: context.l10n.reservationPickupLabel,
-            place: 'Lisbon Airport (LIS)',
-            dateTime: '15 Out, 2023 às 10:00',
+            place: pickupPlace,
+            dateTime: _formatDateTime(context, draft.pickupDate),
             showConnector: true,
           ),
           _ItineraryStop(
             icon: Icons.flag,
             iconColor: AppColors.primary,
             label: context.l10n.reservationReturnLabel,
-            place: 'Lisbon Airport (LIS)',
-            dateTime: '20 Out, 2023 às 18:00',
+            place: returnPlace,
+            dateTime: _formatDateTime(context, draft.returnDate),
             showConnector: false,
           ),
         ],
@@ -503,11 +531,11 @@ class _CostAndPaymentCard extends StatelessWidget {
     final rentalTotal = draft.pricePerDayEur * draft.rentalDays;
     final lineItems = <(String, String)>[
       (
-        'Rental (${draft.rentalDays} days)',
+        context.l10n.reservationRentalDaysLine(draft.rentalDays),
         formatter.formatEurMajor(rentalTotal),
       ),
       if (draft.fullInsurance)
-        ('Full insurance', formatter.formatEurMajor(15)),
+        (context.l10n.reservationInsuranceLine, formatter.formatEurMajor(15)),
     ];
     final totalLabel = formatter.formatEurMajor(draft.estimatedTotalEur);
 

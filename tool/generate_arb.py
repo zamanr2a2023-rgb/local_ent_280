@@ -281,7 +281,7 @@ strings = {
     "support": ("Suporte", "Support", "Soporte"),
     "destination": ("Destino", "Destination", "Destino"),
     "details": ("Detalhes", "Details", "Detalles"),
-    "premiumMobility": ("Mobilidade Premium", "Premium Mobility", "Movilidad Premium"),
+    "premiumMobility": ("Local Transport", "Local Transport", "Local Transport"),
     "seeAll": ("Ver todos", "See all", "Ver todos"),
     "edit": ("Editar", "Edit", "Editar"),
     "total": ("Total", "Total", "Total"),
@@ -319,7 +319,7 @@ strings = {
         "Planifique su viaje en segundos con nuestra red exclusiva.",
     ),
     "splashDriverOfToday": ("MOTORISTA DE HOJE", "TODAY'S DRIVER", "CONDUCTOR DE HOY"),
-    "adminAppBarTitle": ("Mobilidade Premium", "Premium Mobility", "Movilidad Premium"),
+    "adminAppBarTitle": ("Local Transport", "Local Transport", "Local Transport"),
     "adminFleetStatusTitle": ("Estado da Frota", "Fleet Status", "Estado de la flota"),
     "adminFleetStatusUpdated": ("Atualizado: Agora", "Updated: Now", "Actualizado: Ahora"),
     "adminActiveTripsLabel": ("Viagens Ativas", "Active Trips", "Viajes activos"),
@@ -668,7 +668,7 @@ def build_locale(locale_code: str, index: int) -> dict:
 base = Path(__file__).resolve().parent.parent / "lib" / "l10n"
 base.mkdir(parents=True, exist_ok=True)
 for filename, locale, idx in [
-    ("app_pt.arb", "pt", 0),
+    ("app_pt_PT.arb", "pt_PT", 0),
     ("app_en.arb", "en", 1),
     ("app_es.arb", "es", 2),
 ]:

@@ -5,7 +5,8 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/presentation/widgets/drawer_user_card.dart';
@@ -64,15 +65,13 @@ class DriverDrawer extends StatelessWidget {
     }
 
     try {
-      await (_authRepository ?? AuthRepository()).signOut();
+      await (_authRepository ?? authRepositoryOf(context)).signOut();
       rootNavigator.pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
         (_) => false,
       );
     } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.signOutFailed)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.signOutFailed)));
     }
   }
 
@@ -95,7 +94,7 @@ class DriverDrawer extends StatelessWidget {
                 AppLayout.lg,
               ),
               child: Text(
-                l10n.premiumMobility,
+                l10n.appNameLocalTransport,
                 style: AppTypography.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
@@ -181,8 +180,8 @@ class _DrawerNavItem extends StatelessWidget {
     final foreground = isDestructive
         ? AppColors.error
         : isSelected
-            ? AppColors.onSecondaryContainer
-            : AppColors.onSurfaceVariant;
+        ? AppColors.onSecondaryContainer
+        : AppColors.onSurfaceVariant;
     final background = isSelected
         ? AppColors.secondaryContainer
         : Colors.transparent;

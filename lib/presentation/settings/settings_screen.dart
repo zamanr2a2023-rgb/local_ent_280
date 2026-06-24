@@ -7,7 +7,8 @@ import 'package:local_ent_280/core/settings/user_preferences.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// App settings — language, currency and account actions.
@@ -22,8 +23,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late final AuthRepository _authRepository =
-      widget._authRepository ?? AuthRepository();
+  AuthRepository get _authRepository =>
+      widget._authRepository ?? authRepositoryOf(context);
   late final UserPreferences _preferences = UserPreferences.instance;
 
   bool _isSigningOut = false;

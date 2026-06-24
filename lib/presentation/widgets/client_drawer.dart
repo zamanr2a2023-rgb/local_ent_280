@@ -5,14 +5,15 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:local_ent_280/presentation/widgets/drawer_user_card.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum ClientDrawerSection { home, trips, reservations, profile, settings }
+enum ClientDrawerSection { home, trips, balance, profile, settings }
 
 /// Client navigation drawer — mirrors bottom nav + settings.
 class ClientDrawer extends StatelessWidget {
@@ -65,7 +66,7 @@ class ClientDrawer extends StatelessWidget {
     }
 
     try {
-      await (_authRepository ?? AuthRepository()).signOut();
+      await (_authRepository ?? authRepositoryOf(context)).signOut();
       rootNavigator.pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
         (_) => false,
@@ -147,15 +148,15 @@ class ClientDrawer extends StatelessWidget {
                       },
                     ),
                     _DrawerNavItem(
-                      icon: Symbols.calendar_month,
-                      label: l10n.navReservations,
-                      isSelected: selected == ClientDrawerSection.reservations,
+                      icon: Symbols.account_balance_wallet,
+                      label: l10n.navBalance,
+                      isSelected: selected == ClientDrawerSection.balance,
                       onTap: () {
                         Navigator.of(context).pop();
-                        if (selected != ClientDrawerSection.reservations) {
+                        if (selected != ClientDrawerSection.balance) {
                           AppNavigation.onBottomNavTap(
                             context,
-                            AppNavIndex.reservas,
+                            AppNavIndex.saldo,
                           );
                         }
                       },

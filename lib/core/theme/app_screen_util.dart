@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/app/di/provider_overrides.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Design reference: 390×844 (details.md / widget tests).
@@ -19,21 +21,24 @@ abstract final class AppScreenUtil {
 
   /// Wraps a widget for widget tests.
   static Widget testWrap(Widget child, {Locale locale = const Locale('pt')}) {
-    return ScreenUtilInit(
-      designSize: designSize,
-      minTextAdapt: true,
-      builder: (context, appChild) => MaterialApp(
-        locale: locale,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: appChild,
+    return ProviderScope(
+      overrides: buildProviderOverrides(),
+      child: ScreenUtilInit(
+        designSize: designSize,
+        minTextAdapt: true,
+        builder: (context, appChild) => MaterialApp(
+          locale: locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: appChild,
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }

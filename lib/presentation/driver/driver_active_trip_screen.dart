@@ -16,7 +16,8 @@ import 'package:local_ent_280/features/driver/data/driver_location_tracker.dart'
 import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 
 enum _DriverTripPhase { onWay, arrived, inProgress }
 
@@ -56,11 +57,15 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
 
   String? get _driverId => UserSession.instance.profile?.uid;
 
+  bool _repositoriesReady = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_repositoriesReady) return;
+    _repositoriesReady = true;
     _driverRepository = widget.driverRepository ?? DriverRepository();
-    _tripRepository = TripRepository();
+    _tripRepository = tripRepositoryOf(context);
     _trip = widget.trip;
     _syncPhaseFromTrip(_trip);
     _syncPassengerMeta(_trip);
@@ -73,8 +78,7 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
       const Duration(seconds: 30),
       (_) => _refreshRouteMetrics(),
     );
-    _tripSubscription =
-        _tripRepository.watchTrip(widget.tripId).listen((trip) {
+    _tripSubscription = _tripRepository.watchTrip(widget.tripId).listen((trip) {
       if (!mounted) return;
       if (trip == null) return;
       final previousPhase = _phase;
@@ -98,7 +102,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
     final trip = _trip;
     if (trip == null) return;
 
-    final location = await _locationService.getLastKnownLocation() ??
+    final location =
+        await _locationService.getLastKnownLocation() ??
         await _locationService.getCurrentLocation();
     if (location == null || !mounted) return;
 
@@ -154,22 +159,24 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
   }
 
   String _primaryLabel(BuildContext context) => switch (_phase) {
-        _DriverTripPhase.onWay => context.l10n.driverOnTheWay,
-        _DriverTripPhase.arrived => context.l10n.driverArrivedStatus,
-        _DriverTripPhase.inProgress => context.l10n.driverTripInProgressStatus,
-      };
+    _DriverTripPhase.onWay => context.l10n.driverOnTheWay,
+    _DriverTripPhase.arrived => context.l10n.driverArrivedStatus,
+    _DriverTripPhase.inProgress => context.l10n.driverTripInProgressStatus,
+  };
 
   Future<void> _onArrived() async {
     if (_isUpdating) return;
+    final driverId = _driverId;
+    if (driverId == null) return;
     setState(() => _isUpdating = true);
     try {
-      await _driverRepository.markArrived(widget.tripId);
+      await _driverRepository.markArrived(widget.tripId, driverId: driverId);
       if (mounted) setState(() => _phase = _DriverTripPhase.arrived);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.tryAgain)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
       }
     } finally {
       if (mounted) setState(() => _isUpdating = false);
@@ -178,15 +185,17 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
 
   Future<void> _onStartTrip() async {
     if (_isUpdating) return;
+    final driverId = _driverId;
+    if (driverId == null) return;
     setState(() => _isUpdating = true);
     try {
-      await _driverRepository.startTrip(widget.tripId);
+      await _driverRepository.startTrip(widget.tripId, driverId: driverId);
       if (mounted) setState(() => _phase = _DriverTripPhase.inProgress);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.tryAgain)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
       }
     } finally {
       if (mounted) setState(() => _isUpdating = false);
@@ -207,9 +216,9 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
       AppNavigation.toDriverHome(context);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.tryAgain)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
       }
     } finally {
       if (mounted) setState(() => _isUpdating = false);
@@ -226,8 +235,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = _trip;
-    final destinationAddress = trip?.destination.address ??
-        DriverActiveTripData.destinationAddress;
+    final destinationAddress =
+        trip?.destination.address ?? DriverActiveTripData.destinationAddress;
     final passengerName =
         trip?.passengerName ?? DriverActiveTripData.passengerName;
     final estimatedTime = _estimatedTime;
@@ -614,8 +623,8 @@ class _WorkflowButton extends StatelessWidget {
     final color = isDestructive
         ? AppColors.error
         : isEnabled
-            ? AppColors.primary
-            : AppColors.labelMuted;
+        ? AppColors.primary
+        : AppColors.labelMuted;
 
     return OutlinedButton(
       onPressed: isEnabled ? onTap : null,
@@ -625,8 +634,8 @@ class _WorkflowButton extends StatelessWidget {
         side: BorderSide(
           color: isEnabled
               ? (isDestructive
-                  ? AppColors.error.withValues(alpha: 0.4)
-                  : AppColors.outlineVariant)
+                    ? AppColors.error.withValues(alpha: 0.4)
+                    : AppColors.outlineVariant)
               : AppColors.surfaceVariant,
         ),
         padding: EdgeInsets.symmetric(vertical: 12.h),

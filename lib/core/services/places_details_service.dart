@@ -36,7 +36,7 @@ class PlacesDetailsService {
         'place_id': placeId,
         'fields': 'geometry',
         'key': GoogleMapsConfig.placesApiKey,
-        'language': 'en',
+        'language': 'pt',
       },
     );
 
@@ -70,7 +70,8 @@ class PlacesDetailsService {
       {
         'address': address,
         'key': GoogleMapsConfig.placesApiKey,
-        'language': 'en',
+        'language': 'pt',
+        'region': 'cv',
       },
     );
 

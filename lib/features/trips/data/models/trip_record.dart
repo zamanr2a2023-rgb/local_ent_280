@@ -126,6 +126,7 @@ class TripRecord {
     this.completedAt,
     this.clientSupport,
     this.driverSummary,
+    this.unfulfilledReason,
   });
 
   final String id;
@@ -142,6 +143,7 @@ class TripRecord {
   final DateTime? completedAt;
   final TripClientSupport? clientSupport;
   final TripDriverSummary? driverSummary;
+  final String? unfulfilledReason;
 
   bool get hasAssignedDriver =>
       assignedDriverId != null && assignedDriverId!.trim().isNotEmpty;
@@ -207,6 +209,7 @@ class TripRecord {
               data['driverSummary'] as Map<String, dynamic>,
             )
           : null,
+      unfulfilledReason: data['unfulfilledReason'] as String?,
     );
   }
 

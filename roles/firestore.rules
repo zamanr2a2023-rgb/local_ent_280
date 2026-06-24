@@ -1,4 +1,4 @@
-﻿rules_version='2'
+rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -10,15 +10,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(uid));
     }
 
-    // Prefer Firestore users/{uid}.role (this app stores role in Firestore, not auth claims).
     function role() {
       return !isSignedIn()
         ? null
-        : (roleFromUserDoc() != null
-            ? roleFromUserDoc()
-            : (request.auth.token.keys().hasAny(['role'])
-                ? request.auth.token.role
-                : null));
+        : (request.auth.token.keys().hasAny(['role'])
+            ? request.auth.token.role
+            : roleFromUserDoc());
     }
 
     function roleFromUserDoc() {
@@ -263,65 +260,6 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
-    // Client, driver, and admin can update their own profile name and photo.
-    function isSelfProfileUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return request.resource.data.role == resource.data.role
-        && changed.hasOnly([
-          'name',
-          'photoUrl',
-          'updatedAt'
-        ])
-        && (!changed.hasAny(['name'])
-          || (request.resource.data.name is string
-            && request.resource.data.name.size() > 0
-            && request.resource.data.name.size() <= 120))
-        && (!changed.hasAny(['photoUrl'])
-          || (request.resource.data.photoUrl is string
-            && request.resource.data.photoUrl.size() > 0
-            && request.resource.data.photoUrl.size() <= 4096))
-        && (!changed.hasAny(['updatedAt'])
-          || (request.resource.data.updatedAt == request.time
-            || request.resource.data.updatedAt is timestamp));
-    }
-
-    function isSelfRegistrationAllowed() {
-      let data = request.resource.data;
-      return isSignedIn()
-        && request.auth.uid == uid
-        && data.role in ['client', 'driver']
-        && data.keys().hasOnly([
-          'role',
-          'name',
-          'phone',
-          'email',
-          'photoUrl',
-          'isActive',
-          'uiCurrency',
-          'createdAt',
-          'updatedAt'
-        ])
-        && data.name is string
-        && data.name.size() > 0
-        && data.name.size() <= 120
-        && data.email is string
-        && data.email.size() > 0
-        && data.isActive == true
-        && (!data.keys().hasAny(['phone']) || data.phone is string)
-        && (!data.keys().hasAny(['photoUrl']) || data.photoUrl is string)
-        && (
-          !data.keys().hasAny(['uiCurrency'])
-          || (data.uiCurrency is string
-            && isAllowedUiCurrency(data.uiCurrency))
-        )
-        && (!data.keys().hasAny(['createdAt'])
-          || data.createdAt == request.time
-          || data.createdAt is timestamp)
-        && (!data.keys().hasAny(['updatedAt'])
-          || data.updatedAt == request.time
-          || data.updatedAt is timestamp);
-    }
-
     function isManagerDriverUserUpdateAllowed() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return resource.data.role == 'driver'
@@ -399,52 +337,6 @@ service cloud.firestore {
         && request.resource.data.clientSupport == resource.data.clientSupport;
     }
 
-    function isClientTripCreateAllowed() {
-      let data = request.resource.data;
-      return isSignedIn()
-        && roleFromUserDoc() == 'client'
-        && data.clientId == request.auth.uid
-        && data.status == 'REQUESTED'
-        && data.isActive == true
-        && (!data.keys().hasAny(['assignedDriverId']) || data.assignedDriverId == null)
-        && data.pickup is map
-        && data.pickup.address is string
-        && data.pickup.latitude is number
-        && data.pickup.longitude is number
-        && data.destination is map
-        && data.destination.address is string
-        && data.destination.latitude is number
-        && data.destination.longitude is number
-        && data.transportType is map
-        && data.transportType.id is string
-        && data.transportType.name is string
-        && data.meteringSnapshot is map
-        && data.clientSupport is map
-        && data.clientSupport.displayName is string
-        && (!data.clientSupport.keys().hasAny(['phone']) || data.clientSupport.phone is string)
-        && data.createdAt == request.time
-        && data.requestedAt == request.time
-        && data.updatedAt == request.time;
-    }
-
-    function isClientTripCancelUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let status = normalizeTripStatus(resource.data.status);
-      return isTripClient()
-        && changed.hasOnly([
-          'status',
-          'isActive',
-          'updatedAt'
-        ])
-        && request.resource.data.status == 'CANCELLED_BY_CLIENT'
-        && request.resource.data.isActive == false
-        && request.resource.data.updatedAt == request.time
-        && status in [
-          'REQUESTED',
-          'DRIVER_ASSIGNED_WAITING_ACCEPTANCE'
-        ];
-    }
-
     function isClientTripRatingUpdateAllowed() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let status = normalizeTripStatus(resource.data.status);
@@ -489,90 +381,6 @@ service cloud.firestore {
         ]);
     }
 
-    function isDriverTripDiscoveryReadAllowed() {
-      return isDriver()
-        && (
-          (
-            normalizeTripStatus(resource.data.status) == 'REQUESTED'
-            && (
-              resource.data.assignedDriverId == null
-              || !resource.data.keys().hasAny(['assignedDriverId'])
-            )
-          )
-          || tripDriverId(resource.data) == request.auth.uid
-        );
-    }
-
-    function isDriverTripClaimUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let prevStatus = normalizeTripStatus(resource.data.status);
-      let nextStatus = normalizeTripStatus(request.resource.data.status);
-      return isDriver()
-        && prevStatus == 'REQUESTED'
-        && (
-          resource.data.assignedDriverId == null
-          || !resource.data.keys().hasAny(['assignedDriverId'])
-        )
-        && request.resource.data.assignedDriverId == request.auth.uid
-        && nextStatus == 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE'
-        && changed.hasOnly([
-          'assignedDriverId',
-          'status',
-          'updatedAt'
-        ]);
-    }
-
-    function isDriverTripAcceptUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let prevStatus = normalizeTripStatus(resource.data.status);
-      let nextStatus = normalizeTripStatus(request.resource.data.status);
-      return isTripDriver()
-        && prevStatus == 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE'
-        && nextStatus == 'DRIVER_ACCEPTED'
-        && changed.hasOnly([
-          'assignedDriverId',
-          'status',
-          'driverSummary',
-          'isActive',
-          'updatedAt'
-        ]);
-    }
-
-    function isDriverTripDeclineUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let prevStatus = normalizeTripStatus(resource.data.status);
-      let nextStatus = normalizeTripStatus(request.resource.data.status);
-      return isTripDriver()
-        && prevStatus == 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE'
-        && (nextStatus == 'REQUESTED' || nextStatus == 'DRIVER_DECLINED')
-        && request.resource.data.assignedDriverId == null
-        && changed.hasOnly([
-          'assignedDriverId',
-          'status',
-          'updatedAt'
-        ]);
-    }
-
-    function isDriverTripLifecycleUpdateAllowed() {
-      let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let prevStatus = normalizeTripStatus(resource.data.status);
-      let nextStatus = normalizeTripStatus(request.resource.data.status);
-      return isTripDriver()
-        && (
-          (prevStatus == 'DRIVER_ACCEPTED' && nextStatus == 'DRIVER_EN_ROUTE')
-          || (prevStatus == 'DRIVER_EN_ROUTE' && nextStatus == 'DRIVER_ARRIVED')
-          || (prevStatus == 'DRIVER_ARRIVED' && nextStatus == 'IN_TRIP')
-          || (prevStatus == 'IN_TRIP' && nextStatus == 'COMPLETED')
-        )
-        && changed.hasOnly([
-          'status',
-          'isActive',
-          'updatedAt',
-          'completedAt'
-        ])
-        && (nextStatus != 'COMPLETED' || request.resource.data.isActive == false);
-    }
-
     function canReadPublicTariff(tariffId) {
       return tariffId == 'public_default'
         && (isAdmin() || isClient() || isDriver());
@@ -612,14 +420,6 @@ service cloud.firestore {
 
     function canWriteSupportConfig(docId) {
       return isAdmin() && docId == 'support';
-    }
-
-    function canReadMarketConfig(docId) {
-      return isAdmin() && docId == 'market';
-    }
-
-    function canWriteMarketConfig(docId) {
-      return isAdmin() && docId == 'market';
     }
 
     function canReadOperationalMonitoringConfig(docId) {
@@ -671,21 +471,6 @@ service cloud.firestore {
 
     function isPackageReservation(data) {
       return data.source == 'package';
-    }
-
-    function isClientVehicleRentalReservationCreateAllowed() {
-      return isClient()
-        && request.resource.data.source == 'vehicle_rental'
-        && request.resource.data.clientId == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.vehicleId is string
-        && request.resource.data.vehicleLabel is string
-        && request.resource.data.scheduledAt is timestamp
-        && request.resource.data.pickup is map
-        && request.resource.data.destination is map
-        && request.resource.data.estimatedTotalMinor is int
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
     }
 
     function isInternalStaffReservationCreateAllowed() {
@@ -762,13 +547,28 @@ service cloud.firestore {
         || (managerCanVc() && resource.data.role == 'client');
       allow create: if (isSignedIn()
           && request.auth.uid == uid
-          && isSelfRegistrationAllowed())
+          && request.resource.data.role == 'client'
+          && request.resource.data.keys().hasOnly([
+            'role',
+            'name',
+            'phone',
+            'email',
+            'photoUrl',
+            'isActive',
+            'uiCurrency',
+            'createdAt',
+            'updatedAt'
+          ])
+          && (
+            !request.resource.data.keys().hasAny(['uiCurrency'])
+            || (request.resource.data.uiCurrency is string
+              && isAllowedUiCurrency(request.resource.data.uiCurrency))
+          ))
         || isAdmin();
       allow update: if isAdmin()
         || (isSignedIn()
           && request.auth.uid == uid
-          && (isSelfUserUpdateAllowed()
-            || isSelfProfileUpdateAllowed()))
+          && isSelfUserUpdateAllowed())
         || (managerCanEd() && isManagerDriverUserUpdateAllowed());
       allow delete: if isAdmin();
     }
@@ -844,18 +644,11 @@ service cloud.firestore {
         || managerCanVt()
         || managerCanVr()
         || isTripClient()
-        || isTripDriver()
-        || isDriverTripDiscoveryReadAllowed();
-      allow create: if isAdmin()
-        || (isSignedIn() && isClientTripCreateAllowed());
+        || isTripDriver();
+      allow create: if isAdmin();
       allow update: if isAdmin()
         || (managerCanTs() && isManagerTripSupportUpdateAllowed())
         || isDriverTripMeteringUpdateAllowed()
-        || isDriverTripClaimUpdateAllowed()
-        || isDriverTripAcceptUpdateAllowed()
-        || isDriverTripDeclineUpdateAllowed()
-        || isDriverTripLifecycleUpdateAllowed()
-        || (isTripClient() && isClientTripCancelUpdateAllowed())
         || (isTripClient() && isClientTripRatingUpdateAllowed());
       allow delete: if false;
     }
@@ -946,8 +739,7 @@ service cloud.firestore {
     }
 
     match /balance_adjustments/{adjustmentId} {
-      allow read: if isAdmin()
-        || (isSignedIn() && resource.data.clientId == request.auth.uid);
+      allow read: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
@@ -976,12 +768,9 @@ service cloud.firestore {
         || (canManageOperationalReservations()
           && isInternalStaffReservation(resource.data))
         || (isSignedIn()
-          && resource.data.clientId == request.auth.uid)
-        || (isSignedIn()
           && resource.data.assignedDriverId == request.auth.uid);
-      allow create: if (canManageOperationalReservations()
-          && isInternalStaffReservationCreateAllowed())
-        || (isSignedIn() && isClientVehicleRentalReservationCreateAllowed());
+      allow create: if canManageOperationalReservations()
+        && isInternalStaffReservationCreateAllowed();
       allow update: if canManageOperationalReservations()
         && isInternalStaffReservationUpdateAllowed();
       allow delete: if isAdmin();
@@ -1019,12 +808,10 @@ service cloud.firestore {
       allow read: if canReadCancellationPolicy(docId)
         || canReadCurrencyConfig(docId)
         || canReadSupportConfig(docId)
-        || canReadMarketConfig(docId)
         || canReadOperationalMonitoringConfig(docId);
       allow write: if canWriteCancellationPolicy(docId)
         || canWriteCurrencyConfig(docId)
         || canWriteSupportConfig(docId)
-        || canWriteMarketConfig(docId)
         || canWriteOperationalMonitoringConfig(docId);
     }
 

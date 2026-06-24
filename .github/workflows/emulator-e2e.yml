@@ -1,0 +1,71 @@
+name: Emulator E2E
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  android-emulator-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            functions/package-lock.json
+            rules-test/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Install Functions dependencies
+        run: npm --prefix functions ci
+
+      - name: Build Functions
+        run: npm --prefix functions run build
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Run emulator-backed Flutter E2E suite
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          APP_CHECK_DEBUG_TOKEN_FROM_CI: ${{ secrets.APP_CHECK_DEBUG_TOKEN_FROM_CI }}
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_7
+          disk-size: 6000M
+          script: |
+            test -n "$APP_CHECK_DEBUG_TOKEN_FROM_CI" || (echo "APP_CHECK_DEBUG_TOKEN_FROM_CI secret is required" && exit 1)
+            test -f integration_test/emulator/baseline/firebase-export-metadata.json || (echo "Emulator baseline export is required" && exit 1)
+            firebase emulators:exec \
+              --project demo-local-transport \
+              --config firebase.json \
+              --import=integration_test/emulator/baseline \
+              --only auth,firestore,database,functions,storage \
+              "flutter test integration_test/emulator -d emulator-5554 --flavor dev --dart-define=APP_FLAVOR=dev"

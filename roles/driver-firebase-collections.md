@@ -1,7 +1,7 @@
 # Driver — Firebase collections map
 
 Project: **local-transport-482015**  
-Apps: **local_transport** (reference, full backend) · **local_ent_280** (UI app, partial Firebase)
+Apps: **local_ent_280** (production UI + full backend in-repo) · **local_transport** (original reference app)
 
 Screenshots in this folder (`Screenshot_3.png`, `image.png`) show the live Firestore console: a **`trips`** document created by the client app with `status: REQUESTED` and `assignedDriverId: null` (waiting for a driver).
 

@@ -1,0 +1,300 @@
+name: Android App Distribution
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: Android flavor to distribute
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+      run_automated_tests:
+        description: Trigger Firebase automated tests when devices are configured
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  distribute-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      flavor: ${{ steps.target.outputs.flavor }}
+      app_version: ${{ steps.release_metadata.outputs.app_version }}
+      release_mode: ${{ steps.release_metadata.outputs.release_mode }}
+      release_tag: ${{ steps.release_metadata.outputs.release_tag }}
+      release_name: ${{ steps.release_metadata.outputs.release_name }}
+      release_asset_name: ${{ steps.release_metadata.outputs.release_asset_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve distribution target
+        id: target
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            flavor="${{ github.event.inputs.flavor }}"
+            automated_tests="${{ github.event.inputs.run_automated_tests }}"
+          else
+            flavor="dev"
+            automated_tests="true"
+          fi
+
+          if [ "$flavor" = "prod" ]; then
+            echo "FLAVOR=prod" >> "$GITHUB_ENV"
+            echo "FIREBASE_PROJECT_ID=local-transport-prod" >> "$GITHUB_ENV"
+            echo "FIREBASE_APP_ID=1:722072269832:android:fa0ee7d404317feff4cdbd" >> "$GITHUB_ENV"
+            echo "APPDIST_GROUPS=${{ vars.FIREBASE_APPDIST_GROUPS_PROD }}" >> "$GITHUB_ENV"
+            echo "TEST_DEVICES=${{ vars.FIREBASE_TEST_DEVICES_PROD }}" >> "$GITHUB_ENV"
+            echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}" >> "$GITHUB_ENV"
+          else
+            echo "FLAVOR=dev" >> "$GITHUB_ENV"
+            echo "FIREBASE_PROJECT_ID=local-transport-482015" >> "$GITHUB_ENV"
+            echo "FIREBASE_APP_ID=1:451122835320:android:ebbb15573a453adc2ba28d" >> "$GITHUB_ENV"
+            echo "APPDIST_GROUPS=${{ vars.FIREBASE_APPDIST_GROUPS_DEV }}" >> "$GITHUB_ENV"
+            echo "TEST_DEVICES=${{ vars.FIREBASE_TEST_DEVICES_DEV }}" >> "$GITHUB_ENV"
+            echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}" >> "$GITHUB_ENV"
+          fi
+
+          echo "RUN_AUTOMATED_TESTS=$automated_tests" >> "$GITHUB_ENV"
+          echo "flavor=$flavor" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release inputs
+        shell: bash
+        run: |
+          if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+            echo "GOOGLE_MAPS_API_KEY secret is required for $FLAVOR."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud for dev
+        if: steps.target.outputs.flavor == 'dev'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_APPDIST_SERVICE_ACCOUNT_DEV }}
+
+      - name: Authenticate to Google Cloud for prod
+        if: steps.target.outputs.flavor == 'prod'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_APPDIST_SERVICE_ACCOUNT_PROD }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Materialize Android signing files
+        shell: bash
+        run: |
+          mkdir -p android/keystores
+          echo "${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}" | base64 --decode > android/keystores/local-transport-upload.jks
+          cat <<EOF > android/key.properties
+          storeFile=keystores/local-transport-upload.jks
+          storePassword=${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          EOF
+
+      - name: Build signed release APK
+        shell: bash
+        run: |
+          if [ "$FLAVOR" = "dev" ]; then
+            export GOOGLE_MAPS_API_KEY_DEV="$GOOGLE_MAPS_API_KEY"
+          else
+            export GOOGLE_MAPS_API_KEY_PROD="$GOOGLE_MAPS_API_KEY"
+          fi
+
+          flutter build apk \
+            --release \
+            --flavor "$FLAVOR" \
+            --dart-define=GOOGLE_MAPS_API_KEY="$GOOGLE_MAPS_API_KEY" \
+            --dart-define=APP_VERSION="${GITHUB_SHA::7}"
+
+      - name: Resolve GitHub release metadata
+        id: release_metadata
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          app_version="$(sed -nE 's/^version:[[:space:]]*([^[:space:]]+)$/\1/p' pubspec.yaml | head -n 1)"
+          if [ -z "$app_version" ]; then
+            echo "Unable to resolve app version from pubspec.yaml"
+            exit 1
+          fi
+
+          version_tag="android-$FLAVOR-v$app_version"
+          rolling_tag="android-$FLAVOR-main-latest"
+
+          echo "Resolved app version: $app_version"
+          echo "Resolved version release tag candidate: $version_tag"
+          echo "Resolved rolling release tag candidate: $rolling_tag"
+
+          version_release_status="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$version_tag")"
+
+          if [ "$version_release_status" = "200" ]; then
+            release_mode="rolling-release-update"
+            release_tag="$rolling_tag"
+            release_name="Android $FLAVOR main latest"
+            release_asset_name="local-transport-$FLAVOR-main-latest.apk"
+          elif [ "$version_release_status" = "404" ]; then
+            release_mode="new-version-release"
+            release_tag="$version_tag"
+            release_name="Android $FLAVOR $app_version"
+            release_asset_name="local-transport-$FLAVOR-$app_version-${GITHUB_SHA::7}.apk"
+          else
+            echo "Failed to check existing release for tag $version_tag. HTTP status: $version_release_status"
+            exit 1
+          fi
+
+          echo "Chosen release mode: $release_mode"
+          echo "Chosen release tag: $release_tag"
+          echo "Chosen release asset name: $release_asset_name"
+
+          {
+            echo "app_version=$app_version"
+            echo "release_mode=$release_mode"
+            echo "release_tag=$release_tag"
+            echo "release_name=$release_name"
+            echo "release_asset_name=$release_asset_name"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          {
+            echo "Flavor: $FLAVOR"
+            echo "Version: ${{ steps.release_metadata.outputs.app_version }}"
+            echo "GitHub release mode: ${{ steps.release_metadata.outputs.release_mode }}"
+            echo "GitHub release tag: ${{ steps.release_metadata.outputs.release_tag }}"
+            echo "Commit: $GITHUB_SHA"
+            echo "Actor: $GITHUB_ACTOR"
+            echo "Workflow: $GITHUB_WORKFLOW"
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > release-notes.txt
+
+      - name: Distribute build to Firebase App Distribution
+        shell: bash
+        run: |
+          apk_path="build/app/outputs/flutter-apk/app-$FLAVOR-release.apk"
+          if [ ! -f "$apk_path" ]; then
+            echo "Release APK not found at $apk_path"
+            exit 1
+          fi
+
+          dist_args=(
+            appdistribution:distribute
+            "$apk_path"
+            --app
+            "$FIREBASE_APP_ID"
+            --release-notes-file
+            release-notes.txt
+          )
+
+          if [ -n "$APPDIST_GROUPS" ]; then
+            dist_args+=(--groups "$APPDIST_GROUPS")
+          fi
+
+          if [ "$RUN_AUTOMATED_TESTS" = "true" ] && [ -n "$TEST_DEVICES" ]; then
+            dist_args+=(--test-devices "$TEST_DEVICES" --test-non-blocking)
+          fi
+
+          firebase "${dist_args[@]}"
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ steps.target.outputs.flavor }}-release-apk
+          path: build/app/outputs/flutter-apk/app-${{ steps.target.outputs.flavor }}-release.apk
+
+      - name: Upload release notes artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ steps.target.outputs.flavor }}-release-notes
+          path: release-notes.txt
+
+  publish-github-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: distribute-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-${{ needs.distribute-android.outputs.flavor }}-release-apk
+          path: release-artifacts
+
+      - name: Download release notes artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-${{ needs.distribute-android.outputs.flavor }}-release-notes
+          path: release-artifacts
+
+      - name: Prepare GitHub release asset
+        id: asset
+        shell: bash
+        run: |
+          source_path="release-artifacts/app-${{ needs.distribute-android.outputs.flavor }}-release.apk"
+          target_path="release-artifacts/${{ needs.distribute-android.outputs.release_asset_name }}"
+
+          if [ ! -f "$source_path" ]; then
+            echo "Release APK not found at $source_path"
+            exit 1
+          fi
+
+          mv "$source_path" "$target_path"
+
+          echo "Release asset path: $target_path"
+          echo "asset_path=$target_path" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.distribute-android.outputs.release_tag }}
+          name: ${{ needs.distribute-android.outputs.release_name }}
+          body_path: release-artifacts/release-notes.txt
+          target_commitish: ${{ github.sha }}
+          files: ${{ steps.asset.outputs.asset_path }}
+          prerelease: ${{ needs.distribute-android.outputs.flavor != 'prod' }}
+          make_latest: false
+          append_body: false
+          generate_release_notes: false
+          overwrite_files: true
+
+      - name: Log published GitHub release
+        shell: bash
+        run: |
+          echo "Published GitHub release mode: ${{ needs.distribute-android.outputs.release_mode }}"
+          echo "Published GitHub release tag: ${{ needs.distribute-android.outputs.release_tag }}"
+          echo "Published GitHub release asset: ${{ steps.asset.outputs.asset_path }}"

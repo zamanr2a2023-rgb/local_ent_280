@@ -1,5 +1,8 @@
 # Firebase rules — how to publish
 
+> **Canonical deploy files** are at the project root: `firestore.rules`, `storage.rules`, `database.rules.json`, `firestore.indexes.json`.  
+> The `roles/` copies are kept in sync. Prefer `firebase deploy` (see root `README.md`).
+
 **Driver Firebase map:** [`driver-firebase-collections.md`](driver-firebase-collections.md)  
 **Admin Firebase map:** [`admin-firebase-collections.md`](admin-firebase-collections.md)
 

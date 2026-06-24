@@ -35,7 +35,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   StreamSubscription? _statusSubscription;
   StreamSubscription? _pendingSubscription;
-  StreamSubscription? _offerSubscription;
   StreamSubscription? _activeSubscription;
   StreamSubscription? _statsSubscription;
   StreamSubscription? _vehicleSubscription;
@@ -59,8 +58,28 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _loadLocationLabel() async {
     final location = await _locationService.getLastKnownLocation() ??
         await _locationService.getCurrentLocation();
-    if (!mounted || location == null) return;
-    setState(() => _locationLabel = location.address);
+    if (!mounted) return;
+    setState(() {
+      _locationLabel = location == null
+          ? ''
+          : _shortLocationLabel(location.address, location.latitude, location.longitude);
+    });
+  }
+
+  String _shortLocationLabel(String address, double lat, double lng) {
+    final trimmed = address.trim();
+    if (trimmed.isEmpty) {
+      return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+    }
+    final parts = trimmed
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.length >= 2) {
+      return '${parts[parts.length - 2]}, ${parts.last}';
+    }
+    return parts.first;
   }
 
   void _bindFirebase() {
@@ -70,7 +89,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     _statusSubscription =
         _driverRepository.watchDriverStatus(driverId).listen((status) {
       if (!mounted) return;
-      final available = status?.isAvailable ?? false;
+      final available = status?.isDispatchEligible ?? false;
       setState(() => _isAvailable = available);
       if (available) {
         DriverLocationTracker.instance.start(driverId);
@@ -103,21 +122,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       );
     });
 
-    _offerSubscription = _driverRepository.watchOpenTripOffer().listen((trip) async {
-      if (!mounted || trip == null || !_isAvailable || _handlingTripNavigation) {
-        return;
-      }
-      final claimed = await _driverRepository.claimTrip(driverId, trip.id);
-      if (!mounted || !claimed) return;
-      _handlingTripNavigation = true;
-      AppNavigation.toDriverTripRequest(
-        context,
-        tripId: trip.id,
-        trip: trip,
-        driverRepository: _driverRepository,
-      );
-    });
-
     _statsSubscription =
         _driverRepository.watchDriverDashboardStats(driverId).listen((stats) {
       if (!mounted) return;
@@ -135,7 +139,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void dispose() {
     _statusSubscription?.cancel();
     _pendingSubscription?.cancel();
-    _offerSubscription?.cancel();
     _activeSubscription?.cancel();
     _statsSubscription?.cancel();
     _vehicleSubscription?.cancel();
@@ -145,18 +148,31 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _setAvailability(bool value) async {
     final driverId = _driverId;
     if (driverId == null) return;
+    if (value && (_vehicle == null || _vehicle!.isActive != true)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.driverNoVehicleAssigned)),
+      );
+      setState(() => _isAvailable = false);
+      return;
+    }
     setState(() => _isAvailable = value);
     try {
       await _driverRepository.setAvailability(driverId, value);
       if (value) {
         await DriverLocationTracker.instance.start(driverId);
+        await _loadLocationLabel();
       } else {
         await DriverLocationTracker.instance.stop();
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
+        final message = error is StateError &&
+                error.toString().contains('no_vehicle_assigned')
+            ? context.l10n.driverNoVehicleAssigned
+            : context.l10n.tryAgain;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.tryAgain)),
+          SnackBar(content: Text(message)),
         );
       }
     }
@@ -245,7 +261,7 @@ class _DriverAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              context.l10n.premiumMobility,
+              context.l10n.appNameLocalTransport,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -351,7 +367,7 @@ class _MapPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = locationLabel.trim().isNotEmpty
         ? locationLabel
-        : context.l10n.driverLocationCity;
+        : context.l10n.driverLocationLoading;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16.r),
       child: SizedBox(

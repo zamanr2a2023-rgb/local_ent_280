@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:local_ent_280/core/localization/app_locale_resolution.dart';
+import 'package:local_ent_280/core/localization/supported_app_locales.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DisplayCurrency {
@@ -43,11 +45,7 @@ class UserPreferences extends ChangeNotifier {
   bool get onboardingCompleted => _onboardingCompleted;
   bool get isLoaded => _loaded;
 
-  static const selectableLocales = <Locale>[
-    Locale('en'),
-    Locale('pt', 'PT'),
-    Locale('es'),
-  ];
+  static const selectableLocales = SupportedAppLocales.values;
 
   static const selectableCurrencies = <DisplayCurrency>[
     DisplayCurrency.cve,
@@ -78,25 +76,17 @@ class UserPreferences extends ChangeNotifier {
 
   Locale effectiveLocale(Locale deviceLocale) {
     if (_localeOverride != null) {
-      return _localeOverride!;
+      return resolveSupportedAppLocale(_localeOverride!);
     }
-    return const Locale('en');
+    return SupportedAppLocales.portuguesePortugal;
   }
 
   Locale _matchSupportedLocale(Locale deviceLocale) {
-    for (final locale in selectableLocales) {
-      if (locale.languageCode == deviceLocale.languageCode) {
-        if (locale.countryCode == null ||
-            locale.countryCode == deviceLocale.countryCode) {
-          return locale;
-        }
-      }
-    }
-    return const Locale('en');
+    return resolveSupportedAppLocale(deviceLocale);
   }
 
   Future<void> setLanguage(Locale locale) async {
-    _localeOverride = locale;
+    _localeOverride = resolveSupportedAppLocale(locale);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_languageCodeKey, locale.languageCode);
     if (locale.countryCode == null || locale.countryCode!.isEmpty) {

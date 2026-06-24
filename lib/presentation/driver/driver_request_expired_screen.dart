@@ -152,7 +152,7 @@ class _ExpiredAppBar extends StatelessWidget {
           SizedBox(width: AppLayout.md),
           Expanded(
             child: Text(
-              context.l10n.premiumMobility,
+              context.l10n.appNameLocalTransport,
               style: AppTypography.manrope(
                 fontSize: 24.sp,
                 fontWeight: FontWeight.w700,

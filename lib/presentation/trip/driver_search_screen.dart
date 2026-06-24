@@ -3,45 +3,54 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/features/trips/data/repositories/trip_repository_impl.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
+import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// A procurar motorista disponível — `roles/details.md`.
 class DriverSearchScreen extends StatefulWidget {
-  const DriverSearchScreen({super.key, this.tripId, this.tripRepository});
+  const DriverSearchScreen({
+    super.key,
+    this.tripId,
+    this.tripRepository,
+    this.showNoDriversMessage = true,
+  });
 
   final String? tripId;
   final TripRepository? tripRepository;
+  final bool showNoDriversMessage;
 
   @override
   State<DriverSearchScreen> createState() => _DriverSearchScreenState();
 }
 
-class _DriverSearchScreenState extends State<DriverSearchScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
+class _DriverSearchScreenState extends State<DriverSearchScreen> {
   TripRepository? _tripRepository;
   StreamSubscription<TripRecord?>? _tripSubscription;
   TripRecord? _trip;
   bool _isCancelling = false;
   bool _hasNavigatedForward = false;
+  bool _searchFailed = false;
+  String? _failureMessage;
 
   String get _tripId =>
       widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
+  bool _tripListenerStarted = false;
+
   @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_tripListenerStarted) return;
+    _tripListenerStarted = true;
     _listenToTrip();
   }
 
@@ -49,7 +58,7 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
     final tripId = _tripId;
     if (tripId.isEmpty) return;
 
-    _tripRepository = widget.tripRepository ?? TripRepository();
+    _tripRepository = widget.tripRepository ?? tripRepositoryOf(context);
     _tripSubscription = _tripRepository!.watchTrip(tripId).listen((trip) {
       if (!mounted || trip == null) return;
       setState(() => _trip = trip);
@@ -69,10 +78,26 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
       }
       if (status == 'NO_DRIVERS_AVAILABLE' && !_hasNavigatedForward) {
         _hasNavigatedForward = true;
-        _showMessage(context.l10n.driverSearchNoDrivers);
-        AppNavigation.cancelToTripDestination(context);
+        final message = _noDriversMessage(trip, context.l10n);
+        setState(() {
+          _searchFailed = true;
+          _failureMessage = message;
+        });
+        return;
       }
     });
+  }
+
+  String _noDriversMessage(TripRecord trip, AppLocalizations l10n) {
+    final reason = trip.unfulfilledReason ?? '';
+    if (reason.contains('no_locations_within') ||
+        reason.contains('no_available_drivers_near_pickup')) {
+      return l10n.driverSearchNoDriversNearby;
+    }
+    if (reason.contains('no_vehicle_assignment')) {
+      return l10n.driverSearchNoDriversMissingVehicle;
+    }
+    return l10n.driverSearchNoDrivers;
   }
 
   void _showMessage(String message) {
@@ -90,7 +115,7 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
 
     setState(() => _isCancelling = true);
     try {
-      final repository = _tripRepository ?? TripRepository(disabled: true);
+      final repository = _tripRepository ?? TripRepositoryImpl(disabled: true);
       await repository.cancelTripByClient(tripId);
       ActiveTripSession.instance.clear();
       if (!mounted) return;
@@ -106,7 +131,6 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
   @override
   void dispose() {
     _tripSubscription?.cancel();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -119,22 +143,50 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _MapBackground(),
-          _PulsingCarMarker(animation: _pulseController),
+          DriverMapLayer(
+            pickup: _trip?.pickup,
+            destination: _trip?.destination,
+            showRoute: _trip != null,
+            myLocationEnabled: false,
+            trackMyLocation: false,
+            includeMyLocationInCameraFit: false,
+            initialZoom: 14,
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topInset + 120.h,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           Positioned(
             top: topInset + 8.h,
             left: 0,
             right: 0,
             child: _FloatingHeader(
-              onBack: () => AppNavigation.back(context),
+              onBack: () => AppNavigation.cancelToTripDestination(context),
             ),
           ),
-          Positioned(
-            top: topInset + 64.h,
-            left: 0,
-            right: 0,
-            child: const _StatusToast(),
-          ),
+          if (!_searchFailed)
+            Positioned(
+              top: topInset + 64.h,
+              left: 0,
+              right: 0,
+              child: const _StatusToast(),
+            ),
           Positioned(
             left: 0,
             right: 0,
@@ -142,138 +194,12 @@ class _DriverSearchScreenState extends State<DriverSearchScreen>
             child: _SearchBottomSheet(
               trip: _trip,
               isCancelling: _isCancelling,
+              searchFailed: _searchFailed,
+              failureMessage: _failureMessage,
               onCancel: _cancelTrip,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MapBackground extends StatelessWidget {
-  const _MapBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColorFiltered(
-          colorFilter: const ColorFilter.matrix(<double>[
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0, 0, 0, 0.6, 0,
-          ]),
-          child: Image.network(
-            AppAssets.driverSearchMapImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => ColoredBox(
-              color: AppColors.surfaceContainer,
-              child: Icon(Icons.map, size: 64.sp, color: AppColors.outline),
-            ),
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.25),
-                Colors.transparent,
-                AppColors.surfaceContainerLowest.withValues(alpha: 0.15),
-              ],
-              stops: const [0.0, 0.45, 1.0],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PulsingCarMarker extends StatelessWidget {
-  const _PulsingCarMarker({required this.animation});
-
-  final Animation<double> animation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, child) {
-          final t = animation.value;
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              _PulseRing(
-                size: 128.w,
-                opacity: 0.2 * (1 - t),
-                scale: 0.7 + t * 0.5,
-              ),
-              _PulseRing(
-                size: 80.w,
-                opacity: 0.1 * (1 - ((t + 0.5) % 1.0)),
-                scale: 0.7 + ((t + 0.5) % 1.0) * 0.5,
-              ),
-              child!,
-            ],
-          );
-        },
-        child: Container(
-          width: 48.w,
-          height: 48.h,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.surfaceContainerLowest,
-              width: 4.w,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.35),
-                blurRadius: 16.r,
-                offset: Offset(0, 4.h),
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.directions_car,
-            color: AppColors.onPrimary,
-            size: 24.sp,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PulseRing extends StatelessWidget {
-  const _PulseRing({
-    required this.size,
-    required this.opacity,
-    required this.scale,
-  });
-
-  final double size;
-  final double opacity;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.secondary.withValues(alpha: opacity),
-        ),
       ),
     );
   }
@@ -444,11 +370,15 @@ class _SearchBottomSheet extends StatelessWidget {
   const _SearchBottomSheet({
     required this.trip,
     required this.isCancelling,
+    required this.searchFailed,
+    required this.failureMessage,
     required this.onCancel,
   });
 
   final TripRecord? trip;
   final bool isCancelling;
+  final bool searchFailed;
+  final String? failureMessage;
   final VoidCallback onCancel;
 
   static double get _radius => 24.r;
@@ -484,7 +414,9 @@ class _SearchBottomSheet extends StatelessWidget {
             ),
           ),
           Text(
-            context.l10n.driverSearchTitle,
+            searchFailed
+                ? context.l10n.driverSearchNoDrivers
+                : context.l10n.driverSearchTitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               fontSize: 24.sp,
@@ -495,7 +427,9 @@ class _SearchBottomSheet extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            context.l10n.driverSearchSubtitle,
+            searchFailed
+                ? (failureMessage ?? context.l10n.driverSearchNoDrivers)
+                : _searchSubtitle(context, trip),
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
@@ -505,8 +439,8 @@ class _SearchBottomSheet extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24.h),
-          const _ProgressSegments(),
-          SizedBox(height: 24.h),
+          if (!searchFailed) const _ProgressSegments(),
+          if (!searchFailed) SizedBox(height: 24.h),
           Row(
             children: [
               Expanded(
@@ -519,7 +453,7 @@ class _SearchBottomSheet extends StatelessWidget {
               Expanded(
                 child: _InfoBox(
                   label: context.l10n.driverSearchEstimate,
-                  value: _estimateLabel(trip),
+                  value: _estimateLabel(context, trip),
                 ),
               ),
             ],
@@ -559,15 +493,34 @@ class _SearchBottomSheet extends StatelessWidget {
   static String _originLabel(TripRecord? trip) {
     final address = trip?.pickup.address.trim() ?? '';
     if (address.isEmpty) return '—';
-    final comma = address.indexOf(',');
-    if (comma <= 0) return address;
-    return address.substring(0, comma).trim();
+    final parts = address.split(',').map((part) => part.trim()).where(
+          (part) => part.isNotEmpty,
+        );
+    if (parts.isEmpty) return address;
+    if (parts.length >= 2) {
+      return '${parts.first}, ${parts.elementAt(1)}';
+    }
+    return parts.first;
   }
 
-  static String _estimateLabel(TripRecord? trip) {
-    final minutes = trip?.meteringSnapshot.totalMinutes;
-    if (minutes == null || minutes <= 0) return '3-5 minutos';
-    return '$minutes min';
+  static String _searchSubtitle(BuildContext context, TripRecord? trip) {
+    final address = trip?.pickup.address.trim() ?? '';
+    if (address.isEmpty) {
+      return context.l10n.driverSearchSubtitleFallback;
+    }
+    final parts = address.split(',').map((part) => part.trim()).where(
+          (part) => part.isNotEmpty,
+        );
+    final area = parts.length >= 2 ? parts.elementAt(1) : parts.first;
+    return context.l10n.driverSearchSubtitleArea(area);
+  }
+
+  static String _estimateLabel(BuildContext context, TripRecord? trip) {
+    final waitMinutes = trip?.meteringSnapshot.totalWaitMinutes;
+    if (waitMinutes != null && waitMinutes > 0 && waitMinutes <= 60) {
+      return context.l10n.driverSearchWaitMinutes(waitMinutes);
+    }
+    return context.l10n.driverSearchWaitEstimate;
   }
 }
 

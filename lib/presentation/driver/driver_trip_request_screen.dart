@@ -16,7 +16,8 @@ import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/driver/data/driver_location_tracker.dart';
 import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Pedido de viagem recebido — aceitar ou recusar dentro de 12 segundos.
@@ -55,11 +56,15 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
 
   String? get _driverId => UserSession.instance.profile?.uid;
 
+  bool _repositoriesReady = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_repositoriesReady) return;
+    _repositoriesReady = true;
     _driverRepository = widget.driverRepository ?? DriverRepository();
-    _tripRepository = TripRepository();
+    _tripRepository = tripRepositoryOf(context);
     _trip = widget.trip;
     final driverId = _driverId;
     if (driverId != null) {
@@ -233,7 +238,7 @@ class _RequestAppBar extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              context.l10n.premiumMobility,
+              context.l10n.appNameLocalTransport,
               textAlign: TextAlign.center,
               style: AppTypography.manrope(
                 fontSize: 18.sp,

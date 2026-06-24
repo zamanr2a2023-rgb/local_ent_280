@@ -7,7 +7,8 @@ import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/features/trips/data/trip_history_mapper.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
@@ -54,8 +55,8 @@ class TripHistoryScreen extends StatefulWidget {
 
 class _TripHistoryScreenState extends State<TripHistoryScreen> {
   TripHistoryFilter _filter = TripHistoryFilter.todos;
-  late final TripRepository _tripRepository =
-      widget.tripRepository ?? TripRepository();
+  TripRepository get _tripRepository =>
+      widget.tripRepository ?? tripRepositoryOf(context);
   late final DriverRepository _driverRepository =
       widget.driverRepository ?? DriverRepository();
 
@@ -248,7 +249,7 @@ class _HistoryAppBar extends StatelessWidget {
       color: AppColors.background,
       alignment: Alignment.centerLeft,
       child: Text(
-        context.l10n.premiumMobility,
+        context.l10n.appNameLocalTransport,
         style: AppTypography.manrope(
           fontSize: 22.sp,
           fontWeight: FontWeight.w700,

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/driver_found_data.dart';
+import 'package:local_ent_280/core/localization/transport_type_labels.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
@@ -362,7 +363,8 @@ class _DriverAssignmentSheet extends StatelessWidget {
     final vehicleInfo = trip?.transportType.name.trim().isNotEmpty == true
         ? trip!.transportType.name
         : DriverFoundData.vehicleInfo;
-    final serviceTier = trip?.tripTypeLabel ?? DriverFoundData.serviceTier;
+    final serviceTier = trip?.tripTypeLabel ??
+        localizedTransportTypeLabel(context.l10n, 'premium');
     final estimatedTime = trip == null
         ? DriverFoundData.estimatedTime
         : '${trip!.meteringSnapshot.totalMinutes} min';

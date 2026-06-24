@@ -89,7 +89,7 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
                                 _ReservationCard(
                                   reservation: reservation,
                                   onDetails: () =>
-                                      AppNavigation.toTripConfirm(context),
+                                      AppNavigation.toTripDestination(context),
                                   onCancel: () {},
                                 ),
                                 SizedBox(height: 16.h),
@@ -125,7 +125,7 @@ class _ReservationsAppBar extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              context.l10n.premiumMobility,
+              context.l10n.appNameLocalTransport,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,

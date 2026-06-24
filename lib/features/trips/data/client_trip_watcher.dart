@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/features/trips/data/repositories/trip_repository_impl.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 
 /// Listens to a trip document and forwards the client through the booking flow.
 class ClientTripWatcher {
@@ -13,7 +14,7 @@ class ClientTripWatcher {
     required this.onTripChanged,
     this.onCancelled,
     TripRepository? repository,
-  }) : _repository = repository ?? TripRepository();
+  }) : _repository = repository ?? TripRepositoryImpl();
 
   final ClientTripScreen screen;
   final void Function(TripRecord trip) onTripChanged;

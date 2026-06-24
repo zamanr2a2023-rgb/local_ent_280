@@ -1,7 +1,9 @@
 # Admin — Firebase collections map
 
 Project: **local-transport-482015**  
-Apps: **local_transport** (reference, full backend) · **local_ent_280** (UI app, partial Firebase)
+Apps: **local_ent_280** (production UI + full backend in-repo) · **local_transport** (original reference app, same backend source)
+
+> Backend assets (functions, docs, indexes, rules-test, CI) are now included in **local_ent_280**. See root `README.md`.
 
 Screenshots in this folder (`Screenshot_3.png`, `image.png`) show the live Firestore console and the admin UI mockups (Premium Mobility dashboard + Detailed Reports).
 

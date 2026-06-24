@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:local_ent_280/core/config/google_maps_config.dart';
+import 'package:local_ent_280/core/policies/place_autocomplete_policy.dart';
 
 class PlacePrediction {
   const PlacePrediction({
@@ -16,26 +17,46 @@ class PlacePrediction {
 
 /// Google Places Autocomplete (REST).
 class PlacesAutocompleteService {
-  PlacesAutocompleteService({http.Client? client}) : _client = client ?? http.Client();
+  PlacesAutocompleteService({
+    http.Client? client,
+    PlaceAutocompletePolicy? policy,
+  })  : _client = client ?? http.Client(),
+        _policy = policy ?? PlaceAutocompletePolicy.resolve();
 
   final http.Client _client;
+  final PlaceAutocompletePolicy _policy;
 
-  Future<List<PlacePrediction>> search(String input) async {
+  Future<List<PlacePrediction>> search(
+    String input, {
+    double? biasLatitude,
+    double? biasLongitude,
+  }) async {
     final query = input.trim();
     if (query.isEmpty) return [];
+
+    final components = _policy.countryCodes
+        .map((code) => 'country:${code.trim().toLowerCase()}')
+        .join('|');
+
+    final params = <String, String>{
+      'input': query,
+      'key': GoogleMapsConfig.placesApiKey,
+      'language': 'pt',
+      'components': components,
+      'types': 'geocode',
+    };
+
+    if (_policy.usesLocationBias &&
+        biasLatitude != null &&
+        biasLongitude != null) {
+      params['location'] = '$biasLatitude,$biasLongitude';
+      params['radius'] = '50000';
+    }
 
     final uri = Uri.https(
       'maps.googleapis.com',
       '/maps/api/place/autocomplete/json',
-      {
-        'input': query,
-        'key': GoogleMapsConfig.placesApiKey,
-        'language': 'en',
-        'components': 'country:pt',
-        'types': 'geocode',
-        'location': '${GoogleMapsConfig.lisbonLat},${GoogleMapsConfig.lisbonLng}',
-        'radius': '50000',
-      },
+      params,
     );
 
     try {

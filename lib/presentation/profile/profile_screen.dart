@@ -9,7 +9,8 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_role.dart';
@@ -25,9 +26,9 @@ class ProfileScreen extends StatefulWidget {
     AuthRepository? authRepository,
     ProfileRepository? profileRepository,
     AppUserProfile? initialProfile,
-  })  : _authRepository = authRepository,
-        _profileRepository = profileRepository,
-        _initialProfile = initialProfile;
+  }) : _authRepository = authRepository,
+       _profileRepository = profileRepository,
+       _initialProfile = initialProfile;
 
   final AuthRepository? _authRepository;
   final ProfileRepository? _profileRepository;
@@ -38,42 +39,60 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late final AuthRepository _authRepository =
-      widget._authRepository ?? AuthRepository();
+  AuthRepository? _authRepository;
   late final ProfileRepository _profileRepository =
       widget._profileRepository ?? ProfileRepository();
   final _imagePicker = ImagePicker();
 
   AppUserProfile? _profile;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _errorMessage;
   bool _isSigningOut = false;
   bool _isUploadingPhoto = false;
   bool _isSavingName = false;
+  bool _didScheduleLoad = false;
+
+  AuthRepository get _auth {
+    final repository = _authRepository;
+    if (repository == null) {
+      throw StateError('AuthRepository is not available yet.');
+    }
+    return repository;
+  }
 
   @override
   void initState() {
     super.initState();
-    final sessionProfile = UserSession.instance.profile;
-    if (widget._initialProfile != null) {
-      _profile = widget._initialProfile;
-      _isLoading = false;
-    } else if (sessionProfile != null) {
-      _profile = sessionProfile;
-      _isLoading = false;
-      _loadProfile();
+    final cachedProfile =
+        widget._initialProfile ?? UserSession.instance.profile;
+    if (cachedProfile != null) {
+      _profile = cachedProfile;
     } else {
-      _loadProfile();
+      _isLoading = true;
     }
   }
 
-  Future<void> _loadProfile() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authRepository ??= widget._authRepository ?? authRepositoryOf(context);
+    if (_didScheduleLoad) return;
+    _didScheduleLoad = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadProfile(showFullScreenLoader: _profile == null);
     });
+  }
 
-    final uid = _authRepository.currentUser?.uid;
+  Future<void> _loadProfile({bool showFullScreenLoader = true}) async {
+    if (showFullScreenLoader) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    final uid = _auth.currentUser?.uid ?? _profile?.uid;
     if (uid == null) {
       if (!mounted) return;
       setState(() {
@@ -84,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      final profile = await _authRepository.fetchUserProfile(uid);
+      final profile = await _auth.fetchUserProfile(uid);
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -92,6 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (profile == null) {
           _errorMessage = context.l10n.authErrorProfileNotFound;
         } else {
+          _errorMessage = null;
           UserSession.instance.setProfile(profile);
         }
       });
@@ -99,7 +119,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = context.l10n.profileLoadFailed;
+        if (_profile == null) {
+          _errorMessage = context.l10n.profileLoadFailed;
+        }
       });
     }
   }
@@ -164,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
     try {
-      await _authRepository.signOut();
+      await _auth.signOut();
       if (!mounted) return;
       AppNavigation.signOutToLogin(context);
     } catch (_) {
@@ -235,8 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
                 title: Text(l10n.profilePhotoTakePhoto),
-                onTap: () =>
-                    Navigator.of(sheetContext).pop(ImageSource.camera),
+                onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
               ),
             ],
           ),
@@ -249,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickAndUploadPhoto(ImageSource source) async {
-    final uid = _authRepository.currentUser?.uid;
+    final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
     try {
@@ -274,18 +295,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       UserSession.instance.setProfile(updatedProfile);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.profilePhotoUpdated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.profilePhotoUpdated)));
     } catch (error, stackTrace) {
       debugPrint('Profile photo update failed: $error');
       debugPrint('$stackTrace');
       if (!mounted) return;
       setState(() => _isUploadingPhoto = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_photoErrorMessage(context.l10n, error)),
-        ),
+        SnackBar(content: Text(_photoErrorMessage(context.l10n, error))),
       );
     }
   }
@@ -296,16 +315,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final newName = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => _EditNameDialog(
-        initialName: _profile!.name.trim(),
-      ),
+      builder: (dialogContext) =>
+          _EditNameDialog(initialName: _profile!.name.trim()),
     );
 
     if (newName == null || !mounted) return;
 
     if (newName == _profile!.name.trim()) return;
 
-    final uid = _authRepository.currentUser?.uid;
+    final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
     setState(() => _isSavingName = true);
@@ -321,18 +339,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isSavingName = false;
       });
       UserSession.instance.setProfile(updatedProfile);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileNameUpdated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileNameUpdated)));
     } catch (error, stackTrace) {
       debugPrint('Profile name update failed: $error');
       debugPrint('$stackTrace');
       if (!mounted) return;
       setState(() => _isSavingName = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_nameErrorMessage(context.l10n, error)),
-        ),
+        SnackBar(content: Text(_nameErrorMessage(context.l10n, error))),
       );
     }
   }
@@ -361,14 +377,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             _ProfileAppBar(onBackTap: _onBackTap),
-            Expanded(
-              child: _buildBody(),
-            ),
+            Expanded(child: _buildBody()),
             if (!_isAdmin)
               AppBottomNav(
-                mode: _isDriver ? AppBottomNavMode.driver : AppBottomNavMode.full,
-                selectedIndex:
-                    _isDriver ? 2 : AppNavIndex.perfil,
+                mode: _isDriver
+                    ? AppBottomNavMode.driver
+                    : AppBottomNavMode.full,
+                selectedIndex: _isDriver ? 2 : AppNavIndex.perfil,
                 onItemTap: _onBottomNavTap,
               ),
           ],
@@ -382,10 +397,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_errorMessage != null) {
+    if (_errorMessage != null || _profile == null) {
       return _ProfileErrorState(
-        message: _errorMessage!,
-        onRetry: _loadProfile,
+        message: _errorMessage ?? context.l10n.profileLoadFailed,
+        onRetry: () => _loadProfile(showFullScreenLoader: true),
         onLogin: () => AppNavigation.toLogin(context),
       );
     }
@@ -411,10 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(height: 24.h),
         const _MenuSection(),
         SizedBox(height: 32.h),
-        _LogoutSection(
-          isLoading: _isSigningOut,
-          onSignOut: _confirmSignOut,
-        ),
+        _LogoutSection(isLoading: _isSigningOut, onSignOut: _confirmSignOut),
       ],
     );
   }
@@ -593,8 +605,7 @@ class _AccountInfoCard extends StatelessWidget {
             value: profile.isActive
                 ? l10n.profileStatusActive
                 : l10n.profileStatusInactive,
-            valueColor:
-                profile.isActive ? AppColors.accent : AppColors.error,
+            valueColor: profile.isActive ? AppColors.accent : AppColors.error,
           ),
         ],
       ),
@@ -698,7 +709,8 @@ class _MenuSection extends StatelessWidget {
           child: Column(
             children: [
               for (var i = 0; i < items.length; i++) ...[
-                if (i > 0) Divider(height: 1.h, color: AppColors.surfaceVariant),
+                if (i > 0)
+                  Divider(height: 1.h, color: AppColors.surfaceVariant),
                 _MenuTile(
                   icon: _icons[i],
                   label: items[i].$1,
@@ -714,11 +726,7 @@ class _MenuSection extends StatelessWidget {
 }
 
 class _MenuTile extends StatelessWidget {
-  const _MenuTile({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const _MenuTile({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
@@ -762,10 +770,7 @@ class _MenuTile extends StatelessWidget {
 }
 
 class _LogoutSection extends StatelessWidget {
-  const _LogoutSection({
-    required this.isLoading,
-    required this.onSignOut,
-  });
+  const _LogoutSection({required this.isLoading, required this.onSignOut});
 
   final bool isLoading;
   final VoidCallback onSignOut;
@@ -859,9 +864,9 @@ class _EditNameDialogState extends State<_EditNameDialog> {
     final l10n = context.l10n;
     final trimmed = _controller.text.trim();
     if (trimmed.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileNameEmpty)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileNameEmpty)));
       return;
     }
     Navigator.of(context).pop(trimmed);
@@ -895,10 +900,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.cancel),
         ),
-        TextButton(
-          onPressed: _save,
-          child: Text(l10n.save),
-        ),
+        TextButton(onPressed: _save, child: Text(l10n.save)),
       ],
     );
   }
@@ -945,10 +947,7 @@ class _ProfileErrorState extends StatelessWidget {
             child: Text(l10n.tryAgain),
           ),
           SizedBox(height: 12.h),
-          TextButton(
-            onPressed: onLogin,
-            child: Text(l10n.profileGoToLogin),
-          ),
+          TextButton(onPressed: onLogin, child: Text(l10n.profileGoToLogin)),
         ],
       ),
     );

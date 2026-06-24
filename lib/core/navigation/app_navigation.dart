@@ -47,14 +47,19 @@ import 'package:local_ent_280/presentation/profile/profile_screen.dart';
 import 'package:local_ent_280/presentation/settings/settings_screen.dart';
 import 'package:local_ent_280/presentation/trip/trip_history_screen.dart';
 import 'package:local_ent_280/features/driver/data/driver_repository.dart';
+import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 
 /// Bottom navigation indices (Fluxo do Utilizador).
 abstract final class AppNavIndex {
   static const int inicio = 0;
   static const int viagens = 1;
-  static const int reservas = 2;
+  /// Client balance tab (replaces legacy reservations tab).
+  static const int saldo = 2;
   static const int perfil = 3;
+
+  @Deprecated('Use AppNavIndex.saldo')
+  static const int reservas = saldo;
 }
 
 /// Central navigation matching the product user-flow diagram.
@@ -130,7 +135,7 @@ abstract final class AppNavigation {
     );
   }
 
-  /// Login (admin) → painel admin Mobilidade Premium.
+  /// Login (admin) → painel admin Local Transport.
   static void toAdminHome(BuildContext context) {
     final profile = UserSession.instance.profile;
     if (profile != null) {
@@ -300,9 +305,11 @@ abstract final class AppNavigation {
   }
 
   /// Home → Reserva de Evento.
-  static void toEventBooking(BuildContext context) {
+  static void toEventBooking(BuildContext context, {String? packageId}) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => EventDetailScreen(packageId: packageId),
+      ),
     );
   }
 
@@ -329,34 +336,34 @@ abstract final class AppNavigation {
     );
   }
 
-  /// Cancelar viagem → volta ao ecrã de destino, limpando o fluxo em curso.
+  /// Cancelar viagem → volta ao ecrã inicial.
   static void cancelToTripDestination(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const TripDestinationScreen()),
-      (route) => route.isFirst,
-    );
+    ActiveTripSession.instance.clear();
+    _goHome(context);
   }
 
   /// Ver Mapa Completo → confirmação de viagem.
-  static void toTripConfirm(BuildContext context, [TripRouteDraft? route]) {
+  static void toTripConfirm(BuildContext context, TripRouteDraft route) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => TripConfirmScreen(route: route ?? TripRouteDraft.demo()),
+        builder: (_) => TripConfirmScreen(route: route),
       ),
     );
   }
 
-  /// Confirmar viagem → a procurar motorista.
+  /// Confirmar viagem → a procurar motorista (substitui o ecrã de confirmação).
   static void toDriverSearch(
     BuildContext context, {
     String? tripId,
     TripRepository? tripRepository,
+    bool showNoDriversMessage = true,
   }) {
-    Navigator.of(context).push(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => DriverSearchScreen(
           tripId: tripId,
           tripRepository: tripRepository,
+          showNoDriversMessage: showNoDriversMessage,
         ),
       ),
     );
@@ -440,12 +447,24 @@ abstract final class AppNavigation {
     String? vehicleId,
     String? vehicleLabel,
     double? pricePerDayEur,
+    String? imageUrl,
+    int? seats,
+    String? transmission,
+    String? category,
+    bool? isElectric,
+    bool? isPremium,
   }) {
     if (vehicleId != null) {
       RentalBookingDraft.instance.setVehicle(
         id: vehicleId,
         label: vehicleLabel ?? 'Vehicle',
+        category: category,
         pricePerDayEur: pricePerDayEur,
+        imageUrl: imageUrl,
+        seats: seats,
+        transmission: transmission,
+        isElectric: isElectric,
+        isPremium: isPremium,
       );
     }
     Navigator.of(context).push(
@@ -621,8 +640,8 @@ abstract final class AppNavigation {
         toDriverHome(context);
       case AppNavIndex.viagens:
         toDriverTripHistory(context);
-      case AppNavIndex.reservas:
-        _goReservations(context);
+      case AppNavIndex.saldo:
+        _goClientBalance(context);
       case AppNavIndex.perfil:
         _goProfile(context);
     }
@@ -651,8 +670,8 @@ abstract final class AppNavigation {
         _goHome(context);
       case AppNavIndex.viagens:
         _goTripHistory(context);
-      case AppNavIndex.reservas:
-        _goReservations(context);
+      case AppNavIndex.saldo:
+        _goClientBalance(context);
       case AppNavIndex.perfil:
         _goProfile(context);
     }
@@ -681,16 +700,23 @@ abstract final class AppNavigation {
     );
   }
 
-  static void _goReservations(BuildContext context) {
+  static void _goClientBalance(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const ReservationsScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => ClientBalanceScreen(
+          balanceRepository: balanceRepositoryOverride,
+        ),
+      ),
       (_) => false,
     );
   }
 
   static void _goProfile(BuildContext context) {
+    final profile = UserSession.instance.profile;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const ProfileScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => ProfileScreen(initialProfile: profile),
+      ),
       (_) => false,
     );
   }

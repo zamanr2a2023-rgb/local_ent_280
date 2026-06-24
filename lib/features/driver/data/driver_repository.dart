@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
 import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
 import 'package:local_ent_280/features/driver/data/models/driver_dashboard_stats.dart';
 import 'package:local_ent_280/features/driver/data/models/driver_status.dart';
@@ -8,11 +9,14 @@ import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 class DriverRepository {
   DriverRepository({
     FirebaseFirestore? firestore,
+    ClientFunctionsService? functionsService,
     bool disabled = false,
   })  : _firestore = firestore,
+        _functionsService = functionsService ?? ClientFunctionsService(),
         _disabled = disabled;
 
   final FirebaseFirestore? _firestore;
+  final ClientFunctionsService _functionsService;
   final bool _disabled;
 
   FirebaseFirestore get _db => _firestore ?? FirebaseFirestore.instance;
@@ -41,35 +45,73 @@ class DriverRepository {
 
   Future<void> setAvailability(String driverId, bool isAvailable) async {
     if (_disabled) return;
-    await _driverStatus.doc(driverId).set({
+
+    String? assignedVehicleId;
+    if (isAvailable) {
+      final assignment = await _vehicleAssignments.doc(driverId).get();
+      final vehicleId = assignment.data()?['vehicleId'] as String?;
+      if (vehicleId != null && vehicleId.trim().isNotEmpty) {
+        assignedVehicleId = vehicleId.trim();
+      } else {
+        await _driverStatus.doc(driverId).set({
+          'isAvailable': false,
+          'availabilityEnabled': false,
+          'isBusy': false,
+          'currentTripId': FieldValue.delete(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        throw StateError('no_vehicle_assigned');
+      }
+    }
+
+    final updates = <String, dynamic>{
       'isActive': true,
       'isAvailable': isAvailable,
       'availabilityEnabled': isAvailable,
-      if (!isAvailable) 'currentTripId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+
+    if (isAvailable) {
+      final hasAssignedActiveTrip = await _hasAssignedActiveTrip(driverId);
+      if (!hasAssignedActiveTrip) {
+        updates['isBusy'] = false;
+        updates['currentTripId'] = FieldValue.delete();
+      }
+      updates['lastSeenAt'] = FieldValue.serverTimestamp();
+      if (assignedVehicleId != null) {
+        updates['vehicleId'] = assignedVehicleId;
+      }
+    } else {
+      updates['isBusy'] = false;
+      updates['currentTripId'] = FieldValue.delete();
+    }
+
+    await _driverStatus.doc(driverId).set(updates, SetOptions(merge: true));
   }
 
-  /// Open trips waiting for a driver (not yet assigned).
-  Stream<TripRecord?> watchOpenTripOffer() {
-    if (_disabled) return Stream<TripRecord?>.value(null);
-    return _trips
-        .where('status', isEqualTo: 'REQUESTED')
-        .limit(20)
-        .snapshots()
-        .map((snapshot) {
-      final open = snapshot.docs
-          .map(TripRecord.fromFirestore)
-          .where((trip) => !trip.hasAssignedDriver && trip.isActive)
-          .toList();
-      if (open.isEmpty) return null;
-      open.sort((a, b) {
-        final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
-      return open.first;
-    });
+  Future<bool> _hasAssignedActiveTrip(String driverId) async {
+    final snapshot = await _trips
+        .where('assignedDriverId', isEqualTo: driverId)
+        .where('isActive', isEqualTo: true)
+        .limit(10)
+        .get();
+    const terminalStatuses = {
+      'COMPLETED',
+      'CHARGE_APPLIED',
+      'TRIP_COMPLETED',
+      'CANCELLED_BY_CLIENT',
+      'CANCELLED_BY_DRIVER',
+      'DRIVER_DECLINED',
+      'NO_DRIVERS_AVAILABLE',
+      'NO_SHOW',
+    };
+    for (final doc in snapshot.docs) {
+      final status = (doc.data()['status'] as String? ?? '').toUpperCase();
+      if (!terminalStatuses.contains(status)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Trip assigned to this driver awaiting accept/decline.
@@ -157,92 +199,78 @@ class DriverRepository {
     });
   }
 
-  Future<bool> claimTrip(String driverId, String tripId) async {
-    if (_disabled) return false;
-    final ref = _trips.doc(tripId);
-    return _db.runTransaction<bool>((transaction) async {
-      final snap = await transaction.get(ref);
-      if (!snap.exists) return false;
-      final data = snap.data() ?? {};
-      final status = data['status'] as String? ?? '';
-      final assigned = data['assignedDriverId'] as String?;
-      if (status != 'REQUESTED' || (assigned != null && assigned.isNotEmpty)) {
-        return false;
-      }
-      transaction.update(ref, {
-        'assignedDriverId': driverId,
-        'status': 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE',
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      return true;
-    });
-  }
-
   Future<void> acceptTrip({
     required String driverId,
     required String tripId,
     required AppUserProfile profile,
   }) async {
     if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'DRIVER_ACCEPTED',
-      'driverSummary': TripDriverSummary(
-        displayName: profile.name.trim().isNotEmpty
-            ? profile.name.trim()
-            : profile.email,
-        photoUrl: profile.photoUrl,
-        phone: profile.phone,
-      ).toFirestore(),
-      'isActive': true,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: 'DRIVER_ACCEPTED',
+      actorId: driverId,
+    );
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: 'DRIVER_EN_ROUTE',
+      actorId: driverId,
+    );
     await _driverStatus.doc(driverId).set({
       'isAvailable': false,
       'availabilityEnabled': true,
+      'isBusy': true,
       'currentTripId': tripId,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
-  Future<void> declineTrip(String driverId, String tripId) async {
+  Future<void> declineTrip(
+    String driverId,
+    String tripId, {
+    String reason = 'driver_declined',
+  }) async {
     if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'assignedDriverId': FieldValue.delete(),
-      'status': 'REQUESTED',
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: 'DRIVER_DECLINED',
+      actorId: driverId,
+      reason: reason,
+    );
     await _driverStatus.doc(driverId).set({
+      'isBusy': false,
       'currentTripId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
   Future<void> releaseTrip(String driverId, String tripId) async {
-    await declineTrip(driverId, tripId);
+    await declineTrip(
+      driverId,
+      tripId,
+      reason: 'assignment_window_expired',
+    );
   }
 
   Future<void> startEnRoute(String tripId) async {
-    if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'DRIVER_EN_ROUTE',
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    // Accept already transitions to DRIVER_EN_ROUTE.
   }
 
-  Future<void> markArrived(String tripId) async {
+  Future<void> markArrived(String tripId, {required String driverId}) async {
     if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'DRIVER_ARRIVED',
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: 'DRIVER_ARRIVED',
+      actorId: driverId,
+    );
   }
 
-  Future<void> startTrip(String tripId) async {
+  Future<void> startTrip(String tripId, {required String driverId}) async {
     if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'IN_TRIP',
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: 'IN_TRIP',
+      actorId: driverId,
+    );
   }
 
   Future<void> completeTrip({
@@ -250,14 +278,34 @@ class DriverRepository {
     required String tripId,
   }) async {
     if (_disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'COMPLETED',
-      'isActive': false,
-      'completedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    final snap = await _trips.doc(tripId).get();
+    if (!snap.exists) {
+      throw StateError('Trip not found');
+    }
+    final status = snap.data()?['status'] as String? ?? '';
+
+    if (status == 'IN_TRIP') {
+      await _functionsService.transitionTripState(
+        tripId: tripId,
+        targetStatus: 'ARRIVED_DESTINATION',
+        actorId: driverId,
+      );
+    }
+
+    final effectiveStatus = status == 'IN_TRIP' ? 'ARRIVED_DESTINATION' : status;
+    if (effectiveStatus == 'ARRIVED_DESTINATION' ||
+        effectiveStatus == 'EXTENSION_WINDOW') {
+      await _functionsService.transitionTripState(
+        tripId: tripId,
+        targetStatus: 'COMPLETED',
+        actorId: driverId,
+      );
+    }
+
     await _driverStatus.doc(driverId).set({
       'isAvailable': true,
+      'availabilityEnabled': true,
+      'isBusy': false,
       'currentTripId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

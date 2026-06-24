@@ -14,7 +14,9 @@ import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class EventDetailScreen extends StatefulWidget {
-  const EventDetailScreen({super.key});
+  const EventDetailScreen({super.key, this.packageId});
+
+  final String? packageId;
 
   static double get _heroHeight => 353.h;
 
@@ -24,88 +26,116 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   int _quantity = 1;
-  double _ticketPriceEur = 0;
   double _serviceFeeEur = 0;
   final _catalog = CatalogRepository();
 
   @override
   void initState() {
     super.initState();
-    _catalog.watchActivePackages().first.then((packages) {
-      if (!mounted) return;
-      setState(() {
-        _ticketPriceEur =
-            packages.isEmpty ? 0 : packages.first.priceEur;
-      });
-    });
     _catalog.watchEventServiceFeeMinor().first.then((feeMinor) {
       if (!mounted) return;
       setState(() => _serviceFeeEur = feeMinor / 100);
     });
   }
 
-  double get _subtotal => _quantity * _ticketPriceEur;
-  double get _total => _subtotal + _serviceFeeEur;
-
-  String _formatPrice(double value) =>
-      AppCurrencyFormatter.instance.formatEurMajor(value);
+  Stream<CatalogPackage?> _packageStream() {
+    final packageId = widget.packageId;
+    if (packageId != null && packageId.isNotEmpty) {
+      return _catalog.watchPackage(packageId);
+    }
+    return _catalog.watchActivePackages().map(
+      (packages) => packages.isEmpty ? null : packages.first,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const _EventAppBar(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _EventHero(),
-                  Transform.translate(
-                    offset: Offset(0, -40.h),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppLayout.marginMobile,
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(height: 12.h),
-                          const _EventInfoCard(),
-                          SizedBox(height: 24.h),
-                          const _MapCard(),
-                          SizedBox(height: 24.h),
-                          _TicketCard(
-                            quantity: _quantity,
-                            ticketPriceEur: _ticketPriceEur,
-                            serviceFeeEur: _serviceFeeEur,
-                            subtotal: _subtotal,
-                            total: _total,
-                            formatPrice: _formatPrice,
-                            onDecrement: () {
-                              if (_quantity > 1) {
-                                setState(() => _quantity--);
-                              }
-                            },
-                            onIncrement: () => setState(() => _quantity++),
-                          ),
-                          SizedBox(height: 24.h),
-                          const _VipCard(),
-                          SizedBox(height: 24.h),
-                        ],
-                      ),
+      body: StreamBuilder<CatalogPackage?>(
+        stream: _packageStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final package = snapshot.data;
+          if (package == null) {
+            return Column(
+              children: [
+                const _EventAppBar(),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      context.l10n.rentalNoVehicles,
+                      style: GoogleFonts.inter(fontSize: 14.sp),
                     ),
                   ),
-                ],
+                ),
+              ],
+            );
+          }
+
+          final ticketPriceEur = package.priceEur;
+          final subtotal = _quantity * ticketPriceEur;
+          final total = subtotal + _serviceFeeEur;
+          String formatPrice(double value) =>
+              AppCurrencyFormatter.instance.formatEurMajor(value);
+
+          return Column(
+            children: [
+              const _EventAppBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _EventHero(package: package),
+                      Transform.translate(
+                        offset: Offset(0, -40.h),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppLayout.marginMobile,
+                          ),
+                          child: Column(
+                            children: [
+                              SizedBox(height: 12.h),
+                              _EventInfoCard(package: package),
+                              SizedBox(height: 24.h),
+                              _MapCard(imageUrl: package.photoUrl),
+                              SizedBox(height: 24.h),
+                              _TicketCard(
+                                quantity: _quantity,
+                                ticketPriceEur: ticketPriceEur,
+                                serviceFeeEur: _serviceFeeEur,
+                                subtotal: subtotal,
+                                total: total,
+                                formatPrice: formatPrice,
+                                onDecrement: () {
+                                  if (_quantity > 1) {
+                                    setState(() => _quantity--);
+                                  }
+                                },
+                                onIncrement: () => setState(() => _quantity++),
+                              ),
+                              SizedBox(height: 24.h),
+                              const _VipCard(),
+                              SizedBox(height: 24.h),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          AppBottomNav(
-            selectedIndex: AppNavIndex.reservas,
-            onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
-          ),
-        ],
+              AppBottomNav(
+                selectedIndex: AppNavIndex.inicio,
+                onItemTap: (index) =>
+                    AppNavigation.onBottomNavTap(context, index),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -176,17 +206,24 @@ class _EventAppBar extends StatelessWidget {
 }
 
 class _EventHero extends StatelessWidget {
-  const _EventHero();
+  const _EventHero({required this.package});
+
+  final CatalogPackage package;
 
   @override
   Widget build(BuildContext context) {
+    final heroImage = package.photoUrl ?? AppAssets.eventHeroImage;
+    final badge = package.destination.trim().isNotEmpty
+        ? package.destination.split(',').first.trim().toUpperCase()
+        : context.l10n.premium.toUpperCase();
+
     return SizedBox(
       height: EventDetailScreen._heroHeight,
       child: Stack(
         fit: StackFit.expand,
         children: [
           Image.network(
-            AppAssets.eventHeroImage,
+            heroImage,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => ColoredBox(
               color: AppColors.primary,
@@ -227,7 +264,7 @@ class _EventHero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        'MÚSICA ELETRÓNICA',
+                        badge,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
@@ -240,7 +277,7 @@ class _EventHero extends StatelessWidget {
                 ),
                 SizedBox(height: 10.h),
                 Text(
-                  'Gala de Verão: Porto Sunset',
+                  package.title,
                   style: GoogleFonts.manrope(
                     fontSize: 32.sp,
                     fontWeight: FontWeight.w700,
@@ -259,13 +296,19 @@ class _EventHero extends StatelessWidget {
 }
 
 class _EventInfoCard extends StatelessWidget {
-  const _EventInfoCard();
+  const _EventInfoCard({required this.package});
 
-  static const _description =
-      'Prepare-se para a noite mais exclusiva do ano. A Gala de Verão no Porto combina o melhor da música eletrónica melódica com uma vista deslumbrante sobre o Rio Douro. O evento contará com serviço de catering premium, áreas lounge VIP e uma experiência audiovisual imersiva sem precedentes na cidade.';
+  final CatalogPackage package;
 
   @override
   Widget build(BuildContext context) {
+    final description = package.description.trim().isNotEmpty
+        ? package.description
+        : context.l10n.eventStandardTicketDesc;
+    final venue = package.destination.trim().isNotEmpty
+        ? package.destination
+        : '—';
+
     return _WhiteCard(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(24.r),
@@ -282,12 +325,14 @@ class _EventInfoCard extends StatelessWidget {
               _InfoRow(
                 icon: Icons.calendar_today,
                 label: context.l10n.eventDateTimeLabel,
-                value: '15 de Julho, 18:00',
+                value: AppCurrencyFormatter.instance.formatEurMajor(
+                  package.priceEur,
+                ),
               ),
               _InfoRow(
                 icon: Icons.location_on,
                 label: context.l10n.eventLocationLabel,
-                value: 'Alfândega do Porto',
+                value: venue,
               ),
             ],
           ),
@@ -305,7 +350,7 @@ class _EventInfoCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            _description,
+            description,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
               fontWeight: FontWeight.w400,
@@ -376,10 +421,13 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _MapCard extends StatelessWidget {
-  const _MapCard();
+  const _MapCard({this.imageUrl});
+
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
+    final mapImage = imageUrl ?? AppAssets.eventMapImage;
     return _WhiteCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -425,7 +473,7 @@ class _MapCard extends StatelessWidget {
                     0,
                   ]),
                   child: Image.network(
-                    AppAssets.eventMapImage,
+                    mapImage,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
                         const ColoredBox(color: AppColors.surfaceContainerHigh),
@@ -662,7 +710,7 @@ class _TicketCard extends StatelessWidget {
                 Icon(Icons.account_balance, color: AppColors.onSurfaceVariant),
                 SizedBox(width: 16.w),
                 Text(
-                  'MBWAY',
+                  context.l10n.eventPaymentMbway,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,

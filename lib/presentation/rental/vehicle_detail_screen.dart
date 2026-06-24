@@ -9,15 +9,12 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Detalhes do Veículo — Firebase `vehicles/{id}` when [vehicleId] is set.
 class VehicleDetailScreen extends StatelessWidget {
-  const VehicleDetailScreen({
-    super.key,
-    this.vehicleId,
-    this.repository,
-  });
+  const VehicleDetailScreen({super.key, this.vehicleId, this.repository});
 
   final String? vehicleId;
   final RentalVehicleRepository? repository;
@@ -38,6 +35,41 @@ class VehicleDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repository = this.repository ?? RentalVehicleRepository();
+    if (vehicleId == null || vehicleId!.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const _DetailAppBar(),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppLayout.marginMobile),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.l10n.rentalNoVehicles,
+                          style: GoogleFonts.inter(fontSize: 14.sp),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 16.h),
+                        FilledButton(
+                          onPressed: () =>
+                              AppNavigation.toVehicleSearchResults(context),
+                          child: Text(context.l10n.rentalSearchAvailable),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (vehicleId != null) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -71,42 +103,9 @@ class VehicleDetailScreen extends StatelessWidget {
       );
     }
 
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          const _DetailAppBar(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                AppLayout.marginMobile,
-                16.h,
-                AppLayout.marginMobile,
-                100.h + bottomInset,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _GallerySection(),
-                  SizedBox(height: 24.h),
-                  _MainInfoCard(decoration: _cardDecoration),
-                  SizedBox(height: 16.h),
-                  _InsuranceCard(decoration: _cardDecoration),
-                  SizedBox(height: 16.h),
-                  _FuelCard(decoration: _cardDecoration),
-                  SizedBox(height: 16.h),
-                  _BookingSummaryCard(decoration: _cardDecoration),
-                  SizedBox(height: 16.h),
-                  const _TechnicalSpecsCard(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _BottomActionBar(bottomInset: bottomInset),
+      body: SafeArea(child: Center(child: CircularProgressIndicator())),
     );
   }
 }
@@ -342,7 +341,7 @@ class _MainInfoCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999.r),
                       ),
                       child: Text(
-                        'DESPORTIVO PREMIUM',
+                        context.l10n.rentalDemoSportPremium,
                         style: GoogleFonts.inter(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
@@ -353,7 +352,7 @@ class _MainInfoCard extends StatelessWidget {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      'Porsche Taycan 4S',
+                      context.l10n.rentalDemoVehicleName,
                       style: GoogleFonts.manrope(
                         fontSize: 32.sp,
                         fontWeight: FontWeight.w700,
@@ -403,14 +402,14 @@ class _MainInfoCard extends StatelessWidget {
                 child: _SpecItem(
                   icon: Icons.ev_station,
                   label: context.l10n.rentalPowertrain,
-                  value: 'Elétrico',
+                  value: context.l10n.rentalElectric,
                 ),
               ),
               Expanded(
                 child: _SpecItem(
                   icon: Icons.settings_input_component,
                   label: context.l10n.rentalTransmission,
-                  value: 'Automática',
+                  value: context.l10n.rentalTransmissionAutomatic,
                 ),
               ),
             ],
@@ -422,7 +421,7 @@ class _MainInfoCard extends StatelessWidget {
                 child: _SpecItem(
                   icon: Icons.person_outline,
                   label: context.l10n.rentalCapacity,
-                  value: '4 Lugares',
+                  value: context.l10n.rentalSeats('4'),
                 ),
               ),
               Expanded(
@@ -527,7 +526,7 @@ class _InsuranceCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'Proteção total contra danos próprios e assistência em viagem 24/7 sem custos adicionais.',
+            context.l10n.rentalInsuranceDescription,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
               fontWeight: FontWeight.w400,
@@ -536,9 +535,9 @@ class _InsuranceCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12.h),
-          const _CheckListItem(text: 'Isenção de Franquia'),
+          _CheckListItem(text: context.l10n.rentalInsuranceFranchiseWaiver),
           SizedBox(height: 8.h),
-          const _CheckListItem(text: 'Danos de Colisão (CDW)'),
+          _CheckListItem(text: context.l10n.rentalInsuranceCdw),
         ],
       ),
     );
@@ -593,7 +592,7 @@ class _FuelCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Text(
-            'Política de Cheio/Cheio ou devolução com carga superior a 80% para veículos elétricos.',
+            context.l10n.rentalFuelPolicyElectric,
             style: GoogleFonts.inter(
               fontSize: 16.sp,
               fontWeight: FontWeight.w400,
@@ -663,32 +662,31 @@ class _CheckListItem extends StatelessWidget {
 }
 
 class _BookingSummaryCard extends StatelessWidget {
-  const _BookingSummaryCard({
-    required this.decoration,
-    this.pricePerDayEur,
-    this.rentalDays = 3,
-  });
+  const _BookingSummaryCard({required this.decoration});
 
   final BoxDecoration decoration;
-  final double? pricePerDayEur;
-  final int rentalDays;
 
   @override
   Widget build(BuildContext context) {
     final formatter = AppCurrencyFormatter.instance;
-    final perDay = pricePerDayEur ?? RentalBookingDraft.instance.pricePerDayEur;
-    final days = rentalDays;
+    final l10n = context.l10n;
+    final perDay = RentalBookingDraft.instance.pricePerDayEur;
+    const days = 3;
     final rentalTotal = perDay * days;
     final airportFees = perDay * 0.056;
     final total = rentalTotal + airportFees;
     final lineItems = <(String, String, bool)>[
       (
-        'Rental ($days days)',
+        l10n.rentalBookingRentalDays(days),
         formatter.formatEurMajor(rentalTotal),
         false,
       ),
-      ('Seguro Premium', 'Incluído', true),
-      ('Airport Fees', formatter.formatEurMajor(airportFees), false),
+      (l10n.rentalBookingPremiumInsurance, l10n.rentalBookingIncluded, true),
+      (
+        l10n.rentalBookingAirportFees,
+        formatter.formatEurMajor(airportFees),
+        false,
+      ),
     ];
 
     return Container(
@@ -782,7 +780,10 @@ class _BookingSummaryCard extends StatelessWidget {
           SizedBox(height: 16.h),
           _InfoPill(icon: Icons.event, text: '12 Out — 15 Out 2023'),
           SizedBox(height: 8.h),
-          _InfoPill(icon: Icons.location_on, text: 'Lisbon Airport, LIS'),
+          _InfoPill(
+            icon: Icons.location_on,
+            text: context.l10n.rentalDemoAirportLocation,
+          ),
         ],
       ),
     );
@@ -826,14 +827,15 @@ class _InfoPill extends StatelessWidget {
 class _TechnicalSpecsCard extends StatelessWidget {
   const _TechnicalSpecsCard();
 
-  static const _specs = [
-    ('Potência', '530 cv'),
-    ('Autonomia WLTP', '463 km'),
-    ('Tração', 'Integral (AWD)'),
+  static List<(String, String)> _specs(AppLocalizations l10n) => [
+    (l10n.rentalSpecPower, l10n.rentalSpecPowerValue),
+    (l10n.rentalSpecRange, l10n.rentalSpecRangeValue),
+    (l10n.rentalSpecDrive, l10n.rentalSpecDriveValue),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final specs = _specs(context.l10n);
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
@@ -860,11 +862,11 @@ class _TechnicalSpecsCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
-          for (var i = 0; i < _specs.length; i++) ...[
+          for (var i = 0; i < specs.length; i++) ...[
             Row(
               children: [
                 Text(
-                  _specs[i].$1,
+                  specs[i].$1,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     color: AppColors.onPrimary.withValues(alpha: 0.6),
@@ -872,7 +874,7 @@ class _TechnicalSpecsCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  _specs[i].$2,
+                  specs[i].$2,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -881,7 +883,7 @@ class _TechnicalSpecsCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (i < _specs.length - 1)
+            if (i < specs.length - 1)
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.h),
                 child: Divider(
@@ -904,8 +906,9 @@ class _BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final draft = RentalBookingDraft.instance;
-    final totalLabel =
-        AppCurrencyFormatter.instance.formatEurMajor(draft.estimatedTotalEur);
+    final totalLabel = AppCurrencyFormatter.instance.formatEurMajor(
+      draft.estimatedTotalEur,
+    );
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -1048,7 +1051,14 @@ class _FirebaseVehicleDetailBody extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  '${AppCurrencyFormatter.instance.formatEurMajorWithSuffix(vehicle.pricePerDay.toDouble(), '/dia')} · ${vehicle.seats} lugares · ${vehicle.transmissionLabel}',
+                  context.l10n.rentalVehicleSummary(
+                    AppCurrencyFormatter.instance.formatEurMajorWithSuffix(
+                      vehicle.pricePerDay.toDouble(),
+                      context.l10n.rentalPerDay,
+                    ),
+                    context.l10n.rentalSeats('${vehicle.seats}'),
+                    vehicle.transmissionLabel,
+                  ),
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     color: AppColors.onSurfaceVariant,
@@ -1084,6 +1094,12 @@ class _FirebaseVehicleDetailBody extends StatelessWidget {
                 vehicleId: vehicle.id,
                 vehicleLabel: vehicle.name,
                 pricePerDayEur: vehicle.pricePerDay.toDouble(),
+                imageUrl: vehicle.imageUrl,
+                seats: vehicle.seats,
+                transmission: vehicle.transmissionLabel,
+                category: vehicle.categoryLabel,
+                isElectric: vehicle.isElectric,
+                isPremium: vehicle.isPremium,
               ),
               child: Text(context.l10n.rentalContinueToPayment),
             ),

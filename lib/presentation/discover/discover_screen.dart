@@ -570,7 +570,10 @@ class _EventsSection extends StatelessWidget {
                           description: item.description,
                           price: formatter.formatEurMajor(item.priceEur),
                           onTickets: () {
-                            AppNavigation.toEventBooking(context);
+                            AppNavigation.toEventBooking(
+                              context,
+                              packageId: item.id,
+                            );
                           },
                         );
                       },
@@ -878,7 +881,7 @@ class _InteractiveMapSection extends StatelessWidget {
                   left: MediaQuery.sizeOf(context).width * 0.22,
                   top: 120,
                   child: _MapMarker(
-                    label: 'Restaurante Maré',
+                    label: context.l10n.discoverMapRestaurantLabel,
                     color: AppColors.primary,
                   ),
                 ),
@@ -886,7 +889,7 @@ class _InteractiveMapSection extends StatelessWidget {
                   right: MediaQuery.sizeOf(context).width * 0.28,
                   bottom: 100,
                   child: _MapMarker(
-                    label: 'Praia Secreta',
+                    label: context.l10n.discoverMapBeachLabel,
                     color: AppColors.secondary,
                   ),
                 ),

@@ -14,7 +14,7 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Painel Admin — Mobilidade Premium (`roles/details.md`).
+/// Painel Admin — Local Transport (`roles/details.md`).
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key, this.adminRepository});
 
@@ -45,32 +45,56 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   AdminMarketSummary? _market;
   AdminActivityMapData _activityMap = AdminActivityMapData.empty;
   List<AdminFleetRow> _fleet = const [];
+  String? _loadError;
+
+  void _onStreamError(Object error) {
+    if (!mounted) return;
+    setState(() => _loadError = context.l10n.tryAgain);
+  }
 
   @override
   void initState() {
     super.initState();
     _repository = widget.adminRepository ?? AdminRepository();
     _dashboardSubscription =
-        _repository.watchDashboardStats().listen((stats) {
-      if (!mounted) return;
-      setState(() => _stats = stats);
-    });
-    _tariffSubscription = _repository.watchTariffSummary().listen((tariff) {
-      if (!mounted) return;
-      setState(() => _tariff = tariff);
-    });
-    _fleetSubscription = _repository.watchRecentFleet().listen((fleet) {
-      if (!mounted) return;
-      setState(() => _fleet = fleet);
-    });
-    _marketSubscription = _repository.watchMarketSummary().listen((market) {
-      if (!mounted) return;
-      setState(() => _market = market);
-    });
-    _activityMapSubscription = _repository.watchActivityMap().listen((mapData) {
-      if (!mounted) return;
-      setState(() => _activityMap = mapData);
-    });
+        _repository.watchDashboardStats().listen(
+      (stats) {
+        if (!mounted) return;
+        setState(() {
+          _stats = stats;
+          _loadError = null;
+        });
+      },
+      onError: _onStreamError,
+    );
+    _tariffSubscription = _repository.watchTariffSummary().listen(
+      (tariff) {
+        if (!mounted) return;
+        setState(() => _tariff = tariff);
+      },
+      onError: _onStreamError,
+    );
+    _fleetSubscription = _repository.watchRecentFleet().listen(
+      (fleet) {
+        if (!mounted) return;
+        setState(() => _fleet = fleet);
+      },
+      onError: _onStreamError,
+    );
+    _marketSubscription = _repository.watchMarketSummary().listen(
+      (market) {
+        if (!mounted) return;
+        setState(() => _market = market);
+      },
+      onError: _onStreamError,
+    );
+    _activityMapSubscription = _repository.watchActivityMap().listen(
+      (mapData) {
+        if (!mounted) return;
+        setState(() => _activityMap = mapData);
+      },
+      onError: _onStreamError,
+    );
   }
 
   @override
@@ -102,6 +126,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   AppLayout.xxl,
                 ),
                 children: [
+                  if (_loadError != null) ...[
+                    _DashboardErrorBanner(message: _loadError!),
+                    SizedBox(height: AppLayout.md),
+                  ],
                   _FleetStatusSection(stats: _stats),
                   SizedBox(height: AppLayout.lg),
                   _CriticalOperationsSection(stats: _stats),
@@ -143,7 +171,7 @@ class _AdminAppBar extends StatelessWidget {
           SizedBox(width: AppLayout.md),
           Expanded(
             child: Text(
-              context.l10n.adminAppBarTitle,
+              context.l10n.appNameLocalTransport,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,
@@ -959,6 +987,44 @@ class _FleetVehicleCard extends StatelessWidget {
                 color: row.isOnTrip
                     ? AppColors.onPrimaryContainer
                     : AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardErrorBanner extends StatelessWidget {
+  const _DashboardErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppLayout.md),
+      decoration: BoxDecoration(
+        color: AppColors.errorContainer,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Symbols.error_outline,
+            color: AppColors.onErrorContainer,
+            size: 20.sp,
+          ),
+          SizedBox(width: AppLayout.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.inter(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onErrorContainer,
               ),
             ),
           ),

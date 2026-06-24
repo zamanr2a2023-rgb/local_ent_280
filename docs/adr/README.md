@@ -1,0 +1,46 @@
+# ADR Index
+
+- `docs/adr/0001-project-structure.md` - Estrutura feature-first e ownership por camada.
+- `docs/adr/0002-state-and-di-boundaries.md` - Fronteiras de state management e DI.
+- `docs/adr/0003-money-contract-and-minor-units.md` - Contrato monetário canónico e expoentes por moeda.
+- `docs/adr/0004-trip-state-machine-single-source.md` - Matriz canónica de transições e paridade.
+- `docs/adr/0005-documentation-deprecation-policy.md` - Política de deprecação e arquivo documental.
+- `docs/adr/0006-functions-modular-composition.md` - Composition root para Functions e factories por domínio.
+- `docs/adr/0007-trip-phase-single-source.md` - Single source de interpretação "ativo vs não ativo" com `TripPhase`.
+- `docs/adr/0008-trip-write-minimization-policy.md` - Política para reduzir writes/read churn no doc principal `trips/{tripId}`.
+- `docs/adr/0009-functions-runtime-tiering.md` - Tiering de runtime para reduzir custo baseline e preservar latência crítica.
+- `docs/adr/0010-callable-idempotency-policy.md` - Política canónica de idempotência para callables críticas de transição e financeiro.
+- `docs/adr/0011-unified-app-logging-layer.md` - Camada única de logging com níveis por ambiente, sampling e campos de correlação.
+- `docs/adr/0012-centralized-typed-routes.md` - Catálogo único de rotas, helpers tipados para detalhes de viagem e check anti-literais.
+- `docs/adr/0013-centralized-feature-flags-source.md` - Origem única para flags de produto com DI partilhada e remoção de flags locais por ecrã.
+- `docs/adr/0014-configurable-event-reminder-offsets.md` - Reminders de eventos administrativos configuráveis por offsets canónicos.
+- `docs/adr/0015-reports-query-filter-contract.md` - Contrato de filtros de relatórios no domínio para consistência entre tabela e CSV.
+- `docs/adr/0016-firestore-strict-read-validation.md` - Política de validação estrita em leitura Firestore sem compatibilidade legada de schema.
+- `docs/adr/0017-tiered-distance-pricing-integer-metering.md` - Faixas de distância com cálculo inteiro em metros e espelho admin/public.
+- `docs/adr/0018-recurring-reservations-server-side-reminder-queue.md` - Recorrência semanal server-side com contrato temporal DST-safe, `BulkWriter` e reminder queue com claim transacional.
+- `docs/adr/0019-post-charge-trip-extension-subworkflow.md` - Extensão pós-cobrança modelada como sub-workflow separado em `Trip`.
+- `docs/adr/0020-dev-driver-location-simulation-via-device-source-decorator.md` - Simulação de demo no app do motorista via decorator da fonte de localização do dispositivo.
+- `docs/adr/0021-multi-driver-targeting-for-admin-events.md` - Eventos administrativos direcionados por `targetIds` com seleção multi-motorista e sem fallback legado.
+- `docs/adr/0022-multi-currency-ui-with-eur-ledger.md` - Multi-moeda de UI com FX administrado pelo backoffice e persistência financeira EUR-only.
+- `docs/adr/0023-centralized-input-validation-ux.md` - Validação de inputs centralizada com UX consistente (erro inline, submit bloqueado e foco no primeiro erro).
+- `docs/adr/0024-consistent-list-filtering-pattern.md` - Padrão único de filtros/pesquisa/ordenação em listas críticas com estratégia híbrida Firestore+local.
+- `docs/adr/0025-app-language-resolution-and-user-override.md` - Resolução de idioma por dispositivo com fallback `pt_PT`, override local em runtime e mapeamento BCP-47 para integrações externas.
+- `docs/adr/0026-human-friendly-operational-trip-identities.md` - Identidade operacional human-friendly com fallback de referência curta e IDs completos apenas em detalhes técnicos.
+- `docs/adr/0027-password-help-operational-flow-with-app-check.md` - Recuperação de password operacional com callable anti-enumeração, App Check enforcement e visibilidade `admin|manager` via `supportRequests`.
+- `docs/adr/0028-manager-configurable-permissions-via-custom-claims.md` - Permissões configuráveis por manager via custom claims com enforcement em UI, rules e callables.
+- `docs/adr/0029-native-report-csv-share-service.md` - Exportação CSV dos relatórios via share sheet nativa com serviço injetado, fallback por plataforma e pruning de ficheiros temporários.
+- `docs/adr/0030-driver-background-tracking-runtime-outside-screens.md` - Runtime global do motorista para tracking foreground/background desacoplado dos ecrãs operacionais.
+- `docs/adr/0031-remove-minute-pricing-from-trip-fare.md` - Remoção do pricing por minuto da viagem principal e convergência temporal em wait-only + extensão pós-cobrança.
+- `docs/adr/0032-remove-weekday-tariff-multiplier.md` - Remoção do multiplicador semanal do tarifário, mantendo apenas `holiday` e `time_range`.
+- `docs/adr/0033-reports-lazy-tabs-and-read-model-roadmap.md` - Tabs lazy, paginação explícita, contratos ricos e roadmap Algolia+BigQuery para relatórios completos.
+- `docs/adr/0034-firebase-project-split-and-android-distribution.md` - Split `dev|prod` por projeto Firebase no Android, assinatura `release` real e distribuição via Firebase App Distribution.
+- `docs/adr/0035-app-observability-and-safe-admin-bootstrap.md` - Analytics + Crashlytics via serviços injetados e bootstrap seguro de admin sem reset destrutivo.
+- `docs/adr/0036-package-bookings-over-shared-reservation-core.md` - Packages pré-pagos com booking comercial separado, reservas autoritativas reutilizadas e ativação por Cloud Tasks.
+- `docs/adr/0037-source-aware-internal-staff-reservations.md` - Reservas one-off geridas internamente com contrato source-aware partilhado entre `internal_staff` e `package`.
+- `docs/adr/0038-backend-operational-monitoring-from-rtdb-and-bounded-firestore-evidence.md` - Monitorização operacional backend-authored com RTDB como fonte high-frequency e evidência Firestore limitada.
+- `docs/adr/0039-tariff-owned-base-fare-by-transport-type.md` - Tarifa base por tipo de transporte dentro do tarifário, sem multiplicador global de transporte e com writes via callable.
+- `docs/adr/0040-shared-departure-trip-packages.md` - Modelo histórico por saídas partilhadas; substituído para o produto ativo.
+- `docs/adr/0041-hybrid-test-matrix-with-emulator-e2e.md` - Matriz de testes em quatro lanes com `integration_test/mocked`, Firebase Emulator Suite e smoke suite `dev` mínima.
+- `docs/adr/0042-fixed-commercial-trip-packages.md` - Package comercial fixo com booking, reservation e ativação operacional separadas.
+- `docs/adr/0044-firebase-cost-runtime-controls.md` - Controlos de custo Firebase com Cloud Tasks, runtime pointers, metering subdoc e fanout denormalizado.
+- `docs/adr/0045-ticket-scoped-support-chat-and-chat-push-suppression.md` - Suporte por ticket, chat cliente-motorista separado e supressão de push por thread ativa.

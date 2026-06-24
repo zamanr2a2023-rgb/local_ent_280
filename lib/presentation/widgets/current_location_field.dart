@@ -11,11 +11,13 @@ class CurrentLocationField extends StatelessWidget {
     required this.address,
     required this.isLoading,
     required this.onRefresh,
+    this.onMapTap,
   });
 
   final String? address;
   final bool isLoading;
   final VoidCallback onRefresh;
+  final VoidCallback? onMapTap;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +86,19 @@ class CurrentLocationField extends StatelessWidget {
                 ),
               ),
             )
-          else
+          else ...[
+            if (onMapTap != null)
+              IconButton(
+                onPressed: onMapTap,
+                icon: Icon(
+                  Icons.map_outlined,
+                  color: AppColors.accent,
+                  size: 20.sp,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.h),
+                tooltip: l10n.homeSelectLocationOnMap,
+              ),
             IconButton(
               onPressed: onRefresh,
               icon: Icon(
@@ -96,6 +110,7 @@ class CurrentLocationField extends StatelessWidget {
               constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.h),
               tooltip: l10n.homeRefreshLocation,
             ),
+          ],
         ],
       ),
     );

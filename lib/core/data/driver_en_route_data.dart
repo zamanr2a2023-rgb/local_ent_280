@@ -1,13 +1,10 @@
 import 'package:local_ent_280/core/constants/app_assets.dart';
 
-/// Dados do ecrã «Motorista a caminho» — `roles/details.md`.
+/// Mock assets and metrics for the driver en route screen fallback.
 abstract final class DriverEnRouteData {
   static const mapImage = AppAssets.driverEnRouteMapImage;
   static const profileAvatarImage = AppAssets.driverEnRouteProfileAvatarImage;
   static const driverPhotoImage = AppAssets.driverEnRouteDriverImage;
-
-  static const statusLabel = 'Motorista a caminho';
-  static const pickupLabel = 'A sua localização';
 
   static const driverName = 'Ricardo Santos';
   static const rating = '4.9';

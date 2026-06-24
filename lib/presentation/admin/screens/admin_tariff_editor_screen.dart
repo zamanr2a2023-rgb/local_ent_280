@@ -116,9 +116,10 @@ class _AdminTariffEditorScreenState extends State<AdminTariffEditorScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
     if (_transportTypes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Configure transport types first.')),
+        SnackBar(content: Text(l10n.adminTariffNoTransportTypes)),
       );
       return;
     }
@@ -136,7 +137,7 @@ class _AdminTariffEditorScreenState extends State<AdminTariffEditorScreen> {
         lateCancel < 0 ||
         noShow < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter valid amounts.')),
+        SnackBar(content: Text(l10n.adminTariffInvalidAmounts)),
       );
       return;
     }
@@ -147,7 +148,7 @@ class _AdminTariffEditorScreenState extends State<AdminTariffEditorScreen> {
       final value = _parseEur(controller?.text ?? '');
       if (value == null || value < 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid base fare for ${type.name}.')),
+          SnackBar(content: Text(l10n.adminTariffInvalidBaseFare(type.name))),
         );
         return;
       }

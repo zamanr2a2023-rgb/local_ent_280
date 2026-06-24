@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,13 +7,14 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
-import 'package:local_ent_280/core/data/premium_search_items.dart';
+import 'package:local_ent_280/core/services/catalog_search_service.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
+import 'package:local_ent_280/features/rental/data/rental_vehicle_repository.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 /// Local Transport — Início (app_details/details.md).
@@ -26,27 +29,68 @@ class PremiumHomeScreen extends StatefulWidget {
 class _PremiumHomeScreenState extends State<PremiumHomeScreen> {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  List<PremiumSearchItem> _searchResults = [];
+  final _catalogRepository = CatalogRepository();
+  final _vehicleRepository = RentalVehicleRepository();
+  List<CatalogPackage> _packages = const [];
+  List<RentalVehicleRecord> _vehicles = const [];
+  List<CatalogSearchResult> _searchResults = [];
+  StreamSubscription<List<CatalogPackage>>? _packagesSubscription;
+  StreamSubscription<List<RentalVehicleRecord>>? _vehiclesSubscription;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _packagesSubscription =
+        _catalogRepository.watchActivePackages().listen((packages) {
+      if (!mounted) return;
+      setState(() {
+        _packages = packages;
+        _searchResults = CatalogSearchService.filter(
+          query: _searchController.text,
+          packages: _packages,
+          vehicles: _vehicles,
+        );
+      });
+    });
+    _vehiclesSubscription =
+        _vehicleRepository.watchActiveVehicles().listen((vehicles) {
+      if (!mounted) return;
+      setState(() {
+        _vehicles = vehicles;
+        _searchResults = CatalogSearchService.filter(
+          query: _searchController.text,
+          packages: _packages,
+          vehicles: _vehicles,
+        );
+      });
+    });
   }
 
   void _onSearchChanged() {
     setState(() {
-      _searchResults = PremiumSearchItems.filter(_searchController.text);
+      _searchResults = CatalogSearchService.filter(
+        query: _searchController.text,
+        packages: _packages,
+        vehicles: _vehicles,
+      );
     });
   }
 
-  void _onSearchResultTap(PremiumSearchItem item) {
+  void _onSearchResultTap(CatalogSearchResult item) {
     _searchFocusNode.unfocus();
-    AppNavigation.toReservationReview(context);
+    switch (item.kind) {
+      case CatalogSearchResultKind.package:
+        AppNavigation.toEventBooking(context, packageId: item.id);
+      case CatalogSearchResultKind.vehicle:
+        AppNavigation.toVehicleDetail(context, vehicleId: item.id);
+    }
   }
 
   @override
   void dispose() {
+    _packagesSubscription?.cancel();
+    _vehiclesSubscription?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -193,8 +237,8 @@ class _HeroSearchSection extends StatelessWidget {
 
   final TextEditingController controller;
   final FocusNode focusNode;
-  final List<PremiumSearchItem> results;
-  final ValueChanged<PremiumSearchItem> onResultTap;
+  final List<CatalogSearchResult> results;
+  final ValueChanged<CatalogSearchResult> onResultTap;
 
   static final _cardShadow = [
     BoxShadow(

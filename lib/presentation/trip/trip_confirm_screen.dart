@@ -6,21 +6,30 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/core/services/support_contact_service.dart';
+import 'package:local_ent_280/core/services/support_phone_launcher.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
+import 'package:local_ent_280/core/services/client_tariff_service.dart';
+import 'package:local_ent_280/core/services/trip_price_estimator.dart';
 import 'package:local_ent_280/core/data/trip_confirm_data.dart';
 import 'package:local_ent_280/core/models/trip_directions_result.dart';
 import 'package:local_ent_280/core/models/trip_route_draft.dart';
+import 'package:local_ent_280/core/policies/service_area_policy.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_location.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/features/trips/domain/entities/create_trip_input.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/core/services/directions_service.dart';
 import 'package:local_ent_280/core/services/places_details_service.dart';
 import 'package:local_ent_280/core/services/transport_types_service.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/core/localization/transport_type_labels.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 /// Confirmação de viagem com mapa — `roles/details.md`.
@@ -47,63 +56,126 @@ class TripConfirmScreen extends StatefulWidget {
   State<TripConfirmScreen> createState() => _TripConfirmScreenState();
 }
 
+enum _RouteLoadFailure {
+  none,
+  destination,
+  directions,
+  transportTypes,
+}
+
 class _TripConfirmScreenState extends State<TripConfirmScreen> {
-  late final TripRouteDraft _route = widget.route ?? TripRouteDraft.demo();
+  TripRouteDraft? get _route => widget.route;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_route != null) {
+      _loadRouteData();
+    }
+  }
+
   late final DirectionsService _directionsService =
       widget._directionsService ?? DirectionsService();
   late final PlacesDetailsService _placesDetailsService =
       widget._placesDetailsService ?? PlacesDetailsService();
   late final TransportTypesService _transportTypesService =
       widget._transportTypesService ?? TransportTypesService();
+  late final ClientTariffService _tariffService = ClientTariffService();
+  final SupportContactService _supportContactService = SupportContactService();
+  final SupportPhoneLauncher _supportPhoneLauncher = const SupportPhoneLauncher();
+  static const _priceEstimator = TripPriceEstimator();
 
   GoogleMapController? _mapController;
   TripDirectionsResult? _directions;
   List<TransportTypeOption> _transportOptions = [];
+  ClientTariff? _tariff;
   String? _selectedTransportId;
   bool _isLoading = true;
   bool _isSubmitting = false;
+  bool _usedDirectionsFallback = false;
+  _RouteLoadFailure _routeFailure = _RouteLoadFailure.none;
   LatLng? _destinationLatLng;
   TripRepository get _tripRepository =>
-      widget._tripRepository ?? TripRepository();
+      widget._tripRepository ?? tripRepositoryOf(context);
 
-  LatLng get _pickupLatLng =>
-      LatLng(_route.pickupLat, _route.pickupLng);
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRouteData();
+  LatLng get _pickupLatLng {
+    final route = _route!;
+    return LatLng(route.pickupLat, route.pickupLng);
   }
 
   Future<void> _loadRouteData() async {
+    final route = _route;
+    if (route == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _routeFailure = _RouteLoadFailure.none;
+      _usedDirectionsFallback = false;
+    });
+
     LatLng? destination;
-    if (_route.destinationLat != null && _route.destinationLng != null) {
-      destination = LatLng(_route.destinationLat!, _route.destinationLng!);
+    if (route.destinationLat != null && route.destinationLng != null) {
+      destination = LatLng(route.destinationLat!, route.destinationLng!);
     } else {
       destination = await _placesDetailsService.resolveCoordinates(
-        placeId: _route.destinationPlaceId,
-        address: _route.destinationAddress,
+        placeId: route.destinationPlaceId,
+        address: route.destinationAddress,
       );
     }
 
     if (!mounted) return;
     if (destination == null) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _destinationLatLng = null;
+        _directions = null;
+        _transportOptions = [];
+        _tariff = null;
+        _routeFailure = _RouteLoadFailure.destination;
+        _isLoading = false;
+      });
       return;
     }
 
-    final directions = await _directionsService.getDrivingRoute(
+    final routeResult = await _directionsService.getDrivingRouteDetailed(
       origin: _pickupLatLng,
       destination: destination,
     );
     final transportOptions = await _transportTypesService.fetchActiveTypes();
+    final tariff = await _tariffService.fetchCurrentTariff();
 
     if (!mounted) return;
+    if (routeResult.directions == null) {
+      setState(() {
+        _destinationLatLng = destination;
+        _directions = null;
+        _transportOptions = transportOptions;
+        _tariff = tariff;
+        _routeFailure = _RouteLoadFailure.directions;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    if (transportOptions.isEmpty) {
+      setState(() {
+        _destinationLatLng = destination;
+        _directions = routeResult.directions;
+        _transportOptions = [];
+        _tariff = tariff;
+        _routeFailure = _RouteLoadFailure.transportTypes;
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _destinationLatLng = destination;
-      _directions = directions;
+      _directions = routeResult.directions;
+      _usedDirectionsFallback = routeResult.usedFallback;
       _transportOptions = transportOptions;
+      _tariff = tariff;
       _selectedTransportId = transportOptions.first.id;
+      _routeFailure = _RouteLoadFailure.none;
       _isLoading = false;
     });
     _fitMapToRoute();
@@ -142,6 +214,22 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
 
   double get _distanceKm => _directions?.distanceKm ?? 0;
 
+  int _estimatedTotalMinor(TransportTypeOption transport) {
+    final tariff = _tariff;
+    if (tariff == null) {
+      return (transport.priceForDistanceKm(_distanceKm) * 100).round();
+    }
+    return _priceEstimator
+        .estimate(
+          tariff: tariff,
+          transportTypeId: transport.id,
+          distanceKm: _distanceKm,
+          durationMinutes: _directions?.durationMinutes ?? 0,
+          transportBaseFallbackMinor: (transport.baseFare * 100).round(),
+        )
+        .totalMinor;
+  }
+
   TransportTypeOption? get _selectedTransport {
     if (_selectedTransportId == null) return null;
     for (final option in _transportOptions) {
@@ -150,26 +238,92 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
     return null;
   }
 
-  double get _totalPrice =>
-      _selectedTransport?.priceForDistanceKm(_distanceKm) ?? 0;
+  double get _totalPrice {
+    final transport = _selectedTransport;
+    if (transport == null) return 0;
+    return _estimatedTotalMinor(transport) / 100;
+  }
 
-  String get _formattedTotal =>
-      AppCurrencyFormatter.instance.formatEurMajor(_totalPrice);
+  String get _formattedTotal {
+    if (_routeFailure != _RouteLoadFailure.none || _isLoading) {
+      return '—';
+    }
+    return AppCurrencyFormatter.instance.formatEurMajor(_totalPrice);
+  }
+
+  bool get _canConfirm =>
+      !_isLoading &&
+      !_isSubmitting &&
+      _routeFailure == _RouteLoadFailure.none &&
+      _selectedTransport != null &&
+      _directions != null &&
+      _destinationLatLng != null &&
+      _estimatedTotalMinor(_selectedTransport!) > 0;
+
+  String? get _routeErrorMessage {
+    return switch (_routeFailure) {
+      _RouteLoadFailure.destination => context.l10n.tripConfirmDestinationFailed,
+      _RouteLoadFailure.directions => context.l10n.tripConfirmDirectionsFailed,
+      _RouteLoadFailure.transportTypes =>
+        context.l10n.tripConfirmTransportTypesFailed,
+      _RouteLoadFailure.none => null,
+    };
+  }
+
+  void _onConfirmPressed() {
+    if (_isSubmitting || _isLoading) return;
+
+    if (UserSession.instance.profile == null) {
+      _showMessage(context.l10n.tripConfirmSessionInvalid);
+      return;
+    }
+    if (_routeFailure != _RouteLoadFailure.none) {
+      final message = _routeErrorMessage;
+      if (message != null) _showMessage(message);
+      return;
+    }
+    if (_destinationLatLng == null ||
+        _selectedTransport == null ||
+        _directions == null) {
+      _showMessage(context.l10n.tripConfirmRouteLoading);
+      return;
+    }
+    final transport = _selectedTransport!;
+    if (_estimatedTotalMinor(transport) <= 0) {
+      _showMessage(context.l10n.tripConfirmPriceUnavailable);
+      return;
+    }
+
+    _confirmTrip();
+  }
 
   Future<void> _confirmTrip() async {
     if (_isSubmitting || _isLoading) return;
+    final route = _route;
+    if (route == null) return;
 
     final profile = UserSession.instance.profile;
     final destination = _destinationLatLng;
     final transport = _selectedTransport;
     final directions = _directions;
 
-    if (profile == null) {
-      _showMessage(context.l10n.tripConfirmSessionInvalid);
+    if (profile == null ||
+        destination == null ||
+        transport == null ||
+        directions == null) {
       return;
     }
-    if (destination == null || transport == null || directions == null) {
-      _showMessage(context.l10n.tripConfirmRouteLoading);
+
+    if (!ServiceAreaPolicy.isPickupEligibleForDispatch(
+      latitude: route.pickupLat,
+      longitude: route.pickupLng,
+    )) {
+      _showMessage(context.l10n.homePickupOutsideServiceArea);
+      return;
+    }
+
+    final estimatedTotalMinor = _estimatedTotalMinor(transport);
+    if (estimatedTotalMinor <= 0) {
       return;
     }
 
@@ -178,24 +332,27 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
       final tripId = await _tripRepository.createTrip(
         CreateTripInput(
           clientId: profile.uid,
-          clientProfile: profile,
           pickup: TripLocation(
-            address: _route.pickupAddress,
-            latitude: _route.pickupLat,
-            longitude: _route.pickupLng,
+            address: route.pickupAddress,
+            latitude: route.pickupLat,
+            longitude: route.pickupLng,
           ),
           destination: TripLocation(
-            address: _route.destinationAddress,
+            address: route.destinationAddress,
             latitude: destination.latitude,
             longitude: destination.longitude,
           ),
           transportType: TripTransportType(
             id: transport.id,
-            name: transport.label,
+            name: localizedTransportTypeLabel(
+              context.l10n,
+              transport.id,
+              fallback: transport.label,
+            ),
           ),
           distanceKm: directions.distanceKm,
           durationMinutes: directions.durationMinutes,
-          estimatedPriceEur: _totalPrice,
+          estimatedTotalMinor: estimatedTotalMinor,
         ),
       );
 
@@ -206,6 +363,28 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
         tripId: tripId,
         tripRepository: widget._tripRepository,
       );
+    } on ClientFunctionsException catch (error) {
+      developer.log(
+        'Trip create failed: ${error.status} ${error.message}',
+        name: 'TripConfirmScreen',
+      );
+      if (!mounted) return;
+      if (error.isLimitExceeded) {
+        try {
+          await _showLimitExceededDialog(error.message);
+        } catch (dialogError, stackTrace) {
+          developer.log(
+            'Limit exceeded dialog failed',
+            name: 'TripConfirmScreen',
+            error: dialogError,
+            stackTrace: stackTrace,
+          );
+          if (!mounted) return;
+          _showMessage(error.message);
+        }
+      } else {
+        _showMessage(error.message);
+      }
     } on FirebaseException catch (error) {
       developer.log(
         'Trip create failed: ${error.code} ${error.message}',
@@ -233,6 +412,58 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _showLimitExceededDialog(String reason) async {
+    String phone = '';
+    try {
+      phone = await _supportContactService.fetchSupportPhone();
+    } catch (error, stackTrace) {
+      developer.log(
+        'Support phone lookup failed in limit dialog',
+        name: 'TripConfirmScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final l10n = context.l10n;
+        final body = phone.isEmpty
+            ? reason
+            : '$reason\n\n${l10n.clientBalanceContactSupport}: $phone';
+        return AlertDialog(
+          title: Text(l10n.tripConfirmLimitExceeded),
+          content: Text(body),
+          actions: [
+            if (phone.isNotEmpty)
+              TextButton(
+                onPressed: () async {
+                  final result = await _supportPhoneLauncher.call(phone);
+                  if (!dialogContext.mounted) return;
+                  if (!result.launched) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${l10n.clientBalanceSupportCallFailed} '
+                          '(${result.displayPhone})',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Text(l10n.tripConfirmLimitExceededCallSupport),
+              ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -270,6 +501,35 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final route = _route;
+    if (route == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _ConfirmAppBar(onBack: () => AppNavigation.back(context)),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppLayout.marginMobile),
+                    child: Text(
+                      context.l10n.tripConfirmDestinationFailed,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 15.sp,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final topInset = MediaQuery.paddingOf(context).top + 56.h;
     final destination = _destinationLatLng;
 
@@ -327,19 +587,28 @@ class _TripConfirmScreenState extends State<TripConfirmScreen> {
             builder: (context, scrollController) {
               return _TripDetailsSheet(
                 scrollController: scrollController,
-                pickupLabel: _route.pickupAddress,
-                destinationLabel: _route.destinationAddress,
-                distanceLabel: _directions?.formattedDistance ?? '—',
-                durationLabel: _directions?.formattedDuration ?? '—',
+                pickupLabel: route.pickupAddress,
+                destinationLabel: route.destinationAddress,
+                distanceLabel: _routeFailure == _RouteLoadFailure.none
+                    ? (_directions?.formattedDistance ?? '—')
+                    : '—',
+                durationLabel: _routeFailure == _RouteLoadFailure.none
+                    ? (_directions?.formattedDuration ?? '—')
+                    : '—',
+                routeErrorMessage: _routeErrorMessage,
+                showDirectionsFallbackWarning:
+                    _usedDirectionsFallback && _routeFailure == _RouteLoadFailure.none,
                 isLoading: _isLoading,
                 transportOptions: _transportOptions,
                 selectedTransportId: _selectedTransportId ?? '',
-                distanceKm: _distanceKm,
+                estimatePriceMinor: _estimatedTotalMinor,
                 totalFormatted: _formattedTotal,
                 onTransportSelected: (id) =>
                     setState(() => _selectedTransportId = id),
                 isSubmitting: _isSubmitting,
-                onConfirm: _confirmTrip,
+                canConfirm: _canConfirm,
+                onConfirm: _onConfirmPressed,
+                onRetryRoute: _loadRouteData,
               );
             },
           ),
@@ -464,14 +733,18 @@ class _TripDetailsSheet extends StatelessWidget {
     required this.destinationLabel,
     required this.distanceLabel,
     required this.durationLabel,
+    required this.routeErrorMessage,
+    required this.showDirectionsFallbackWarning,
     required this.isLoading,
     required this.transportOptions,
     required this.selectedTransportId,
-    required this.distanceKm,
+    required this.estimatePriceMinor,
     required this.totalFormatted,
     required this.onTransportSelected,
     required this.isSubmitting,
+    required this.canConfirm,
     required this.onConfirm,
+    required this.onRetryRoute,
   });
 
   final ScrollController scrollController;
@@ -479,14 +752,18 @@ class _TripDetailsSheet extends StatelessWidget {
   final String destinationLabel;
   final String distanceLabel;
   final String durationLabel;
+  final String? routeErrorMessage;
+  final bool showDirectionsFallbackWarning;
   final bool isLoading;
   final List<TransportTypeOption> transportOptions;
   final String selectedTransportId;
-  final double distanceKm;
+  final int Function(TransportTypeOption option) estimatePriceMinor;
   final String totalFormatted;
   final ValueChanged<String> onTransportSelected;
   final bool isSubmitting;
+  final bool canConfirm;
   final VoidCallback onConfirm;
+  final VoidCallback onRetryRoute;
 
   static double get _sheetRadius => 24.r;
 
@@ -525,6 +802,18 @@ class _TripDetailsSheet extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 24.h),
+                  if (routeErrorMessage != null) ...[
+                    _RouteErrorBanner(
+                      message: routeErrorMessage!,
+                      onRetry: onRetryRoute,
+                    ),
+                    SizedBox(height: 16.h),
+                  ] else if (showDirectionsFallbackWarning) ...[
+                    _RouteWarningBanner(
+                      message: context.l10n.tripConfirmDirectionsApproximate,
+                    ),
+                    SizedBox(height: 16.h),
+                  ],
                   _RouteSection(
                     pickupLabel: pickupLabel,
                     destinationLabel: destinationLabel,
@@ -561,7 +850,7 @@ class _TripDetailsSheet extends StatelessWidget {
                                       final option = transportOptions[i];
                                       return _TransportOptionCard(
                                         option: option,
-                                        price: option.priceForDistanceKm(distanceKm),
+                                        priceMinor: estimatePriceMinor(option),
                                         selected: option.id == selectedTransportId,
                                         onTap: () => onTransportSelected(option.id),
                                       );
@@ -623,7 +912,8 @@ class _TripDetailsSheet extends StatelessWidget {
                   SizedBox(
                     height: 56.h,
                     child: FilledButton(
-                      onPressed: isSubmitting || isLoading ? null : onConfirm,
+                      onPressed:
+                          isSubmitting ? null : onConfirm,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.secondary,
                         foregroundColor: AppColors.onSecondary,
@@ -666,6 +956,83 @@ class _TripDetailsSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _RouteErrorBanner extends StatelessWidget {
+  const _RouteErrorBanner({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, color: AppColors.error, size: 20.sp),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(context.l10n.tryAgain),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteWarningBanner extends StatelessWidget {
+  const _RouteWarningBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryContainer.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: AppColors.secondary, size: 20.sp),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -875,25 +1242,26 @@ class _StatCard extends StatelessWidget {
 class _TransportOptionCard extends StatelessWidget {
   const _TransportOptionCard({
     required this.option,
-    required this.price,
+    required this.priceMinor,
     required this.selected,
     required this.onTap,
   });
 
   final TransportTypeOption option;
-  final double price;
+  final int priceMinor;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final priceText = AppCurrencyFormatter.instance.formatEurMajor(price);
-    final label = switch (option.id) {
-      'premium' => context.l10n.tripConfirmTransportPremium,
-      'eco' => context.l10n.tripConfirmTransportEco,
-      'shared' => context.l10n.tripConfirmTransportShared,
-      _ => option.label,
-    };
+    final priceText = priceMinor > 0
+        ? AppCurrencyFormatter.instance.formatEurMinor(priceMinor)
+        : '—';
+    final label = localizedTransportTypeLabel(
+      context.l10n,
+      option.id,
+      fallback: option.label,
+    );
 
     return GestureDetector(
       onTap: onTap,

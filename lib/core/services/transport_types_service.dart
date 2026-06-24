@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:local_ent_280/core/data/trip_confirm_data.dart';
+import 'package:local_ent_280/features/admin/data/admin_tariff_payload.dart';
 
 /// Uber-style transport tier with distance-based pricing.
 class TransportTypeOption {
@@ -37,7 +37,7 @@ class TransportTypesService {
   static const _defaults = [
     TransportTypeOption(
       id: 'premium',
-      label: 'Premium',
+      label: 'premium',
       baseFare: 2.5,
       perKmRate: 1.19,
       icon: Icons.directions_car,
@@ -45,7 +45,7 @@ class TransportTypesService {
     ),
     TransportTypeOption(
       id: 'eco',
-      label: 'Eco-Eletric',
+      label: 'eco',
       baseFare: 2.0,
       perKmRate: 1.05,
       icon: Icons.electric_car,
@@ -53,7 +53,7 @@ class TransportTypesService {
     ),
     TransportTypeOption(
       id: 'shared',
-      label: 'Partilhado',
+      label: 'shared',
       baseFare: 1.5,
       perKmRate: 0.58,
       icon: Icons.hail,
@@ -85,10 +85,14 @@ class TransportTypesService {
 
     final id = (data['id'] as String?) ?? doc.id;
     final label = data['label'] as String? ?? data['name'] as String? ?? id;
-    final baseFare = (data['baseFare'] as num?)?.toDouble() ?? 2.0;
-    final perKmRate = (data['perKmRate'] as num?)?.toDouble() ??
-        (data['pricePerKm'] as num?)?.toDouble() ??
-        1.0;
+    final baseFare = _readEurMajor(
+      data['baseFare'] ?? data['initialBaseFare'],
+      fallback: 2.0,
+    );
+    final perKmRate = _readEurMajor(
+      data['perKmRate'] ?? data['pricePerKm'] ?? data['perKm'],
+      fallback: 1.0,
+    );
     final sortOrder = (data['sortOrder'] as num?)?.toInt() ?? 0;
 
     return TransportTypeOption(
@@ -101,15 +105,22 @@ class TransportTypesService {
     );
   }
 
+  double _readEurMajor(Object? value, {required double fallback}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toDouble();
+    if (value is Map) {
+      final major = readEurMajor(value);
+      return major > 0 ? major : fallback;
+    }
+    return fallback;
+  }
+
   IconData _iconForId(String id) {
     return switch (id) {
       'premium' => Icons.directions_car,
       'eco' => Icons.electric_car,
       'shared' => Icons.hail,
-      _ => switch (TripConfirmData.transportOptions.where((o) => o.id == id)) {
-            final matches when matches.isNotEmpty => matches.first.icon,
-            _ => Icons.local_taxi,
-          },
+      _ => Icons.local_taxi,
     };
   }
 }

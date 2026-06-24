@@ -8,6 +8,7 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Resultados da pesquisa de veículos — `roles/details.md`.
 class VehicleSearchResultsScreen extends StatefulWidget {
@@ -22,27 +23,69 @@ class VehicleSearchResultsScreen extends StatefulWidget {
 
 class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen> {
   late final RentalVehicleRepository _repository;
-  String _carType = 'Todos os tipos';
+  String _carType = RentalVehicleFilterKeys.carTypeAll;
   String _maxPrice = 'any';
-  String _transmission = 'Todas';
+  String _transmission = RentalVehicleFilterKeys.transmissionAll;
 
-  static const _carTypes = [
-    'Todos os tipos',
-    'Sedan',
-    'SUV',
-    'Executivo',
-    'Elétrico',
-  ];
-  static const _maxPriceKeys = ['any', 'max_50', 'max_100', 'max_200'];
-  static const _transmissions = ['Todas', 'Automático', 'Manual'];
-
-  List<String> _maxPriceLabels() {
+  List<({String key, String label})> _maxPriceOptions(AppLocalizations l10n) {
     final formatter = AppCurrencyFormatter.instance;
     return [
-      'Qualquer preço',
-      'Até ${formatter.formatEurMajorWithSuffix(50, '/dia')}',
-      'Até ${formatter.formatEurMajorWithSuffix(100, '/dia')}',
-      'Até ${formatter.formatEurMajorWithSuffix(200, '/dia')}',
+      (key: 'any', label: l10n.rentalAnyPrice),
+      (
+        key: 'max_50',
+        label: l10n.rentalPriceUpTo(
+          formatter.formatEurMajorWithSuffix(50, l10n.rentalPerDay),
+        ),
+      ),
+      (
+        key: 'max_100',
+        label: l10n.rentalPriceUpTo(
+          formatter.formatEurMajorWithSuffix(100, l10n.rentalPerDay),
+        ),
+      ),
+      (
+        key: 'max_200',
+        label: l10n.rentalPriceUpTo(
+          formatter.formatEurMajorWithSuffix(200, l10n.rentalPerDay),
+        ),
+      ),
+    ];
+  }
+
+  static List<({String key, String label})> _carTypeOptions(
+    AppLocalizations l10n,
+  ) {
+    return [
+      (key: RentalVehicleFilterKeys.carTypeAll, label: l10n.rentalAllTypes),
+      (key: RentalVehicleFilterKeys.carTypeSedan, label: l10n.rentalCarTypeSedan),
+      (key: RentalVehicleFilterKeys.carTypeSuv, label: l10n.rentalCarTypeSuv),
+      (
+        key: RentalVehicleFilterKeys.carTypeExecutive,
+        label: l10n.rentalCarTypeExecutive,
+      ),
+      (
+        key: RentalVehicleFilterKeys.carTypeElectric,
+        label: l10n.rentalCarTypeElectric,
+      ),
+    ];
+  }
+
+  static List<({String key, String label})> _transmissionOptions(
+    AppLocalizations l10n,
+  ) {
+    return [
+      (
+        key: RentalVehicleFilterKeys.transmissionAll,
+        label: l10n.rentalTransmissionAll,
+      ),
+      (
+        key: RentalVehicleFilterKeys.transmissionAutomatic,
+        label: l10n.rentalTransmissionAutomatic,
+      ),
+      (
+        key: RentalVehicleFilterKeys.transmissionManual,
+        label: l10n.rentalTransmissionManual,
+      ),
     ];
   }
 
@@ -83,6 +126,7 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                 }
 
                 final allVehicles = snapshot.data ?? const [];
+                final l10n = context.l10n;
                 final filtered = RentalVehicleRepository.applyFilters(
                   allVehicles,
                   carType: _carType,
@@ -110,10 +154,9 @@ class _VehicleSearchResultsScreenState extends State<VehicleSearchResultsScreen>
                           carType: _carType,
                           maxPrice: _maxPrice,
                           transmission: _transmission,
-                          carTypes: _carTypes,
-                          maxPrices: _maxPriceLabels(),
-                          maxPriceKeys: _maxPriceKeys,
-                          transmissions: _transmissions,
+                          carTypeOptions: _carTypeOptions(l10n),
+                          maxPriceOptions: _maxPriceOptions(l10n),
+                          transmissionOptions: _transmissionOptions(l10n),
                           onCarTypeChanged: (v) => setState(() => _carType = v),
                           onMaxPriceChanged: (v) => setState(() => _maxPrice = v),
                           onTransmissionChanged: (v) =>
@@ -211,10 +254,9 @@ class _FilterCard extends StatelessWidget {
     required this.carType,
     required this.maxPrice,
     required this.transmission,
-    required this.carTypes,
-    required this.maxPrices,
-    required this.maxPriceKeys,
-    required this.transmissions,
+    required this.carTypeOptions,
+    required this.maxPriceOptions,
+    required this.transmissionOptions,
     required this.onCarTypeChanged,
     required this.onMaxPriceChanged,
     required this.onTransmissionChanged,
@@ -223,19 +265,12 @@ class _FilterCard extends StatelessWidget {
   final String carType;
   final String maxPrice;
   final String transmission;
-  final List<String> carTypes;
-  final List<String> maxPrices;
-  final List<String> maxPriceKeys;
-  final List<String> transmissions;
+  final List<({String key, String label})> carTypeOptions;
+  final List<({String key, String label})> maxPriceOptions;
+  final List<({String key, String label})> transmissionOptions;
   final ValueChanged<String> onCarTypeChanged;
   final ValueChanged<String> onMaxPriceChanged;
   final ValueChanged<String> onTransmissionChanged;
-
-  String _maxPriceLabel() {
-    final index = maxPriceKeys.indexOf(maxPrice);
-    if (index < 0 || index >= maxPrices.length) return maxPrices.first;
-    return maxPrices[index];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -258,26 +293,21 @@ class _FilterCard extends StatelessWidget {
           _FilterDropdown(
             label: context.l10n.rentalCarType,
             value: carType,
-            items: carTypes,
+            options: carTypeOptions,
             onChanged: onCarTypeChanged,
           ),
           SizedBox(height: 16.h),
           _FilterDropdown(
             label: context.l10n.rentalMaxPrice,
-            value: _maxPriceLabel(),
-            items: maxPrices,
-            onChanged: (label) {
-              final index = maxPrices.indexOf(label);
-              if (index >= 0 && index < maxPriceKeys.length) {
-                onMaxPriceChanged(maxPriceKeys[index]);
-              }
-            },
+            value: maxPrice,
+            options: maxPriceOptions,
+            onChanged: onMaxPriceChanged,
           ),
           SizedBox(height: 16.h),
           _FilterDropdown(
             label: context.l10n.rentalTransmission,
             value: transmission,
-            items: transmissions,
+            options: transmissionOptions,
             onChanged: onTransmissionChanged,
           ),
           SizedBox(height: 16.h),
@@ -313,13 +343,13 @@ class _FilterDropdown extends StatelessWidget {
   const _FilterDropdown({
     required this.label,
     required this.value,
-    required this.items,
+    required this.options,
     required this.onChanged,
   });
 
   final String label;
   final String value;
-  final List<String> items;
+  final List<({String key, String label})> options;
   final ValueChanged<String> onChanged;
 
   @override
@@ -355,8 +385,13 @@ class _FilterDropdown extends StatelessWidget {
                 fontSize: 16.sp,
                 color: AppColors.onSurface,
               ),
-              items: items
-                  .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+              items: options
+                  .map(
+                    (option) => DropdownMenuItem(
+                      value: option.key,
+                      child: Text(option.label),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v != null) onChanged(v);
@@ -733,32 +768,34 @@ class _VehicleSpecsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final iconSize = compact ? 18.sp : 20.sp;
     final fontSize = compact ? 12.sp : 14.sp;
 
     final specs = <Widget>[
       _SpecChip(
         icon: Icons.person_outline,
-        label: '${vehicle.seats} Lugares',
+        label: l10n.rentalSeats('${vehicle.seats}'),
         iconSize: iconSize,
         fontSize: fontSize,
       ),
       _SpecChip(
         icon: Icons.work_outline,
-        label: '${vehicle.bags} ${vehicle.bags == 1 ? 'Mala' : 'Malas'}',
+        label:
+            '${vehicle.bags} ${vehicle.bags == 1 ? l10n.rentalBag : l10n.rentalBags}',
         iconSize: iconSize,
         fontSize: fontSize,
       ),
       if (vehicle.hasAc)
         _SpecChip(
           icon: Icons.ac_unit,
-          label: 'AC',
+          label: l10n.rentalAc,
           iconSize: iconSize,
           fontSize: fontSize,
         ),
       _SpecChip(
         icon: vehicle.isElectric ? Icons.bolt : Icons.settings_input_component,
-        label: vehicle.isElectric ? 'Elétrico' : vehicle.transmissionLabel,
+        label: vehicle.isElectric ? l10n.rentalElectric : vehicle.transmissionLabel,
         iconSize: iconSize,
         fontSize: fontSize,
       ),

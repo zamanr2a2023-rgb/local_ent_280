@@ -165,18 +165,27 @@ class AdminRepository {
     }
 
     final subs = <StreamSubscription<dynamic>>[
-      watchTrips().listen((value) {
-        trips = value;
-        emit();
-      }),
-      _driverOperationalStates.limit(50).snapshots().listen((value) {
-        opsSnap = value;
-        emit();
-      }),
-      _marketConfig.snapshots().listen((value) {
-        marketSnap = value;
-        emit();
-      }),
+      watchTrips().listen(
+        (value) {
+          trips = value;
+          emit();
+        },
+        onError: controller.addError,
+      ),
+      _driverOperationalStates.limit(50).snapshots().listen(
+        (value) {
+          opsSnap = value;
+          emit();
+        },
+        onError: controller.addError,
+      ),
+      _marketConfig.snapshots().listen(
+        (value) {
+          marketSnap = value;
+          emit();
+        },
+        onError: controller.addError,
+      ),
     ];
 
     controller.onCancel = () async {

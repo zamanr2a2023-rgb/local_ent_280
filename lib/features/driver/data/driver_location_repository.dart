@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:local_ent_280/core/data/geo/geohash_encoder.dart';
 import 'package:local_ent_280/firebase_options.dart';
@@ -22,10 +23,14 @@ class DriverLocationSnapshot {
 
 /// Publishes and reads live driver GPS in RTDB `driverLocations/{driverId}`.
 class DriverLocationRepository {
-  DriverLocationRepository({FirebaseDatabase? database})
-      : _database = database ?? _defaultDatabase();
+  DriverLocationRepository({
+    FirebaseDatabase? database,
+    FirebaseFirestore? firestore,
+  })  : _database = database ?? _defaultDatabase(),
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseDatabase _database;
+  final FirebaseFirestore _firestore;
   static const _collection = 'driverLocations';
   static const _geohashPrecision = 9;
 
@@ -65,6 +70,10 @@ class DriverLocationRepository {
     );
     try {
       await _ref(driverId).update(payload);
+      await _firestore.collection('driverStatus').doc(driverId).set({
+        'lastSeenAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Driver location RTDB update failed: $e');
       rethrow;

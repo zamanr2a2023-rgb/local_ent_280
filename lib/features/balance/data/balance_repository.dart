@@ -11,10 +11,7 @@ class ClientBalance {
   final String currency;
 
   String get formattedAmount =>
-      AppCurrencyFormatter.instance.formatStoredMinor(
-        balanceMinor,
-        storedCurrency: currency,
-      );
+      AppCurrencyFormatter.instance.formatEurMinor(balanceMinor);
 }
 
 class ClientBalanceProfile {
@@ -34,11 +31,9 @@ class ClientBalanceProfile {
 
   bool get isBlockedByDebtLimit => balanceMinor <= debtLimitMinor;
 
+  /// Wallet amounts are stored in EUR — always display operation currency.
   String formatMoney(int minor) =>
-      AppCurrencyFormatter.instance.formatStoredMinor(
-        minor,
-        storedCurrency: currency,
-      );
+      AppCurrencyFormatter.instance.formatEurMinor(minor);
 
   String get formattedBalance => formatMoney(balanceMinor);
 
@@ -63,10 +58,8 @@ class BalanceAdjustmentRecord {
   final String adminEmail;
 
   String get formattedDelta {
-    final formatted = AppCurrencyFormatter.instance.formatStoredMinor(
-      deltaMinor.abs(),
-      storedCurrency: currency,
-    );
+    final formatted =
+        AppCurrencyFormatter.instance.formatEurMinor(deltaMinor.abs());
     if (deltaMinor > 0) return '+$formatted';
     if (deltaMinor < 0) return '-$formatted';
     return formatted;

@@ -551,7 +551,7 @@ class _TripBottomSheet extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'ETA • ${DriverEnRouteData.etaTime}',
+                      context.l10n.driverEnRouteEtaAt(DriverEnRouteData.etaTime),
                       style: GoogleFonts.inter(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,

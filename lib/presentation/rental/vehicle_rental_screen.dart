@@ -3,10 +3,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Pesquisa de Aluguer de Veículos — `roles/details.md` mockup.
 class VehicleRentalScreen extends StatefulWidget {
@@ -17,20 +19,16 @@ class VehicleRentalScreen extends StatefulWidget {
 }
 
 class _VehicleRentalScreenState extends State<VehicleRentalScreen> {
-  static const _driverAgeOptions = [
-    '18 - 25 years',
-    '26 - 65 years',
-    '65+ years',
-  ];
+  static const _driverAgeKeys = ['young', 'standard', 'senior'];
 
-  final _pickupController = TextEditingController(text: 'Lisbon Airport, PT');
-  final _dropoffController = TextEditingController(text: 'Same pickup location');
+  final _pickupController = TextEditingController();
+  final _dropoffController = TextEditingController();
 
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _rangeStart = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _rangeEnd = DateTime(DateTime.now().year, DateTime.now().month, 6);
 
-  String _driverAge = _driverAgeOptions[1];
+  String _driverAge = _driverAgeKeys[1];
   bool _premiumOnly = true;
 
   @override
@@ -120,7 +118,7 @@ class _VehicleRentalScreenState extends State<VehicleRentalScreen> {
             ),
           ),
           AppBottomNav(
-            selectedIndex: AppNavIndex.reservas,
+            selectedIndex: AppNavIndex.inicio,
             onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
           ),
         ],
@@ -268,7 +266,7 @@ class _SearchFormCard extends StatelessWidget {
             label: context.l10n.rentalPickupLocation,
             icon: Icons.location_on_outlined,
             controller: pickupController,
-            hint: 'Lisbon Airport, PT',
+            hint: context.l10n.rentalDemoPickupLocation,
           ),
           SizedBox(height: 16.h),
           _LocationField(
@@ -299,7 +297,17 @@ class _SearchFormCard extends StatelessWidget {
           SizedBox(
             height: 56.h,
             child: FilledButton.icon(
-              onPressed: () => AppNavigation.toVehicleSearchResults(context),
+              onPressed: () {
+                RentalBookingDraft.instance.setRentalSchedule(
+                  pickup: pickupController.text,
+                  returnLocation: dropoffController.text.trim().isNotEmpty
+                      ? dropoffController.text
+                      : pickupController.text,
+                  pickupDate: rangeStart,
+                  returnDate: rangeEnd,
+                );
+                AppNavigation.toVehicleSearchResults(context);
+              },
               icon: Icon(Icons.search, size: 22.sp, color: AppColors.onSecondary),
               label: Text(
                 context.l10n.rentalSearchAvailable,
@@ -412,10 +420,19 @@ class _DateCalendarSection extends StatelessWidget {
   final ValueChanged<int> onMonthShift;
   final ValueChanged<DateTime> onDayTap;
 
-  static const _weekdays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+  static List<String> _weekdays(AppLocalizations l10n) => [
+        l10n.rentalWeekdaySun,
+        l10n.rentalWeekdayMon,
+        l10n.rentalWeekdayTue,
+        l10n.rentalWeekdayWed,
+        l10n.rentalWeekdayThu,
+        l10n.rentalWeekdayFri,
+        l10n.rentalWeekdaySat,
+      ];
 
   @override
   Widget build(BuildContext context) {
+    final weekdays = _weekdays(context.l10n);
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -461,7 +478,7 @@ class _DateCalendarSection extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Row(
-            children: _weekdays
+            children: weekdays
                 .map(
                   (d) => Expanded(
                     child: Text(
@@ -656,6 +673,12 @@ class _DriverAgeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final ageOptions = [
+      (key: 'young', label: l10n.rentalDriverAgeYoung),
+      (key: 'standard', label: l10n.rentalDriverAgeStandard),
+      (key: 'senior', label: l10n.rentalDriverAgeSenior),
+    ];
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -692,9 +715,12 @@ class _DriverAgeSection extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                   color: AppColors.onSurface,
                 ),
-                items: _VehicleRentalScreenState._driverAgeOptions
+                items: ageOptions
                     .map(
-                      (o) => DropdownMenuItem(value: o, child: Text(o)),
+                      (option) => DropdownMenuItem(
+                        value: option.key,
+                        child: Text(option.label),
+                      ),
                     )
                     .toList(),
                 onChanged: (v) {

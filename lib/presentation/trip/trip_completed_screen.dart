@@ -11,7 +11,8 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 
 /// Viagem concluída — resumo e avaliação (`roles/details.md`).
 class TripCompletedScreen extends StatefulWidget {
@@ -41,10 +42,14 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
   String get _tripId =>
       widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
 
+  bool _repositoryReady = false;
+
   @override
-  void initState() {
-    super.initState();
-    _tripRepository = widget.tripRepository ?? TripRepository();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_repositoryReady) return;
+    _repositoryReady = true;
+    _tripRepository = widget.tripRepository ?? tripRepositoryOf(context);
     _trip = widget.trip ?? ActiveTripSession.instance.trip;
     final tripId = _tripId;
     if (_trip == null && tripId.isNotEmpty) {
@@ -52,6 +57,11 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
         if (mounted && trip != null) setState(() => _trip = trip);
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   Future<void> _submitRating() async {

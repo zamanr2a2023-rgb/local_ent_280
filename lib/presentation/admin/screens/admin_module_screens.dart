@@ -12,6 +12,7 @@ import 'package:local_ent_280/presentation/admin/admin_drawer.dart';
 import 'package:local_ent_280/presentation/admin/widgets/admin_balance_adjustment_sheet.dart';
 import 'package:local_ent_280/presentation/admin/widgets/admin_transport_type_form_sheet.dart';
 import 'package:local_ent_280/presentation/admin/widgets/admin_trip_package_form_sheet.dart';
+import 'package:local_ent_280/presentation/admin/widgets/admin_assign_driver_sheet.dart';
 import 'package:local_ent_280/presentation/admin/widgets/admin_vehicle_form_sheet.dart';
 import 'package:local_ent_280/presentation/admin/screens/admin_tariff_editor_screen.dart';
 import 'package:local_ent_280/presentation/admin/widgets/admin_scaffold.dart';
@@ -29,8 +30,10 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
   late final AdminModulesRepository _repo;
   StreamSubscription? _sub;
   StreamSubscription? _typesSub;
+  StreamSubscription? _driversSub;
   List<AdminVehicleRecord> _vehicles = const [];
   List<AdminTransportTypeRecord> _transportTypes = const [];
+  List<AdminUserRecord> _drivers = const [];
 
   @override
   void initState() {
@@ -44,13 +47,34 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
       if (!mounted) return;
       setState(() => _transportTypes = items);
     });
+    _driversSub = _repo.watchDrivers().listen((items) {
+      if (!mounted) return;
+      setState(() => _drivers = items);
+    });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
     _typesSub?.cancel();
+    _driversSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _openAssignDriver(AdminVehicleRecord vehicle) async {
+    final assigned = await showAdminAssignDriverSheet(
+      context,
+      vehicle: vehicle,
+      drivers: _drivers,
+      onAssign: (driverId) => _repo.assignVehicleToDriver(
+        driverId: driverId,
+        vehicleId: vehicle.id,
+      ),
+    );
+    if (!mounted || !assigned) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.adminFleetAssignDriverSuccess)),
+    );
   }
 
   Future<void> _openCreateVehicle() async {
@@ -109,6 +133,11 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
                             ? l10n.adminStatusActive
                             : l10n.adminStatusInactive,
                         actions: [
+                          IconButton(
+                            tooltip: l10n.adminFleetAssignDriverTitle,
+                            icon: const Icon(Icons.person_add_alt_1_outlined),
+                            onPressed: () => _openAssignDriver(vehicle),
+                          ),
                           IconButton(
                             icon: const Icon(Icons.edit_outlined),
                             onPressed: () async {

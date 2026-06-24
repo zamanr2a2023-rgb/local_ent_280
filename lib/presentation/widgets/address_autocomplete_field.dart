@@ -18,6 +18,8 @@ class AddressAutocompleteField extends StatefulWidget {
     this.hint,
     this.placesService,
     this.onPlaceSelected,
+    this.biasLatitude,
+    this.biasLongitude,
   });
 
   final IconData icon;
@@ -28,6 +30,8 @@ class AddressAutocompleteField extends StatefulWidget {
   final TextEditingController controller;
   final PlacesAutocompleteService? placesService;
   final ValueChanged<PlacePrediction>? onPlaceSelected;
+  final double? biasLatitude;
+  final double? biasLongitude;
 
   @override
   State<AddressAutocompleteField> createState() =>
@@ -95,7 +99,11 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
     }
 
     setState(() => _isLoading = true);
-    final results = await _placesService.search(query);
+    final results = await _placesService.search(
+      query,
+      biasLatitude: widget.biasLatitude,
+      biasLongitude: widget.biasLongitude,
+    );
     if (!mounted || !_focusNode.hasFocus) return;
 
     setState(() {

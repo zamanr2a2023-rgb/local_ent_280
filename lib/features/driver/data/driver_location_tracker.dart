@@ -40,6 +40,8 @@ class DriverLocationTracker {
     await stop(clearLocation: false);
     _activeDriverId = driverId;
 
+    await _publishImmediatePosition(driverId);
+
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -98,6 +100,21 @@ class DriverLocationTracker {
       _lastLongitude = position.longitude;
     } catch (_) {
       // Keep streaming; next tick may succeed.
+    }
+  }
+
+  Future<void> _publishImmediatePosition(String driverId) async {
+    try {
+      final position = await Geolocator.getLastKnownPosition() ??
+          await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
+      await _handlePosition(driverId, position);
+    } catch (error) {
+      debugPrint('Driver location immediate publish failed: $error');
     }
   }
 

@@ -68,7 +68,7 @@ class AdminActivityMapLayerState extends State<AdminActivityMapLayer> {
     if (widget.data.hasMapCenter) {
       return LatLng(widget.data.centerLatitude!, widget.data.centerLongitude!);
     }
-    return const LatLng(GoogleMapsConfig.lisbonLat, GoogleMapsConfig.lisbonLng);
+    return const LatLng(GoogleMapsConfig.defaultMapLat, GoogleMapsConfig.defaultMapLng);
   }
 
   void _fitCamera() {

@@ -7,6 +7,7 @@ import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/core/policies/service_area_policy.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
 import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
@@ -16,8 +17,11 @@ import 'package:local_ent_280/core/services/places_autocomplete_service.dart';
 import 'package:local_ent_280/core/services/location_permission_helper.dart';
 import 'package:local_ent_280/presentation/widgets/address_autocomplete_field.dart';
 import 'package:local_ent_280/presentation/widgets/current_location_field.dart';
+import 'package:local_ent_280/presentation/widgets/pickup_map_picker_sheet.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/balance/data/balance_repository.dart';
+import 'package:local_ent_280/features/trips/data/client_active_trip_navigator.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
 import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,19 +40,76 @@ class _HomeScreenState extends State<HomeScreen> {
   final _pickupController = TextEditingController();
   final _destinationController = TextEditingController();
   final _locationService = CurrentLocationService();
+  final _tripSheetKey = GlobalKey<_TripBottomSheetState>();
 
   String? _currentAddress;
   double? _pickupLat;
   double? _pickupLng;
   String? _destinationPlaceId;
   bool _isLoadingLocation = true;
+  bool _canConfirmRoute = false;
 
   @override
   void initState() {
     super.initState();
+    _destinationController.addListener(_onDestinationChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
       _requestLocationAccess();
+      _resumeActiveTripIfNeeded();
     });
+  }
+
+  Future<void> _resumeActiveTripIfNeeded() async {
+    final clientId = UserSession.instance.profile?.uid;
+    if (clientId == null || !mounted) return;
+
+    try {
+      final trips = await tripRepositoryOf(context)
+          .watchClientTrips(clientId)
+          .first;
+      if (!mounted) return;
+      final activeTrip = ClientActiveTripNavigator.findResumableTrip(trips);
+      if (activeTrip != null) {
+        ClientActiveTripNavigator.resume(context, activeTrip);
+      }
+    } catch (_) {
+      // Ignore resume errors; home remains usable.
+    }
+  }
+
+  void _expandTripSheet() {
+    _tripSheetKey.currentState?.expand();
+  }
+
+  void _onDestinationChanged() {
+    if (_destinationController.text.trim().isEmpty) {
+      _destinationPlaceId = null;
+    }
+    final canConfirm = _canConfirmRouteNow();
+    if (canConfirm != _canConfirmRoute) {
+      setState(() => _canConfirmRoute = canConfirm);
+    }
+  }
+
+  bool _canConfirmRouteNow() {
+    final pickup = _currentAddress?.trim();
+    final destination = _destinationController.text.trim();
+    return !_isLoadingLocation &&
+        pickup != null &&
+        pickup.isNotEmpty &&
+        destination.isNotEmpty &&
+        _pickupLat != null &&
+        _pickupLng != null;
+  }
+
+  void _refreshCanConfirmRoute() {
+    final canConfirm = _canConfirmRouteNow();
+    if (canConfirm != _canConfirmRoute) {
+      setState(() => _canConfirmRoute = canConfirm);
+    }
   }
 
   Future<void> _requestLocationAccess() async {
@@ -65,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _pickupLat = null;
         _pickupLng = null;
         _pickupController.clear();
+        _canConfirmRoute = false;
       });
       return;
     }
@@ -83,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _pickupLat = cached.latitude;
         _pickupLng = cached.longitude;
         _pickupController.text = cached.address;
+        _canConfirmRoute = _canConfirmRouteNow();
       });
     }
 
@@ -94,14 +157,40 @@ class _HomeScreenState extends State<HomeScreen> {
       _pickupLat = location?.latitude ?? _pickupLat;
       _pickupLng = location?.longitude ?? _pickupLng;
       _pickupController.text = location?.address ?? _pickupController.text;
+      _canConfirmRoute = _canConfirmRouteNow();
+    });
+  }
+
+  Future<void> _selectPickupOnMap() async {
+    if (!mounted) return;
+
+    final granted = await LocationPermissionHelper.ensureGranted(context);
+    if (!granted || !mounted) return;
+
+    final location = await showPickupMapPickerSheet(
+      context,
+      locationService: _locationService,
+      initialLatitude: _pickupLat,
+      initialLongitude: _pickupLng,
+    );
+    if (!mounted || location == null) return;
+
+    setState(() {
+      _isLoadingLocation = false;
+      _currentAddress = location.address;
+      _pickupLat = location.latitude;
+      _pickupLng = location.longitude;
+      _pickupController.text = location.address;
+      _canConfirmRoute = _canConfirmRouteNow();
     });
   }
 
   void _onDestinationSelected(PlacePrediction prediction) {
     _destinationPlaceId = prediction.placeId;
+    _refreshCanConfirmRoute();
   }
 
-  void _confirmRoute(BuildContext context) {
+  void _confirmRoute(BuildContext context) async {
     final l10n = context.l10n;
     final pickup = _currentAddress?.trim();
     final destination = _destinationController.text.trim();
@@ -124,6 +213,32 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
+    if (!ServiceAreaPolicy.isPickupEligibleForDispatch(
+      latitude: _pickupLat!,
+      longitude: _pickupLng!,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homePickupOutsideServiceArea)),
+      );
+      return;
+    }
+
+    final clientId = UserSession.instance.profile?.uid;
+    if (clientId != null) {
+      try {
+        final trips = await tripRepositoryOf(context)
+            .watchClientTrips(clientId)
+            .first;
+        final activeTrip = ClientActiveTripNavigator.findResumableTrip(trips);
+        if (!mounted) return;
+        if (activeTrip != null) {
+          ClientActiveTripNavigator.resume(context, activeTrip);
+          return;
+        }
+      } catch (_) {
+        // Continue with a new booking if the active-trip lookup fails.
+      }
+    }
 
     AppNavigation.toTripConfirm(
       context,
@@ -139,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _destinationController.removeListener(_onDestinationChanged);
     _pickupController.dispose();
     _destinationController.dispose();
     super.dispose();
@@ -184,22 +300,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     horizontal: AppLayout.marginMobile,
                   ),
                   child: _QuickActionsRow(
-                    onPedir: () => AppNavigation.toTripDestination(context),
-                    onReservar: () => AppNavigation.toReservations(context),
-                    // onAlugar: () => AppNavigation.toVehicleRental(context),
-                    onAlugar: () {},
+                    onPedir: _expandTripSheet,
+                    onReservar: () => AppNavigation.toTripDestination(context),
+                    onAlugar: () => AppNavigation.toVehicleRental(context),
                     onHistorico: () => AppNavigation.toTripHistory(context),
                     onSaldo: () => AppNavigation.toClientBalance(context),
                   ),
                 ),
                 SizedBox(height: HomeScreen._gapActionsToSheet),
                 _TripBottomSheet(
+                  key: _tripSheetKey,
                   currentAddress: _currentAddress,
                   isLoadingLocation: _isLoadingLocation,
                   onRefreshLocation: _requestLocationAccess,
+                  onSelectPickupOnMap: _selectPickupOnMap,
                   destinationController: _destinationController,
                   onDestinationSelected: _onDestinationSelected,
                   onConfirmRoute: () => _confirmRoute(context),
+                  canConfirmRoute: _canConfirmRoute,
+                  biasLatitude: _pickupLat,
+                  biasLongitude: _pickupLng,
                 ),
                 AppBottomNav(
                   selectedIndex: AppNavIndex.inicio,
@@ -564,20 +684,29 @@ class _QuickActionButton extends StatelessWidget {
 
 class _TripBottomSheet extends StatefulWidget {
   const _TripBottomSheet({
+    super.key,
     required this.currentAddress,
     required this.isLoadingLocation,
     required this.onRefreshLocation,
+    required this.onSelectPickupOnMap,
     required this.destinationController,
     required this.onDestinationSelected,
     required this.onConfirmRoute,
+    required this.canConfirmRoute,
+    this.biasLatitude,
+    this.biasLongitude,
   });
 
   final String? currentAddress;
   final bool isLoadingLocation;
   final VoidCallback onRefreshLocation;
+  final VoidCallback onSelectPickupOnMap;
   final TextEditingController destinationController;
   final ValueChanged<PlacePrediction> onDestinationSelected;
   final VoidCallback onConfirmRoute;
+  final bool canConfirmRoute;
+  final double? biasLatitude;
+  final double? biasLongitude;
 
   @override
   State<_TripBottomSheet> createState() => _TripBottomSheetState();
@@ -593,6 +722,8 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
   static const _velocityThreshold = 250.0;
 
   void _toggle() => setState(() => _expanded = !_expanded);
+
+  void expand() => setState(() => _expanded = true);
 
   void _onVerticalDragStart(DragStartDetails _) {
     _dragDelta = 0;
@@ -701,9 +832,13 @@ class _TripBottomSheetState extends State<_TripBottomSheet> {
                   currentAddress: widget.currentAddress,
                   isLoadingLocation: widget.isLoadingLocation,
                   onRefreshLocation: widget.onRefreshLocation,
+                  onSelectPickupOnMap: widget.onSelectPickupOnMap,
                   destinationController: widget.destinationController,
                   onDestinationSelected: widget.onDestinationSelected,
                   onConfirmRoute: widget.onConfirmRoute,
+                  canConfirmRoute: widget.canConfirmRoute,
+                  biasLatitude: widget.biasLatitude,
+                  biasLongitude: widget.biasLongitude,
                 ),
               ),
             ),
@@ -719,17 +854,25 @@ class _ExpandedSheetContent extends StatelessWidget {
     required this.currentAddress,
     required this.isLoadingLocation,
     required this.onRefreshLocation,
+    required this.onSelectPickupOnMap,
     required this.destinationController,
     required this.onDestinationSelected,
     required this.onConfirmRoute,
+    required this.canConfirmRoute,
+    this.biasLatitude,
+    this.biasLongitude,
   });
 
   final String? currentAddress;
   final bool isLoadingLocation;
   final VoidCallback onRefreshLocation;
+  final VoidCallback onSelectPickupOnMap;
   final TextEditingController destinationController;
   final ValueChanged<PlacePrediction> onDestinationSelected;
   final VoidCallback onConfirmRoute;
+  final bool canConfirmRoute;
+  final double? biasLatitude;
+  final double? biasLongitude;
 
   @override
   Widget build(BuildContext context) {
@@ -755,6 +898,7 @@ class _ExpandedSheetContent extends StatelessWidget {
                   address: currentAddress,
                   isLoading: isLoadingLocation,
                   onRefresh: onRefreshLocation,
+                  onMapTap: onSelectPickupOnMap,
                 ),
                 SizedBox(height: 12.h),
                 AddressAutocompleteField(
@@ -764,6 +908,8 @@ class _ExpandedSheetContent extends StatelessWidget {
                   controller: destinationController,
                   hint: l10n.homeDestinationHint,
                   onPlaceSelected: onDestinationSelected,
+                  biasLatitude: biasLatitude,
+                  biasLongitude: biasLongitude,
                 ),
               ],
             ),
@@ -773,10 +919,13 @@ class _ExpandedSheetContent extends StatelessWidget {
         SizedBox(
           height: 48.h,
           child: ElevatedButton(
-            onPressed: onConfirmRoute,
+            onPressed: canConfirmRoute ? onConfirmRoute : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.accent,
               foregroundColor: AppColors.onAccent,
+              disabledBackgroundColor:
+                  AppColors.surfaceVariant.withValues(alpha: 0.55),
+              disabledForegroundColor: AppColors.onSurfaceVariant,
               elevation: 4,
               shadowColor: AppColors.accent.withValues(alpha: 0.25),
               shape: RoundedRectangleBorder(

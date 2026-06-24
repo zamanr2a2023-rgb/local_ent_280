@@ -5,6 +5,8 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
+import 'package:local_ent_280/core/services/support_contact_service.dart';
+import 'package:local_ent_280/core/services/support_phone_launcher.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/balance/data/balance_repository.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
@@ -21,6 +23,8 @@ class ClientBalanceScreen extends StatefulWidget {
 
 class _ClientBalanceScreenState extends State<ClientBalanceScreen> {
   late final BalanceRepository _repository;
+  final SupportContactService _supportContactService = SupportContactService();
+  final SupportPhoneLauncher _supportPhoneLauncher = const SupportPhoneLauncher();
 
   @override
   void initState() {
@@ -28,9 +32,57 @@ class _ClientBalanceScreenState extends State<ClientBalanceScreen> {
     _repository = widget.balanceRepository ?? BalanceRepository();
   }
 
-  void _showTopUpComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.clientBalanceTopUpComingSoon)),
+  Future<void> _contactSupportForTopUp() async {
+    final phone = await _supportContactService.fetchSupportPhone();
+    if (!mounted) return;
+
+    if (phone.isEmpty) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.l10n.clientBalanceContactSupport),
+          content: Text(context.l10n.clientBalanceSupportUnavailable),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(context.l10n.cancel),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final result = await _supportPhoneLauncher.call(phone);
+    if (!mounted) return;
+
+    if (result.launched) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.l10n.clientBalanceContactSupport),
+        content: Text(
+          '${context.l10n.clientBalanceSupportCallFailed}\n\n'
+          '${context.l10n.adminSupportPhoneLabel}: ${result.displayPhone}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final retry = await _supportPhoneLauncher.call(result.displayPhone);
+              if (!dialogContext.mounted) return;
+              if (retry.launched) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: Text(context.l10n.tryAgain),
+          ),
+        ],
+      ),
     );
   }
 
@@ -41,7 +93,7 @@ class _ClientBalanceScreenState extends State<ClientBalanceScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: const ClientDrawer(selected: ClientDrawerSection.home),
+      drawer: const ClientDrawer(selected: ClientDrawerSection.balance),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -116,9 +168,34 @@ class _ClientBalanceScreenState extends State<ClientBalanceScreen> {
                           },
                         ),
                         SizedBox(height: 24.h),
-                        FilledButton(
-                          onPressed: _showTopUpComingSoon,
-                          child: Text(l10n.homeTopUp),
+                        _TopUpInfoCard(
+                          title: context.l10n.clientBalanceTopUpTitle,
+                          body: context.l10n.clientBalanceTopUpBody,
+                        ),
+                        SizedBox(height: 16.h),
+                        StreamBuilder<String>(
+                          stream: _supportContactService.watchSupportPhone(),
+                          builder: (context, phoneSnapshot) {
+                            final phone = phoneSnapshot.data?.trim() ?? '';
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (phone.isNotEmpty) ...[
+                                  _InfoCard(
+                                    title: l10n.adminSupportPhoneLabel,
+                                    subtitle: phone,
+                                    trailing: Icons.phone,
+                                  ),
+                                  SizedBox(height: 12.h),
+                                ],
+                                FilledButton.icon(
+                                  onPressed: _contactSupportForTopUp,
+                                  icon: Icon(Icons.support_agent, size: 20.sp),
+                                  label: Text(l10n.clientBalanceContactSupport),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         SizedBox(height: 28.h),
                         Text(
@@ -165,11 +242,62 @@ class _ClientBalanceScreenState extends State<ClientBalanceScreen> {
                     ),
             ),
             AppBottomNav(
-              selectedIndex: AppNavIndex.inicio,
+              selectedIndex: AppNavIndex.saldo,
               onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TopUpInfoCard extends StatelessWidget {
+  const _TopUpInfoCard({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryContainer.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColors.secondary.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: AppColors.secondary, size: 22.sp),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.manrope(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  body,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.sp,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

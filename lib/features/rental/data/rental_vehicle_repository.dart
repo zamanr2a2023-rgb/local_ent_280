@@ -36,12 +36,13 @@ class RentalVehicleRecord {
     final data = doc.data() ?? {};
     final make = (data['make'] as String? ?? '').trim();
     final model = (data['model'] as String? ?? '').trim();
-    final name = [if (make.isNotEmpty) make, if (model.isNotEmpty) model]
-        .join(' ')
-        .trim()
-        .ifEmpty(doc.id);
+    final name = [
+      if (make.isNotEmpty) make,
+      if (model.isNotEmpty) model,
+    ].join(' ').trim().ifEmpty(doc.id);
 
-    final priceMinor = (data['rentalPricePerDayMinor'] as num?)?.toInt() ??
+    final priceMinor =
+        (data['rentalPricePerDayMinor'] as num?)?.toInt() ??
         (data['pricePerDayMinor'] as num?)?.toInt() ??
         9000;
     final category = _normalizeCategory(
@@ -65,10 +66,12 @@ class RentalVehicleRecord {
       hasAc: data['hasAc'] as bool? ?? true,
       transmissionLabel: transmission,
       categoryLabel: category,
-      isPremium: data['isRentalPremium'] as bool? ??
+      isPremium:
+          data['isRentalPremium'] as bool? ??
           data['isPremium'] as bool? ??
           priceMinor >= 10000,
-      isElectric: data['isElectric'] as bool? ??
+      isElectric:
+          data['isElectric'] as bool? ??
           category.toLowerCase().contains('elétric') ||
               category.toLowerCase().contains('electric'),
       notes: data['notes'] as String? ?? '',
@@ -101,13 +104,39 @@ extension _StringEmpty on String {
   String ifEmpty(String fallback) => isEmpty ? fallback : this;
 }
 
+abstract final class RentalVehicleFilterKeys {
+  static const carTypeAll = 'all';
+  static const carTypeSedan = 'sedan';
+  static const carTypeSuv = 'suv';
+  static const carTypeExecutive = 'executive';
+  static const carTypeElectric = 'electric';
+
+  static const transmissionAll = 'all';
+  static const transmissionAutomatic = 'automatic';
+  static const transmissionManual = 'manual';
+
+  static const List<String> carTypes = [
+    carTypeAll,
+    carTypeSedan,
+    carTypeSuv,
+    carTypeExecutive,
+    carTypeElectric,
+  ];
+
+  static const List<String> transmissions = [
+    transmissionAll,
+    transmissionAutomatic,
+    transmissionManual,
+  ];
+}
+
 class RentalVehicleRepository {
   RentalVehicleRepository({
     FirebaseFirestore? firestore,
     this.disabled = false,
     List<RentalVehicleRecord>? mockVehicles,
-  })  : _firestore = firestore,
-        _mockVehicles = mockVehicles;
+  }) : _firestore = firestore,
+       _mockVehicles = mockVehicles;
 
   final FirebaseFirestore? _firestore;
   final bool disabled;
@@ -125,13 +154,15 @@ class RentalVehicleRepository {
         .limit(100)
         .snapshots()
         .map((snapshot) {
-      final records = snapshot.docs.map(RentalVehicleRecord.fromFirestore).toList();
-      records.sort((a, b) {
-        if (a.isPremium != b.isPremium) return a.isPremium ? -1 : 1;
-        return a.pricePerDay.compareTo(b.pricePerDay);
-      });
-      return records;
-    });
+          final records = snapshot.docs
+              .map(RentalVehicleRecord.fromFirestore)
+              .toList();
+          records.sort((a, b) {
+            if (a.isPremium != b.isPremium) return a.isPremium ? -1 : 1;
+            return a.pricePerDay.compareTo(b.pricePerDay);
+          });
+          return records;
+        });
   }
 
   Stream<RentalVehicleRecord?> watchVehicle(String vehicleId) {
@@ -160,21 +191,46 @@ class RentalVehicleRepository {
     required String transmission,
   }) {
     return vehicles.where((vehicle) {
-      if (carType != 'Todos os tipos' &&
-          vehicle.categoryLabel.toLowerCase() != carType.toLowerCase()) {
+      if (carType != RentalVehicleFilterKeys.carTypeAll &&
+          !_matchesCategory(vehicle.categoryLabel, carType)) {
         return false;
       }
       if (maxPrice != 'any') {
         final limit = RentalVehicleRepository.maxPriceLimitForKey(maxPrice);
         if (limit != null && vehicle.pricePerDay > limit) return false;
       }
-      if (transmission != 'Todas' &&
-          vehicle.transmissionLabel.toLowerCase() !=
-              transmission.toLowerCase()) {
+      if (transmission != RentalVehicleFilterKeys.transmissionAll &&
+          !_matchesTransmission(vehicle.transmissionLabel, transmission)) {
         return false;
       }
       return true;
     }).toList();
+  }
+
+  static bool _matchesCategory(String categoryLabel, String filterKey) {
+    final normalized = RentalVehicleRecord._normalizeCategory(
+      categoryLabel,
+    ).toLowerCase();
+    return switch (filterKey) {
+      RentalVehicleFilterKeys.carTypeSedan => normalized == 'sedan',
+      RentalVehicleFilterKeys.carTypeSuv => normalized == 'suv',
+      RentalVehicleFilterKeys.carTypeExecutive => normalized == 'executivo',
+      RentalVehicleFilterKeys.carTypeElectric =>
+        normalized == 'elétrico' || normalized == 'eletrico',
+      _ => true,
+    };
+  }
+
+  static bool _matchesTransmission(String transmissionLabel, String filterKey) {
+    final normalized = RentalVehicleRecord._normalizeTransmission(
+      transmissionLabel,
+    ).toLowerCase();
+    return switch (filterKey) {
+      RentalVehicleFilterKeys.transmissionAutomatic =>
+        normalized == 'automático' || normalized == 'automatico',
+      RentalVehicleFilterKeys.transmissionManual => normalized == 'manual',
+      _ => true,
+    };
   }
 
   static int? maxPriceLimitForKey(String key) {

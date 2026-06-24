@@ -58,6 +58,19 @@ class CurrentLocationService {
     }
   }
 
+  Future<DeviceLocation> locationFromCoordinates({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final address = await _reverseGeocode(latitude, longitude);
+    return DeviceLocation(
+      latitude: latitude,
+      longitude: longitude,
+      address: address ?? _formatCoordinates(latitude, longitude),
+      isCoordinateFallback: address == null,
+    );
+  }
+
   Future<bool> _hasLocationAccess() async {
     final permission = await Geolocator.checkPermission();
     if (permission != LocationPermission.whileInUse &&

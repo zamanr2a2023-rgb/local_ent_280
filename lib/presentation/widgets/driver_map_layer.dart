@@ -14,6 +14,8 @@ class DriverMapLayer extends StatefulWidget {
     this.destination,
     this.showRoute = false,
     this.myLocationEnabled = true,
+    this.trackMyLocation = true,
+    this.includeMyLocationInCameraFit = true,
     this.initialZoom = 13,
     this.overlay,
     this.extraMarkers = const [],
@@ -24,6 +26,10 @@ class DriverMapLayer extends StatefulWidget {
   final TripLocation? destination;
   final bool showRoute;
   final bool myLocationEnabled;
+  /// When false, skips device GPS lookup (trip-only maps).
+  final bool trackMyLocation;
+  /// When false, camera fits only pickup/destination markers.
+  final bool includeMyLocationInCameraFit;
   final double initialZoom;
   final Widget? overlay;
   final List<({double latitude, double longitude, bool isDriver})> extraMarkers;
@@ -61,17 +67,50 @@ class _DriverMapLayerState extends State<DriverMapLayer> {
   }
 
   Future<void> _loadMap() async {
-    final location = await _locationService.getLastKnownLocation() ??
-        await _locationService.getCurrentLocation();
-    if (!mounted) return;
+    LatLng? myLatLng;
+    if (widget.trackMyLocation) {
+      final location = await _locationService.getLastKnownLocation() ??
+          await _locationService.getCurrentLocation();
+      if (!mounted) return;
 
-    final myLatLng = location != null
-        ? LatLng(location.latitude, location.longitude)
-        : const LatLng(GoogleMapsConfig.lisbonLat, GoogleMapsConfig.lisbonLng);
+      myLatLng = location != null
+          ? LatLng(location.latitude, location.longitude)
+          : const LatLng(
+              GoogleMapsConfig.defaultMapLat,
+              GoogleMapsConfig.defaultMapLng,
+            );
+      setState(() => _myLocation = myLatLng);
+    }
 
-    setState(() => _myLocation = myLatLng);
-    await _buildMarkersAndRoute(myLatLng);
+    await _buildMarkersAndRoute(
+      myLatLng ??
+          _tripTarget() ??
+          const LatLng(
+            GoogleMapsConfig.defaultMapLat,
+            GoogleMapsConfig.defaultMapLng,
+          ),
+    );
     _fitCamera();
+  }
+
+  LatLng? _tripTarget() {
+    final pickup = widget.pickup;
+    if (pickup != null && pickup.latitude != 0 && pickup.longitude != 0) {
+      return LatLng(pickup.latitude, pickup.longitude);
+    }
+    final destination = widget.destination;
+    if (destination != null &&
+        destination.latitude != 0 &&
+        destination.longitude != 0) {
+      return LatLng(destination.latitude, destination.longitude);
+    }
+    return null;
+  }
+
+  LatLng get _initialTarget {
+    return _tripTarget() ??
+        _myLocation ??
+        const LatLng(GoogleMapsConfig.defaultMapLat, GoogleMapsConfig.defaultMapLng);
   }
 
   Future<void> _buildMarkersAndRoute(LatLng myLatLng) async {
@@ -151,7 +190,9 @@ class _DriverMapLayerState extends State<DriverMapLayer> {
     if (controller == null) return;
 
     final points = <LatLng>[];
-    if (_myLocation != null) points.add(_myLocation!);
+    if (widget.includeMyLocationInCameraFit && _myLocation != null) {
+      points.add(_myLocation!);
+    }
     final pickup = widget.pickup;
     final destination = widget.destination;
     if (pickup != null && pickup.latitude != 0) {
@@ -199,8 +240,7 @@ class _DriverMapLayerState extends State<DriverMapLayer> {
 
   @override
   Widget build(BuildContext context) {
-    final target = _myLocation ??
-        const LatLng(GoogleMapsConfig.lisbonLat, GoogleMapsConfig.lisbonLng);
+    final target = _initialTarget;
 
     return Stack(
       fit: StackFit.expand,

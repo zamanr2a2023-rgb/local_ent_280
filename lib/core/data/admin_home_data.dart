@@ -6,7 +6,7 @@ abstract final class AdminHomeData {
   static const activityMapImage =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuAHI-WJ4OOJ5X_QOSgU0gE2g9fWV6TXJUXrUrODDDM3pVB5nb-pzwvSeYRbv38AWj4FrfrBVAVmFcj19xZFP5RHuReHXeZozbtTfzv4TyB1r1kM6Ud3bNczvJk1_zDpUy80SXrPjGW36NIR7iHrAcWDTdV8iDjq_MnZMlUkFPwCkfh6Ay8YJHiEie0nJ56aDBrXeSx87i6Z_HdmxYi8EcIOXpo-Fn_9tx5Z4hHridhMk-74y6CAozYDv5nVC0c_mr_zi2IRv5D8y0E';
 
-  static const appBarTitle = 'Mobilidade Premium';
+  static const appBarTitle = 'Local Transport';
 
   static const fleetStatusTitle = 'Estado da Frota';
   static const fleetStatusUpdated = 'Atualizado: Agora';
@@ -68,7 +68,7 @@ class AdminFleetVehicle {
   final AdminFleetStatus status;
 
   String get statusLabel => switch (status) {
-        AdminFleetStatus.emViagem => 'Em Viagem',
-        AdminFleetStatus.inativo => 'Inativo',
-      };
+    AdminFleetStatus.emViagem => 'Em Viagem',
+    AdminFleetStatus.inativo => 'Inativo',
+  };
 }

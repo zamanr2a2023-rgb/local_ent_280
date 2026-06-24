@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:local_ent_280/core/constants/app_assets.dart';
 
 /// Dados do ecrã de confirmação de viagem — `roles/details.md`.
 class TransportOption {
@@ -32,19 +31,19 @@ abstract final class TripConfirmData {
   static const transportOptions = [
     TransportOption(
       id: 'premium',
-      label: 'Premium',
+      label: 'premium',
       price: 12.50,
       icon: Icons.directions_car,
     ),
     TransportOption(
       id: 'eco',
-      label: 'Eco-Eletric',
+      label: 'eco',
       price: 10.80,
       icon: Icons.electric_car,
     ),
     TransportOption(
       id: 'shared',
-      label: 'Partilhado',
+      label: 'shared',
       price: 6.40,
       icon: Icons.hail,
     ),

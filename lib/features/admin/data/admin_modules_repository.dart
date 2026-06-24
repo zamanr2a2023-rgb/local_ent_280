@@ -42,6 +42,14 @@ class AdminModulesRepository {
     );
   }
 
+  Stream<List<AdminUserRecord>> watchDrivers() {
+    return watchUsers().map(
+      (users) => users
+          .where((u) => u.role == 'driver' && u.isActive)
+          .toList(),
+    );
+  }
+
   Future<void> setUserActive(String uid, bool isActive) async {
     if (disabled) return;
     await _db.collection('users').doc(uid).update({
@@ -181,6 +189,40 @@ class AdminModulesRepository {
       'isActive': isActive,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  /// Assigns a vehicle to a driver and removes duplicate vehicle assignments.
+  Future<void> assignVehicleToDriver({
+    required String driverId,
+    required String vehicleId,
+  }) async {
+    if (disabled) return;
+
+    final trimmedDriverId = driverId.trim();
+    final trimmedVehicleId = vehicleId.trim();
+    if (trimmedDriverId.isEmpty || trimmedVehicleId.isEmpty) {
+      throw StateError('Driver and vehicle are required.');
+    }
+
+    final duplicates = await _db
+        .collection('driverVehicleAssignments')
+        .where('vehicleId', isEqualTo: trimmedVehicleId)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in duplicates.docs) {
+      if (doc.id != trimmedDriverId) {
+        batch.delete(doc.reference);
+      }
+    }
+    batch.set(
+      _db.collection('driverVehicleAssignments').doc(trimmedDriverId),
+      {
+        'vehicleId': trimmedVehicleId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+    );
+    await batch.commit();
   }
 
   Stream<List<AdminSupportRequestRecord>> watchSupportRequests() {

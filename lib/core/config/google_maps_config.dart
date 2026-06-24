@@ -20,9 +20,9 @@ abstract final class GoogleMapsConfig {
   @Deprecated('Use GoogleMapsConfig.apiKey')
   static const String placesApiKey = apiKey;
 
-  /// Bias autocomplete suggestions toward Lisbon.
-  static const double lisbonLat = 38.7223;
-  static const double lisbonLng = -9.1393;
+  /// Fallback map centre (Praia, Cabo Verde) when no device location is available.
+  static const double defaultMapLat = 14.9177;
+  static const double defaultMapLng = -23.5092;
 
   static bool get isConfigured => apiKey.trim().isNotEmpty;
 }

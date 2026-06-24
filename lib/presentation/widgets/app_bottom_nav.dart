@@ -5,7 +5,7 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 
-/// Client: Home, Trips, Reservations, Profile. Driver: Home, Trips, Profile.
+/// Client: Home, Trips, Balance, Profile. Driver: Home, Trips, Profile.
 enum AppBottomNavMode { full, driver }
 
 /// Shared bottom navigation — same layout on every tab/screen.
@@ -25,7 +25,7 @@ class AppBottomNav extends StatelessWidget {
   static const _fullIcons = [
     Icons.home,
     Icons.directions_car,
-    Icons.calendar_today,
+    Icons.account_balance_wallet,
     Icons.person,
   ];
 
@@ -45,7 +45,7 @@ class AppBottomNav extends StatelessWidget {
         : [
             l10n.navHome,
             l10n.navTrips,
-            l10n.navReservations,
+            l10n.navBalance,
             l10n.navProfile,
           ];
     final bottomPadding = MediaQuery.paddingOf(context).bottom;

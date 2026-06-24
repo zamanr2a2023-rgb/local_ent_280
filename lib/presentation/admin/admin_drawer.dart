@@ -7,7 +7,8 @@ import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/theme/app_typography.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/presentation/login/login_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -80,7 +81,7 @@ class AdminDrawer extends StatelessWidget {
     }
 
     try {
-      await (_authRepository ?? AuthRepository()).signOut();
+      await (_authRepository ?? authRepositoryOf(context)).signOut();
       rootNavigator.pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
         (_) => false,
@@ -111,7 +112,7 @@ class AdminDrawer extends StatelessWidget {
                 AppLayout.lg,
               ),
               child: Text(
-                l10n.adminAppBarTitle,
+                l10n.appNameLocalTransport,
                 style: AppTypography.manrope(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,

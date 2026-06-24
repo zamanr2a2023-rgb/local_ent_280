@@ -20,6 +20,7 @@
   "navHome": "Home",
   "navTrips": "Trips",
   "navReservations": "Reservations",
+  "navBalance": "Balance",
   "navProfile": "Profile",
   "loginSubtitle": "Sign in to manage your trips.",
   "loginSettingsTooltip": "Settings",
@@ -124,23 +125,23 @@
   "profilePhotoTakePhoto": "Take photo",
   "profilePhotoUpdated": "Profile photo updated",
   "profilePhotoUpdateFailed": "Could not update profile photo. Try again.",
-  "profilePhotoPermissionDenied": "Photo upload blocked. Publish Storage rules from roles/storage.rules in Firebase Console.",
+  "profilePhotoPermissionDenied": "Photo upload is not allowed. Contact support if the problem persists.",
   "profilePhotoUploading": "Uploading photo...",
   "profileEditName": "Edit name",
   "profileNameHint": "Your name",
   "profileNameUpdated": "Name updated",
   "profileNameUpdateFailed": "Could not update name. Try again.",
-  "profileNamePermissionDenied": "Name update blocked. Publish Firestore rules from roles/firestore.rules in Firebase Console.",
+  "profileNamePermissionDenied": "Could not update your name. Check your session or contact support.",
   "profileNameEmpty": "Please enter your name.",
   "homeAvailableBalance": "Available balance",
-  "homeTopUp": "Top up",
+  "homeTopUp": "View balance",
   "homeActionRequest": "Request",
   "homeActionBook": "Book",
   "homeActionRent": "Rent",
   "homeActionHistory": "History",
   "homeActionBalance": "Balance",
   "clientBalanceTitle": "Balance",
-  "clientBalanceSubtitle": "Live wallet from Firebase balances collection.",
+  "clientBalanceSubtitle": "Your account balance, updated in real time.",
   "clientBalanceDebtLimit": "Debt limit",
   "clientBalanceLastUpdated": "Last updated",
   "clientBalanceHistoryTitle": "Recent adjustments",
@@ -148,8 +149,13 @@
   "clientBalanceHistoryEmptyBody": "Admin balance changes will appear here.",
   "clientBalanceAdjustmentDefault": "Balance adjustment",
   "clientBalanceDebtWarningTitle": "Debt limit reached",
-  "clientBalanceDebtWarningBody": "Top up your balance to continue booking trips.",
-  "clientBalanceTopUpComingSoon": "Online top-up will be available soon. Contact support for help.",
+  "clientBalanceDebtWarningBody": "Contact support to top up your balance and continue booking trips.",
+  "clientBalanceTopUpTitle": "How to top up",
+  "clientBalanceTopUpBody": "Balance top-ups are managed by support. Call support to request a credit — it will appear here after admin approval.",
+  "clientBalanceContactSupport": "Contact support",
+  "clientBalanceSupportUnavailable": "Support phone number unavailable. Contact the support team.",
+  "clientBalanceSupportCallFailed": "Could not open the phone dialer on this device.",
+  "tripConfirmLimitExceededCallSupport": "Call support",
   "clientBalanceUnavailable": "Balance unavailable",
   "homeWhereToday": "Where are we going today?",
   "homeCurrentLocation": "Current location",
@@ -159,6 +165,9 @@
   "homeLocationLoading": "Getting your location...",
   "homeLocationUnavailable": "Unable to get your location",
   "homeRefreshLocation": "Refresh location",
+  "homeSelectLocationOnMap": "Select on map",
+  "homeSelectLocationOnMapHint": "Move the map or tap the location button to use your current position.",
+  "homeUseMapLocation": "Use this location",
   "homeLocationPermissionTitle": "Allow location access",
   "homeLocationPermissionMessage": "Local Transport needs your location to set your pickup point automatically.",
   "homeLocationPermissionAllow": "Allow",
@@ -193,7 +202,7 @@
   "support": "Support",
   "destination": "Destination",
   "details": "Details",
-  "premiumMobility": "Premium Mobility",
+  "premiumMobility": "Local Transport",
   "seeAll": "See all",
   "edit": "Edit",
   "total": "Total",
@@ -215,7 +224,7 @@
   "splashInstantBookingTitle": "Instant Bookings",
   "splashInstantBookingSubtitle": "Plan your trip in seconds with our exclusive network.",
   "splashDriverOfToday": "TODAY'S DRIVER",
-  "adminAppBarTitle": "Premium Mobility",
+  "adminAppBarTitle": "Local Transport",
   "adminFleetStatusTitle": "Fleet Status",
   "adminFleetStatusUpdated": "Updated: Now",
   "adminActiveTripsLabel": "Active Trips",
@@ -325,7 +334,7 @@
   "adminMonitoringTitle": "Monitoring settings",
   "adminMonitoringDesc": "Thresholds for operational monitoring.",
   "adminMonitoringHeading": "Operational monitoring",
-  "adminMonitoringSubtitle": "Review monitoring thresholds stored in Firebase.",
+  "adminMonitoringSubtitle": "Review operational monitoring thresholds.",
   "adminMonitoringConfig": "Current configuration",
   "adminMonitoringLoading": "Loading monitoring configuration...",
   "adminMonitoringEnabled": "Monitoring enabled",
@@ -357,6 +366,10 @@
   "adminFleetDesc": "Track vehicles, status and availability.",
   "adminFleetNoDriver": "No driver assigned",
   "adminFleetDriver": "Driver",
+  "adminFleetAssignDriverTitle": "Assign driver",
+  "adminFleetAssignDriverDesc": "Select a driver for this vehicle.",
+  "adminFleetAssignDriverEmpty": "No active drivers found.",
+  "adminFleetAssignDriverSuccess": "Driver assigned successfully.",
   "adminTransportTypesTitle": "Types of transport",
   "adminTransportTypesDesc": "Create and manage available types.",
   "adminTransportTypesEmpty": "No transport types",
@@ -446,11 +459,11 @@
   "adminReportsTabOverview": "Operational Overview",
   "adminReportsTabClient": "Customer Statement",
   "adminReportsTabDriver": "Driver's Statement",
-  "adminReportsTabComingSoon": "This report view will load statement data from Firebase trips and balance adjustments.",
+  "adminReportsTabComingSoon": "Trip and balance statement reports will be available soon.",
   "adminCurrencyTitle": "Currency settings",
   "adminCurrencyDesc": "FX rates used for CVE, EUR and USD.",
   "adminCurrencyHeading": "Currency settings",
-  "adminCurrencySubtitle": "Set exchange rates in config/currency.",
+  "adminCurrencySubtitle": "Set exchange rates for EUR, CVE and USD display.",
   "adminCurrencyCveToEur": "CVE to EUR",
   "adminCurrencyCveToUsd": "CVE to USD",
   "adminCurrencySaveSuccess": "Currency settings saved",
@@ -565,8 +578,8 @@
   "rentalPremiumChoice": "Premium Choice",
   "rentalAllCars": "All Cars",
   "rentalLoadMore": "Load more vehicles",
-  "rentalLoadError": "Could not load vehicles from Firebase.",
-  "rentalNoVehicles": "No active vehicles found in Firebase.",
+  "rentalLoadError": "Could not load vehicles. Please try again.",
+  "rentalNoVehicles": "No vehicles available at the moment.",
   "rentalVehicleDetails": "Vehicle Details",
   "rentalRating": "Rating",
   "rentalPowertrain": "Powertrain",
@@ -621,8 +634,8 @@
   "tripHistoryStatusInProgress": "In progress",
   "tripHistoryStatusScheduled": "Scheduled",
   "tripHistoryEmpty": "No trips yet",
-  "tripHistoryEmptyBody": "Your Firebase trips will appear here after you request a ride.",
-  "tripHistoryLoadError": "Could not load trips from Firebase.",
+  "tripHistoryEmptyBody": "Your trips will appear here after you request a ride.",
+  "tripHistoryLoadError": "Could not load trips. Please try again.",
   "tripHistoryNoDetails": "No details",
   "tripDetailsRateExperience": "Rate your experience",
   "tripDetailsDigitalInvoice": "Digital Invoice",
@@ -652,12 +665,33 @@
   "tripInProgressArrivalLabel": "Estimated arrival",
   "tripInProgressCostLabel": "Estimated Cost",
   "driverSearchSubtitle": "Connecting you to the nearest vehicles in Central Lisbon.",
+  "driverSearchSubtitleFallback": "Connecting you to the nearest available vehicles.",
+  "driverSearchSubtitleArea": "Connecting you to the nearest vehicles near {area}.",
+  "@driverSearchSubtitleArea": {
+    "placeholders": {
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "driverSearchOrigin": "ORIGIN",
   "driverSearchEstimate": "ESTIMATE",
+  "driverSearchWaitEstimate": "3–5 min",
+  "driverSearchWaitMinutes": "{minutes} min",
+  "@driverSearchWaitMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "driverSearchCancelTrip": "Cancel Trip",
   "driverSearchCancelling": "Cancelling...",
   "driverSearchCancelFailed": "Unable to cancel the trip.",
   "driverSearchNoDrivers": "No drivers available. Please try again.",
+  "driverSearchNoDriversNearby": "No drivers found near your pickup. The driver must be available within 100 km.",
+  "driverSearchNoDriversMissingVehicle": "Nearby drivers have no vehicle assigned. Ask admin to assign a vehicle.",
+  "homePickupOutsideServiceArea": "Pickup is outside the service area. Use a location in Cabo Verde (or Portugal for dev testing).",
   "driverSearchOptimizing": "Optimizing route in real time...",
   "driverFoundWaiting": "Awaiting confirmation...",
   "driverFoundEstimatedTime": "Estimated time",
@@ -687,7 +721,13 @@
   "tripConfirmSessionInvalid": "Invalid session. Please sign in again.",
   "tripConfirmRouteLoading": "Please wait for the route to finish loading.",
   "tripConfirmCreateFailed": "Unable to create the trip. Please try again.",
-  "tripConfirmPermissionDenied": "Trip creation is blocked by Firebase rules. Publish the updated rules and sign in as a client.",
+  "tripConfirmPermissionDenied": "Could not create the trip. Check your balance and session, or contact support.",
+  "tripConfirmDestinationFailed": "Could not locate the destination. Check the address or pick a suggestion from the list.",
+  "tripConfirmDirectionsFailed": "Could not calculate the route. Check your connection and Google Maps API settings.",
+  "tripConfirmTransportTypesFailed": "Transport options are unavailable. Try again in a moment.",
+  "tripConfirmPriceUnavailable": "Trip price is unavailable. Wait for the route to load or choose another destination.",
+  "tripConfirmLimitExceeded": "Insufficient balance to request this trip. Top up your account and try again.",
+  "tripConfirmDirectionsApproximate": "Exact route unavailable. Distance and price are approximate.",
   "tripConfirmPickupPoint": "PICKUP POINT",
   "tripConfirmFinalDestination": "FINAL DESTINATION",
   "tripConfirmTransportPremium": "Premium",
@@ -712,7 +752,8 @@
   "driverTripsLabel": "Trips",
   "driverDistanceLabel": "Distance",
   "driverRecentTrips": "Recent Trips",
-  "driverLocationCity": "Lisbon, PT",
+  "driverLocationCity": "Praia, CV",
+  "driverLocationLoading": "Locating...",
   "driverHoursAgo": "{hours}h ago",
   "@driverHoursAgo": {
     "placeholders": {
@@ -781,5 +822,127 @@
   "adminReportsEfficiencyFooter": "Your fleet is operating 15% above the industry average this quarter.",
   "adminDrawerFleetManager": "Fleet Manager",
   "adminDrawerFleetSubtitle": "Central Lisbon Fleet",
-  "adminDrawerRoleBadge": "Admin"
+  "adminDrawerRoleBadge": "Admin",
+  "adminTariffNoTransportTypes": "Configure transport types first.",
+  "adminTariffInvalidAmounts": "Enter valid amounts.",
+  "adminTariffInvalidBaseFare": "Invalid base fare for {typeName}.",
+  "@adminTariffInvalidBaseFare": {
+    "placeholders": {
+      "typeName": {
+        "type": "String"
+      }
+    }
+  },
+  "rentalAc": "AC",
+  "rentalElectric": "Electric",
+  "rentalAllTypes": "All types",
+  "rentalCarTypeSedan": "Sedan",
+  "rentalCarTypeSuv": "SUV",
+  "rentalCarTypeExecutive": "Executive",
+  "rentalCarTypeElectric": "Electric",
+  "rentalTransmissionAll": "All",
+  "rentalTransmissionAutomatic": "Automatic",
+  "rentalTransmissionManual": "Manual",
+  "rentalAnyPrice": "Any price",
+  "rentalPriceUpTo": "Up to {price}",
+  "@rentalPriceUpTo": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "driverEnRouteEtaAt": "ETA • {time}",
+  "@driverEnRouteEtaAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rentalWeekdaySun": "SUN",
+  "rentalWeekdayMon": "MON",
+  "rentalWeekdayTue": "TUE",
+  "rentalWeekdayWed": "WED",
+  "rentalWeekdayThu": "THU",
+  "rentalWeekdayFri": "FRI",
+  "rentalWeekdaySat": "SAT",
+  "rentalDemoPickupLocation": "Lisbon Airport, PT",
+  "rentalDriverAgeYoung": "18 - 25 years",
+  "rentalDriverAgeStandard": "26 - 65 years",
+  "rentalDriverAgeSenior": "65+ years",
+  "rentalDemoSportPremium": "SPORT PREMIUM",
+  "rentalDemoVehicleName": "Porsche Taycan 4S",
+  "rentalInsuranceDescription": "Full protection against own damage and 24/7 roadside assistance at no extra cost.",
+  "rentalInsuranceFranchiseWaiver": "Excess waiver",
+  "rentalInsuranceCdw": "Collision damage (CDW)",
+  "rentalFuelPolicyElectric": "Full-to-full policy or return with more than 80% charge for electric vehicles.",
+  "rentalBookingRentalDays": "Rental ({days} days)",
+  "@rentalBookingRentalDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "rentalBookingPremiumInsurance": "Premium insurance",
+  "rentalBookingIncluded": "Included",
+  "rentalBookingAirportFees": "Airport fees",
+  "rentalDemoAirportLocation": "Lisbon Airport, LIS",
+  "rentalSpecPower": "Power",
+  "rentalSpecPowerValue": "530 hp",
+  "rentalSpecRange": "WLTP range",
+  "rentalSpecRangeValue": "463 km",
+  "rentalSpecDrive": "Drive",
+  "rentalSpecDriveValue": "All-wheel (AWD)",
+  "rentalVehicleSummary": "{price} · {seats} · {transmission}",
+  "@rentalVehicleSummary": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "String"
+      },
+      "transmission": {
+        "type": "String"
+      }
+    }
+  },
+  "eventDemoGenre": "ELECTRONIC MUSIC",
+  "eventDemoTitle": "Summer Gala: Porto Sunset",
+  "eventDemoDescription": "Get ready for the most exclusive night of the year. The Summer Gala in Porto combines melodic electronic music with stunning views over the Douro River. Premium catering, VIP lounge areas and an immersive audiovisual experience await.",
+  "eventDemoVenue": "Alfândega do Porto",
+  "eventPaymentMbway": "MB WAY",
+  "discoverMapRestaurantLabel": "Maré Restaurant",
+  "discoverMapBeachLabel": "Secret Beach",
+  "reservationDemoVehicleName": "Tesla Model 3 Performance",
+  "reservationDemoVehicleSpecs": "{powertrain} • {seats} • {transmission}",
+  "@reservationDemoVehicleSpecs": {
+    "placeholders": {
+      "powertrain": {
+        "type": "String"
+      },
+      "seats": {
+        "type": "String"
+      },
+      "transmission": {
+        "type": "String"
+      }
+    }
+  },
+  "reservationDemoAirport": "Lisbon Airport (LIS)",
+  "reservationDemoPickupDateTime": "15 Oct, 2023 at 10:00",
+  "reservationDemoReturnDateTime": "20 Oct, 2023 at 18:00",
+  "reservationRentalDaysLine": "Rental ({days} days)",
+  "@reservationRentalDaysLine": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reservationInsuranceLine": "Full insurance",
+  "reservationDefaultVehicle": "Vehicle",
+  "reservationDefaultCity": "Lisbon"
 }

@@ -11,7 +11,8 @@ import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/core/data/trip_history_data.dart';
 import 'package:local_ent_280/features/trips/data/trip_history_mapper.dart';
-import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 
 /// Detalhes da Viagem — `roles/details.md`.
@@ -46,7 +47,7 @@ class TripDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = tripRepository ?? TripRepository();
+    final repository = tripRepository ?? tripRepositoryOf(context);
     if (tripId != null) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -99,33 +100,15 @@ class TripDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _DetailsAppBar(onBack: () => AppNavigation.back(context)),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.marginMobile,
-                  12.h,
-                  AppLayout.marginMobile,
-                  24.h,
-                ),
-                children: [
-                  const _MapCard(),
-                  SizedBox(height: 16.h),
-                  const _SummaryCard(),
-                  SizedBox(height: 16.h),
-                  const _RatingCard(),
-                  SizedBox(height: 16.h),
-                  const _InvoiceCard(),
-                  SizedBox(height: 16.h),
-                  const _DriverCard(),
-                  SizedBox(height: 16.h),
-                  const _SupportCard(),
-                ],
-              ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(AppLayout.marginMobile),
+            child: Text(
+              context.l10n.tripHistoryEmpty,
+              style: AppTypography.inter(fontSize: 14.sp),
+              textAlign: TextAlign.center,
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -158,7 +141,7 @@ class _DetailsAppBar extends StatelessWidget {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              context.l10n.premiumMobility,
+              context.l10n.appNameLocalTransport,
               style: AppTypography.manrope(
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w700,

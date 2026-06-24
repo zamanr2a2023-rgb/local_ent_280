@@ -3,7 +3,8 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:local_ent_280/features/auth/data/auth_exception.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
 import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 
@@ -36,7 +37,7 @@ void main() {
     auth = MockFirebaseAuth(
       mockUser: MockUser(uid: uid, email: email),
     );
-    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+    repository = AuthRepositoryImpl(firebaseAuth: auth, firestore: firestore);
   });
 
   tearDown(() {
@@ -149,7 +150,7 @@ void main() {
       signedIn: true,
       mockUser: MockUser(uid: uid, email: email),
     );
-    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+    repository = AuthRepositoryImpl(firebaseAuth: auth, firestore: firestore);
 
     final profile = await repository.restoreSession();
 
@@ -163,7 +164,7 @@ void main() {
       signedIn: true,
       mockUser: MockUser(uid: uid, email: email),
     );
-    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+    repository = AuthRepositoryImpl(firebaseAuth: auth, firestore: firestore);
 
     final profile = await repository.restoreSession();
 
@@ -173,7 +174,7 @@ void main() {
 
   test('signUp creates client profile in Firestore', () async {
     auth = MockFirebaseAuth();
-    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+    repository = AuthRepositoryImpl(firebaseAuth: auth, firestore: firestore);
 
     final profile = await repository.signUp(
       name: 'New Client',
@@ -194,7 +195,7 @@ void main() {
 
   test('signUp creates driver profile and driverStatus', () async {
     auth = MockFirebaseAuth();
-    repository = AuthRepository(firebaseAuth: auth, firestore: firestore);
+    repository = AuthRepositoryImpl(firebaseAuth: auth, firestore: firestore);
 
     final profile = await repository.signUp(
       name: 'New Driver',

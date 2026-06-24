@@ -97,4 +97,25 @@ class CatalogRepository {
       return (data['serviceFeeMinor'] as num?)?.toInt() ?? 0;
     });
   }
+
+  Stream<CatalogPackage?> watchPackage(String packageId) {
+    if (disabled || packageId.isEmpty) {
+      return Stream<CatalogPackage?>.value(null);
+    }
+    return _db.collection('tripPackages').doc(packageId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      final isActive = doc.data()?['isActive'] as bool? ?? true;
+      if (!isActive) return null;
+      return CatalogPackage.fromFirestore(doc);
+    });
+  }
+
+  Future<CatalogPackage?> fetchPackage(String packageId) async {
+    if (disabled || packageId.isEmpty) return null;
+    final doc = await _db.collection('tripPackages').doc(packageId).get();
+    if (!doc.exists) return null;
+    final isActive = doc.data()?['isActive'] as bool? ?? true;
+    if (!isActive) return null;
+    return CatalogPackage.fromFirestore(doc);
+  }
 }

@@ -51,6 +51,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navReservations => 'Reservas';
 
   @override
+  String get navBalance => 'Saldo';
+
+  @override
   String get navProfile => 'Perfil';
 
   @override
@@ -348,7 +351,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profilePhotoPermissionDenied =>
-      'Subida de foto bloqueada. Publique las reglas Storage (roles/storage.rules) en la consola Firebase.';
+      'No tienes permiso para subir la foto. Contacta con soporte si el problema persiste.';
 
   @override
   String get profilePhotoUploading => 'Subiendo foto...';
@@ -368,7 +371,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileNamePermissionDenied =>
-      'Actualización del nombre bloqueada. Publique las reglas Firestore (roles/firestore.rules) en la consola Firebase.';
+      'No se pudo actualizar el nombre. Comprueba tu sesión o contacta con soporte.';
 
   @override
   String get profileNameEmpty => 'Introduzca su nombre.';
@@ -377,7 +380,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeAvailableBalance => 'Saldo disponible';
 
   @override
-  String get homeTopUp => 'Recargar';
+  String get homeTopUp => 'Ver saldo';
 
   @override
   String get homeActionRequest => 'Pedir';
@@ -399,7 +402,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get clientBalanceSubtitle =>
-      'Monedero en vivo desde la colección balances de Firebase.';
+      'Saldo de tu cuenta actualizado en tiempo real.';
 
   @override
   String get clientBalanceDebtLimit => 'Límite de deuda';
@@ -425,11 +428,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get clientBalanceDebtWarningBody =>
-      'Recarga tu saldo para seguir reservando viajes.';
+      'Contacta con soporte para recargar el saldo y seguir reservando viajes.';
 
   @override
-  String get clientBalanceTopUpComingSoon =>
-      'La recarga online estará disponible pronto. Contacta con soporte si necesitas ayuda.';
+  String get clientBalanceTopUpTitle => 'Cómo recargar';
+
+  @override
+  String get clientBalanceTopUpBody =>
+      'La recarga del saldo la gestiona soporte. Llama para solicitar crédito — aparecerá aquí tras la aprobación del administrador.';
+
+  @override
+  String get clientBalanceContactSupport => 'Contactar soporte';
+
+  @override
+  String get clientBalanceSupportUnavailable =>
+      'Teléfono de soporte no disponible. Contacta con el equipo de soporte.';
+
+  @override
+  String get clientBalanceSupportCallFailed =>
+      'No se pudo abrir el marcador telefónico en este dispositivo.';
+
+  @override
+  String get tripConfirmLimitExceededCallSupport => 'Llamar a soporte';
 
   @override
   String get clientBalanceUnavailable => 'Saldo no disponible';
@@ -457,6 +477,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeRefreshLocation => 'Actualizar ubicación';
+
+  @override
+  String get homeSelectLocationOnMap => 'Seleccionar en el mapa';
+
+  @override
+  String get homeSelectLocationOnMapHint =>
+      'Mueva el mapa o toque el botón de ubicación para usar su posición actual.';
+
+  @override
+  String get homeUseMapLocation => 'Usar esta ubicación';
 
   @override
   String get homeLocationPermissionTitle => 'Permitir ubicación';
@@ -565,7 +595,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get details => 'Detalles';
 
   @override
-  String get premiumMobility => 'Movilidad Premium';
+  String get premiumMobility => 'Local Transport';
 
   @override
   String get seeAll => 'Ver todos';
@@ -633,7 +663,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get splashDriverOfToday => 'CONDUCTOR DE HOY';
 
   @override
-  String get adminAppBarTitle => 'Movilidad Premium';
+  String get adminAppBarTitle => 'Local Transport';
 
   @override
   String get adminFleetStatusTitle => 'Estado de la flota';
@@ -922,7 +952,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminMonitoringSubtitle =>
-      'Revisar umbrales guardados en Firebase.';
+      'Revisar los límites de monitorización operativa.';
 
   @override
   String get adminMonitoringConfig => 'Configuración actual';
@@ -1001,6 +1031,21 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminFleetDriver => 'Conductor';
+
+  @override
+  String get adminFleetAssignDriverTitle => 'Asignar conductor';
+
+  @override
+  String get adminFleetAssignDriverDesc =>
+      'Seleccione un conductor para este vehículo.';
+
+  @override
+  String get adminFleetAssignDriverEmpty =>
+      'No se encontraron conductores activos.';
+
+  @override
+  String get adminFleetAssignDriverSuccess =>
+      'Conductor asignado correctamente.';
 
   @override
   String get adminTransportTypesTitle => 'Tipos de transporte';
@@ -1263,7 +1308,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminReportsTabComingSoon =>
-      'Esta vista cargará datos de viajes y ajustes de saldo desde Firebase.';
+      'Los informes de viajes y movimientos de saldo estarán disponibles pronto.';
 
   @override
   String get adminCurrencyTitle => 'Ajustes de moneda';
@@ -1276,7 +1321,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminCurrencySubtitle =>
-      'Definir tipos de cambio en config/currency.';
+      'Definir tipos de cambio para la visualización en EUR, CVE y USD.';
 
   @override
   String get adminCurrencyCveToEur => 'CVE a EUR';
@@ -1598,11 +1643,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get rentalLoadError =>
-      'No se pudieron cargar los vehículos desde Firebase.';
+      'No se pudieron cargar los vehículos. Inténtalo de nuevo.';
 
   @override
   String get rentalNoVehicles =>
-      'No se encontraron vehículos activos en Firebase.';
+      'No hay vehículos disponibles en este momento.';
 
   @override
   String get rentalVehicleDetails => 'Detalles del vehículo';
@@ -1752,11 +1797,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripHistoryEmptyBody =>
-      'Tus viajes de Firebase aparecerán aquí después de solicitar un trayecto.';
+      'Tus viajes aparecerán aquí después de solicitar un trayecto.';
 
   @override
   String get tripHistoryLoadError =>
-      'No se pudieron cargar los viajes desde Firebase.';
+      'No se pudieron cargar los viajes. Inténtalo de nuevo.';
 
   @override
   String get tripHistoryNoDetails => 'Sin detalles';
@@ -1848,10 +1893,27 @@ class AppLocalizationsEs extends AppLocalizations {
       'Conectándole con los vehículos más cercanos en Lisboa Central.';
 
   @override
+  String get driverSearchSubtitleFallback =>
+      'Conectando con los vehículos disponibles más cercanos.';
+
+  @override
+  String driverSearchSubtitleArea(String area) {
+    return 'Conectando con los vehículos más cercanos cerca de $area.';
+  }
+
+  @override
   String get driverSearchOrigin => 'ORIGEN';
 
   @override
   String get driverSearchEstimate => 'ESTIMACIÓN';
+
+  @override
+  String get driverSearchWaitEstimate => '3–5 min';
+
+  @override
+  String driverSearchWaitMinutes(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get driverSearchCancelTrip => 'Cancelar viaje';
@@ -1865,6 +1927,18 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get driverSearchNoDrivers =>
       'No hay conductores disponibles. Inténtelo de nuevo.';
+
+  @override
+  String get driverSearchNoDriversNearby =>
+      'No hay conductores cerca de la recogida. El conductor debe estar disponible en un radio de 100 km.';
+
+  @override
+  String get driverSearchNoDriversMissingVehicle =>
+      'Los conductores cercanos no tienen vehículo asignado. Pida al admin que asigne un vehículo.';
+
+  @override
+  String get homePickupOutsideServiceArea =>
+      'La recogida está fuera del área de servicio. Use una ubicación en Cabo Verde (o Portugal en pruebas dev).';
 
   @override
   String get driverSearchOptimizing => 'Optimizando ruta en tiempo real...';
@@ -1940,7 +2014,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tripConfirmPermissionDenied =>
-      'La creación del viaje está bloqueada por las reglas de Firebase. Publique las reglas actualizadas e inicie sesión como cliente.';
+      'No se pudo crear el viaje. Comprueba tu saldo y sesión, o contacta con soporte.';
+
+  @override
+  String get tripConfirmDestinationFailed =>
+      'No se pudo localizar el destino. Compruebe la dirección o elija una sugerencia de la lista.';
+
+  @override
+  String get tripConfirmDirectionsFailed =>
+      'No se pudo calcular la ruta. Compruebe la conexión y la configuración de la API de Google Maps.';
+
+  @override
+  String get tripConfirmTransportTypesFailed =>
+      'Opciones de transporte no disponibles. Inténtelo de nuevo en un momento.';
+
+  @override
+  String get tripConfirmPriceUnavailable =>
+      'Precio del viaje no disponible. Espere a que se cargue la ruta o elija otro destino.';
+
+  @override
+  String get tripConfirmLimitExceeded =>
+      'Saldo insuficiente para solicitar este viaje. Recargue la cuenta e inténtelo de nuevo.';
+
+  @override
+  String get tripConfirmDirectionsApproximate =>
+      'Ruta exacta no disponible. Distancia y precio son aproximados.';
 
   @override
   String get tripConfirmPickupPoint => 'PUNTO DE RECOGIDA';
@@ -1996,7 +2094,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get driverRecentTrips => 'Últimos viajes';
 
   @override
-  String get driverLocationCity => 'Lisboa, PT';
+  String get driverLocationCity => 'Praia, CV';
+
+  @override
+  String get driverLocationLoading => 'Localizando...';
 
   @override
   String driverHoursAgo(int hours) {
@@ -2153,4 +2254,209 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminDrawerRoleBadge => 'Admin';
+
+  @override
+  String get adminTariffNoTransportTypes =>
+      'Configura primero los tipos de transporte.';
+
+  @override
+  String get adminTariffInvalidAmounts => 'Introduce importes válidos.';
+
+  @override
+  String adminTariffInvalidBaseFare(String typeName) {
+    return 'Tarifa base no válida para $typeName.';
+  }
+
+  @override
+  String get rentalAc => 'AC';
+
+  @override
+  String get rentalElectric => 'Eléctrico';
+
+  @override
+  String get rentalAllTypes => 'Todos los tipos';
+
+  @override
+  String get rentalCarTypeSedan => 'Sedán';
+
+  @override
+  String get rentalCarTypeSuv => 'SUV';
+
+  @override
+  String get rentalCarTypeExecutive => 'Ejecutivo';
+
+  @override
+  String get rentalCarTypeElectric => 'Eléctrico';
+
+  @override
+  String get rentalTransmissionAll => 'Todas';
+
+  @override
+  String get rentalTransmissionAutomatic => 'Automático';
+
+  @override
+  String get rentalTransmissionManual => 'Manual';
+
+  @override
+  String get rentalAnyPrice => 'Cualquier precio';
+
+  @override
+  String rentalPriceUpTo(String price) {
+    return 'Hasta $price';
+  }
+
+  @override
+  String driverEnRouteEtaAt(String time) {
+    return 'ETA • $time';
+  }
+
+  @override
+  String get rentalWeekdaySun => 'DOM';
+
+  @override
+  String get rentalWeekdayMon => 'LUN';
+
+  @override
+  String get rentalWeekdayTue => 'MAR';
+
+  @override
+  String get rentalWeekdayWed => 'MIÉ';
+
+  @override
+  String get rentalWeekdayThu => 'JUE';
+
+  @override
+  String get rentalWeekdayFri => 'VIE';
+
+  @override
+  String get rentalWeekdaySat => 'SÁB';
+
+  @override
+  String get rentalDemoPickupLocation => 'Aeropuerto de Lisboa, PT';
+
+  @override
+  String get rentalDriverAgeYoung => '18 - 25 años';
+
+  @override
+  String get rentalDriverAgeStandard => '26 - 65 años';
+
+  @override
+  String get rentalDriverAgeSenior => '65+ años';
+
+  @override
+  String get rentalDemoSportPremium => 'DEPORTIVO PREMIUM';
+
+  @override
+  String get rentalDemoVehicleName => 'Porsche Taycan 4S';
+
+  @override
+  String get rentalInsuranceDescription =>
+      'Protección total contra daños propios y asistencia en carretera 24/7 sin coste adicional.';
+
+  @override
+  String get rentalInsuranceFranchiseWaiver => 'Exención de franquicia';
+
+  @override
+  String get rentalInsuranceCdw => 'Daños por colisión (CDW)';
+
+  @override
+  String get rentalFuelPolicyElectric =>
+      'Política lleno/lleno o devolución con más del 80% de carga para vehículos eléctricos.';
+
+  @override
+  String rentalBookingRentalDays(int days) {
+    return 'Alquiler ($days días)';
+  }
+
+  @override
+  String get rentalBookingPremiumInsurance => 'Seguro premium';
+
+  @override
+  String get rentalBookingIncluded => 'Incluido';
+
+  @override
+  String get rentalBookingAirportFees => 'Tasas de aeropuerto';
+
+  @override
+  String get rentalDemoAirportLocation => 'Aeropuerto de Lisboa, LIS';
+
+  @override
+  String get rentalSpecPower => 'Potencia';
+
+  @override
+  String get rentalSpecPowerValue => '530 CV';
+
+  @override
+  String get rentalSpecRange => 'Autonomía WLTP';
+
+  @override
+  String get rentalSpecRangeValue => '463 km';
+
+  @override
+  String get rentalSpecDrive => 'Tracción';
+
+  @override
+  String get rentalSpecDriveValue => 'Integral (AWD)';
+
+  @override
+  String rentalVehicleSummary(String price, String seats, String transmission) {
+    return '$price · $seats · $transmission';
+  }
+
+  @override
+  String get eventDemoGenre => 'MÚSICA ELECTRÓNICA';
+
+  @override
+  String get eventDemoTitle => 'Gala de Verano: Porto Sunset';
+
+  @override
+  String get eventDemoDescription =>
+      'Prepárate para la noche más exclusiva del año. La Gala de Verano en Oporto combina la mejor música electrónica melódica con una vista impresionante sobre el río Duero. Catering premium, zonas VIP y una experiencia audiovisual inmersiva.';
+
+  @override
+  String get eventDemoVenue => 'Alfândega do Porto';
+
+  @override
+  String get eventPaymentMbway => 'MB WAY';
+
+  @override
+  String get discoverMapRestaurantLabel => 'Restaurante Maré';
+
+  @override
+  String get discoverMapBeachLabel => 'Playa Secreta';
+
+  @override
+  String get reservationDemoVehicleName => 'Tesla Model 3 Performance';
+
+  @override
+  String reservationDemoVehicleSpecs(
+    String powertrain,
+    String seats,
+    String transmission,
+  ) {
+    return '$powertrain • $seats • $transmission';
+  }
+
+  @override
+  String get reservationDemoAirport => 'Aeropuerto de Lisboa (LIS)';
+
+  @override
+  String get reservationDemoPickupDateTime => '15 oct, 2023 a las 10:00';
+
+  @override
+  String get reservationDemoReturnDateTime => '20 oct, 2023 a las 18:00';
+
+  @override
+  String reservationRentalDaysLine(int days) {
+    return 'Alquiler ($days días)';
+  }
+
+  @override
+  String get reservationInsuranceLine => 'Seguro total';
+
+  @override
+  String get reservationDefaultVehicle => 'Vehículo';
+
+  @override
+  String get reservationDefaultCity => 'Lisboa';
 }

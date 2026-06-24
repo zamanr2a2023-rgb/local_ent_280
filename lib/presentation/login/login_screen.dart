@@ -8,7 +8,7 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/features/auth/data/auth_exception.dart';
 import 'package:local_ent_280/features/auth/data/auth_exception_localization.dart';
-import 'package:local_ent_280/features/auth/data/auth_repository.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
 import 'package:local_ent_280/features/auth/data/auth_signing.dart';
 import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
@@ -29,8 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  late final AuthSigning _authRepository =
-      widget._authRepository ?? AuthRepository();
+  AuthSigning get _authRepository =>
+      widget._authRepository ?? authRepositoryOf(context);
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();

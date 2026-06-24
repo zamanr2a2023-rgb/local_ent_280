@@ -1,4 +1,6 @@
 abstract final class AppAssets {
+  static const String appIcon = 'assets/icons/app_icon.png';
+
   static const String heroCarImage =
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDpb2RzpDYAVlZ98FHKe1vU84ZpO5ho66W3u-oyN0j0XoQC987u9QJ1q9tFCJhWjYa6_RvORLMLAzBQii3CGkkP9rJACJND4cIVzjdbg3xuIswFwYaCFyNu7q0OleTqLamxp0k9T6C7muNWilb0uFkfuXGsK2U6r7u3KwWbiTUOVPgVGA6kTxvPEHGqPpjj-JOerYnCgNwHDMwdO1g24k6tXcYL-YPSWORuR5pw8WokPGq_AYDm-E6S2BHDANQvpn-6eyjJu1CaOhA';
 
