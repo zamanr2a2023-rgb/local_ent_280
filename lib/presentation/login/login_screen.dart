@@ -1,27 +1,44 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/discover/discover_screen.dart';
-
-enum UserRole { cliente, profissional }
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/features/auth/data/auth_exception.dart';
+import 'package:local_ent_280/features/auth/data/auth_exception_localization.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/features/auth/data/auth_signing.dart';
+import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
+import 'package:local_ent_280/l10n/app_localizations.dart';
+import 'package:local_ent_280/presentation/login/auth_form_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, AuthSigning? authRepository})
+      : _authRepository = authRepository;
 
-  static const double _marginMobile = 20;
-  static const double _inputRadius = 12;
-  static const double _buttonRadius = 12;
+  final AuthSigning? _authRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  UserRole _role = UserRole.cliente;
+  AuthUserRole _role = AuthUserRole.cliente;
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  AuthSigning get _authRepository =>
+      widget._authRepository ?? authRepositoryOf(context);
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  LoginSelectedRole get _selectedLoginRole => switch (_role) {
+        AuthUserRole.cliente => LoginSelectedRole.client,
+        AuthUserRole.profissional => LoginSelectedRole.professional,
+      };
 
   @override
   void dispose() {
@@ -32,35 +49,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: l10n.loginSettingsTooltip,
+            icon: Icon(
+              Icons.settings_outlined,
+              size: 24.sp,
+              color: AppColors.onSurfaceVariant,
+            ),
+            onPressed: () => AppNavigation.toSettings(context),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: LoginScreen._marginMobile,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppLayout.marginMobile,
             vertical: 32,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 48),
-              _RoleSelector(
+              SizedBox(height: 20.h),
+              _buildHeader(l10n),
+              SizedBox(height: 60.h),
+              AuthRoleSelector(
+                clientLabel: l10n.loginRoleClient,
+                professionalLabel: l10n.loginRoleProfessional,
                 selected: _role,
                 onChanged: (role) => setState(() => _role = role),
               ),
-              const SizedBox(height: 24),
-              _buildEmailField(),
-              const SizedBox(height: 16),
-              _buildPasswordField(),
-              const SizedBox(height: 8),
-              _buildSecurityNote(),
-              const SizedBox(height: 24),
-              _buildLoginButton(),
-              const SizedBox(height: 24),
-              _buildRegisterPrompt(),
-              const SizedBox(height: 48),
-              _buildFooterLinks(),
+              SizedBox(height: 35.h),
+              _buildEmailField(l10n),
+              SizedBox(height: 30.h),
+              _buildPasswordField(l10n),
+              SizedBox(height: 12.h),
+              AuthSecurityNote(text: l10n.secureConnectionE2E),
+              SizedBox(height: 30.h),
+              _buildLoginButton(l10n),
+              SizedBox(height: 40.h),
+              _buildRegisterPrompt(l10n),
+              SizedBox(height: 60.h),
+              _buildFooterLinks(l10n),
             ],
           ),
         ),
@@ -68,24 +104,24 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mobilidade Premium',
+          l10n.appNameLocalTransport,
           style: GoogleFonts.manrope(
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w700,
             height: 32 / 24,
             color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Text(
-          'Inicie sessão para gerir as suas viagens.',
+          l10n.loginSubtitle,
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 16.sp,
             fontWeight: FontWeight.w400,
             height: 24 / 16,
             color: AppColors.onSurfaceVariant,
@@ -95,26 +131,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(
-            'E-mail ou Telemóvel',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              height: 20 / 14,
-              letterSpacing: 0.1,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-        ),
-        _AuthTextField(
+        AuthFieldLabel(label: l10n.loginEmailOrMobileLabel),
+        AuthTextField(
           controller: _emailController,
-          hintText: 'ex: joao@email.com',
+          hintText: l10n.loginEmailHint,
           prefixIcon: Icons.alternate_email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -123,41 +147,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Row(
-            children: [
-              Text(
-                'Palavra-passe',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  height: 20 / 14,
-                  letterSpacing: 0.1,
-                  color: AppColors.onSurfaceVariant,
-                ),
+        AuthFieldLabel(
+          label: l10n.loginPasswordLabel,
+          trailing: GestureDetector(
+            onTap: () {},
+            child: Text(
+              l10n.loginForgotPassword,
+              style: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
+                height: 16 / 12,
+                color: AppColors.secondary,
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () {},
-                child: Text(
-                  'Esqueceu-se?',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    height: 16 / 12,
-                    color: AppColors.secondary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-        _AuthTextField(
+        AuthTextField(
           controller: _passwordController,
           hintText: '••••••••',
           prefixIcon: Icons.lock_outline,
@@ -168,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 setState(() => _obscurePassword = !_obscurePassword),
             icon: Icon(
               _obscurePassword ? Icons.visibility : Icons.visibility_off,
-              size: 22,
+              size: 22.sp,
               color: AppColors.onSurfaceVariant,
             ),
           ),
@@ -177,79 +186,92 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSecurityNote() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.verified_user,
-            size: 18,
-            color: AppColors.onSurfaceVariant,
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              'Ligação segura e encriptada ponta-a-ponta.',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 16 / 12,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<void> _onLoginPressed() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError(context.l10n.loginFillEmailPassword);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final profile = await _authRepository.signIn(
+        email: email,
+        password: password,
+        selectedRole: _selectedLoginRole,
+      );
+      if (!mounted) return;
+      AppNavigation.afterAuthenticatedLogin(context, profile);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _showError(e.localizedMessage(context.l10n));
+    } catch (_) {
+      if (!mounted) return;
+      _showError(AuthException.unknown().localizedMessage(context.l10n));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
-  Widget _buildLoginButton() {
+  Widget _buildLoginButton(AppLocalizations l10n) {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 56.h,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(builder: (_) => const DiscoverScreen()),
-          );
-        },
+        onPressed: _isLoading ? null : _onLoginPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.secondary,
           foregroundColor: AppColors.onSecondary,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LoginScreen._buttonRadius),
+            borderRadius: BorderRadius.circular(AuthFormLayout.buttonRadius),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Entrar',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.1,
+        child: _isLoading
+            ? SizedBox(
+                width: 24.w,
+                height: 24.h,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.onSecondary,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    l10n.signIn,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Icon(Icons.arrow_forward, size: 20.sp),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, size: 20),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildRegisterPrompt() {
+  Widget _buildRegisterPrompt(AppLocalizations l10n) {
     final bodyStyle = GoogleFonts.inter(
-      fontSize: 16,
+      fontSize: 16.sp,
       fontWeight: FontWeight.w400,
       height: 24 / 16,
       color: AppColors.onSurfaceVariant,
     );
     final linkStyle = GoogleFonts.inter(
-      fontSize: 14,
+      fontSize: 14.sp,
       fontWeight: FontWeight.w600,
       height: 20 / 14,
       letterSpacing: 0.1,
@@ -261,214 +283,33 @@ class _LoginScreenState extends State<LoginScreen> {
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text('Ainda não tem conta? ', style: bodyStyle),
+          Text(l10n.loginNoAccountPrompt, style: bodyStyle),
           GestureDetector(
-            onTap: () {},
-            child: Text('Registar agora', style: linkStyle),
+            onTap: () => AppNavigation.toRegister(context),
+            child: Text(l10n.loginRegisterNow, style: linkStyle),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFooterLinks() {
+  Widget _buildFooterLinks(AppLocalizations l10n) {
     return Opacity(
       opacity: 0.6,
       child: Column(
         children: [
-          const Divider(color: AppColors.surfaceContainer, height: 48),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Divider(color: AppColors.surfaceContainer, height: 48.h),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16.w,
+            runSpacing: 8.h,
             children: [
-              _FooterLink(label: 'Privacidade', onTap: () {}),
-              _FooterLink(label: 'Termos de Uso', onTap: () {}),
-              _FooterLink(label: 'Suporte', onTap: () {}),
+              AuthFooterLink(label: l10n.loginPrivacy, onTap: () {}),
+              AuthFooterLink(label: l10n.loginTermsOfUse, onTap: () {}),
+              AuthFooterLink(label: l10n.loginSupport, onTap: () {}),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RoleSelector extends StatelessWidget {
-  const _RoleSelector({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final UserRole selected;
-  final ValueChanged<UserRole> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _RoleTab(
-              label: 'Cliente',
-              icon: Icons.person,
-              isSelected: selected == UserRole.cliente,
-              onTap: () => onChanged(UserRole.cliente),
-            ),
-          ),
-          Expanded(
-            child: _RoleTab(
-              label: 'Profissional',
-              icon: Icons.directions_car,
-              isSelected: selected == UserRole.profissional,
-              onTap: () => onChanged(UserRole.profissional),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleTab extends StatelessWidget {
-  const _RoleTab({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.secondaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? AppColors.onSecondaryContainer
-                  : AppColors.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                height: 20 / 14,
-                letterSpacing: 0.1,
-                color: isSelected
-                    ? AppColors.onSecondaryContainer
-                    : AppColors.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AuthTextField extends StatelessWidget {
-  const _AuthTextField({
-    required this.controller,
-    required this.hintText,
-    required this.prefixIcon,
-    this.obscureText = false,
-    this.keyboardType,
-    this.textInputAction,
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String hintText;
-  final IconData prefixIcon;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      style: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: AppColors.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: GoogleFonts.inter(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-        ),
-        filled: true,
-        fillColor: AppColors.surfaceContainerLowest,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        prefixIcon: Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22),
-        prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        suffixIcon: suffixIcon,
-        suffixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoginScreen._inputRadius),
-          borderSide: const BorderSide(color: AppColors.secondary, width: 1.5),
-        ),
-        constraints: const BoxConstraints(minHeight: 56),
-      ),
-    );
-  }
-}
-
-class _FooterLink extends StatelessWidget {
-  const _FooterLink({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          height: 16 / 12,
-          color: AppColors.onSurfaceVariant,
-        ),
       ),
     );
   }

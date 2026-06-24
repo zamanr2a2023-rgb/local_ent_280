@@ -1,0 +1,16 @@
+{
+  "name": "rules-test",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore,database,storage --project demo-local-transport --config ../firebase.json \"node --test --test-concurrency=1\"",
+    "test:firestore": "firebase emulators:exec --only firestore --project demo-local-transport --config ../firebase.json \"node --test --test-concurrency=1 tests/firestoreRules.test.js tests/firestoreOperationalMonitoringRules.test.js\"",
+    "test:rtdb": "firebase emulators:exec --only database --project demo-local-transport --config ../firebase.json \"node --test --test-concurrency=1 tests/realtimeDatabaseRules.test.js\"",
+    "test:storage": "firebase emulators:exec --only firestore,storage --project demo-local-transport --config ../firebase.json \"node --test --test-concurrency=1 tests/storageRules.test.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.1",
+    "firebase": "^10.12.4",
+    "firebase-tools": "^13.17.0"
+  }
+}

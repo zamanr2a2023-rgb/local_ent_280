@@ -1,74 +1,288 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/discover/discover_screen.dart';
-import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
-import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
+import 'package:local_ent_280/core/policies/service_area_policy.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/presentation/widgets/client_drawer.dart';
+import 'package:local_ent_280/core/models/trip_route_draft.dart';
+import 'package:local_ent_280/core/services/current_location_service.dart';
+import 'package:local_ent_280/core/services/places_autocomplete_service.dart';
+import 'package:local_ent_280/core/services/location_permission_helper.dart';
+import 'package:local_ent_280/presentation/widgets/address_autocomplete_field.dart';
+import 'package:local_ent_280/presentation/widgets/current_location_field.dart';
+import 'package:local_ent_280/presentation/widgets/pickup_map_picker_sheet.dart';
+import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/features/balance/data/balance_repository.dart';
+import 'package:local_ent_280/features/trips/data/client_active_trip_navigator.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/presentation/widgets/session_profile_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.balanceRepository});
 
-  static const double _marginMobile = 20;
-  static const double _sheetTopRadius = 24;
+  final BalanceRepository? balanceRepository;
+
+  static double get _sheetTopRadius => 30.r;
+  static double get _gapActionsToSheet => 20.h;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _navIndex = 0;
+  final _pickupController = TextEditingController();
   final _destinationController = TextEditingController();
+  final _locationService = CurrentLocationService();
+  final _tripSheetKey = GlobalKey<_TripBottomSheetState>();
+
+  String? _currentAddress;
+  double? _pickupLat;
+  double? _pickupLng;
+  String? _destinationPlaceId;
+  bool _isLoadingLocation = true;
+  bool _canConfirmRoute = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _destinationController.addListener(_onDestinationChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+      _requestLocationAccess();
+      _resumeActiveTripIfNeeded();
+    });
+  }
+
+  Future<void> _resumeActiveTripIfNeeded() async {
+    final clientId = UserSession.instance.profile?.uid;
+    if (clientId == null || !mounted) return;
+
+    try {
+      final trips = await tripRepositoryOf(context)
+          .watchClientTrips(clientId)
+          .first;
+      if (!mounted) return;
+      final activeTrip = ClientActiveTripNavigator.findResumableTrip(trips);
+      if (activeTrip != null) {
+        ClientActiveTripNavigator.resume(context, activeTrip);
+      }
+    } catch (_) {
+      // Ignore resume errors; home remains usable.
+    }
+  }
+
+  void _expandTripSheet() {
+    _tripSheetKey.currentState?.expand();
+  }
+
+  void _onDestinationChanged() {
+    if (_destinationController.text.trim().isEmpty) {
+      _destinationPlaceId = null;
+    }
+    final canConfirm = _canConfirmRouteNow();
+    if (canConfirm != _canConfirmRoute) {
+      setState(() => _canConfirmRoute = canConfirm);
+    }
+  }
+
+  bool _canConfirmRouteNow() {
+    final pickup = _currentAddress?.trim();
+    final destination = _destinationController.text.trim();
+    return !_isLoadingLocation &&
+        pickup != null &&
+        pickup.isNotEmpty &&
+        destination.isNotEmpty &&
+        _pickupLat != null &&
+        _pickupLng != null;
+  }
+
+  void _refreshCanConfirmRoute() {
+    final canConfirm = _canConfirmRouteNow();
+    if (canConfirm != _canConfirmRoute) {
+      setState(() => _canConfirmRoute = canConfirm);
+    }
+  }
+
+  Future<void> _requestLocationAccess() async {
+    if (!mounted) return;
+    setState(() => _isLoadingLocation = true);
+
+    final granted = await LocationPermissionHelper.ensureGranted(context);
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() {
+        _isLoadingLocation = false;
+        _currentAddress = null;
+        _pickupLat = null;
+        _pickupLng = null;
+        _pickupController.clear();
+        _canConfirmRoute = false;
+      });
+      return;
+    }
+
+    await _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+
+    // Show cached GPS quickly, then refresh with a live fix.
+    final cached = await _locationService.getLastKnownLocation();
+    if (mounted && cached != null) {
+      setState(() {
+        _currentAddress = cached.address;
+        _pickupLat = cached.latitude;
+        _pickupLng = cached.longitude;
+        _pickupController.text = cached.address;
+        _canConfirmRoute = _canConfirmRouteNow();
+      });
+    }
+
+    final location = await _locationService.getCurrentLocation();
+    if (!mounted) return;
+    setState(() {
+      _isLoadingLocation = false;
+      _currentAddress = location?.address ?? _currentAddress;
+      _pickupLat = location?.latitude ?? _pickupLat;
+      _pickupLng = location?.longitude ?? _pickupLng;
+      _pickupController.text = location?.address ?? _pickupController.text;
+      _canConfirmRoute = _canConfirmRouteNow();
+    });
+  }
+
+  Future<void> _selectPickupOnMap() async {
+    if (!mounted) return;
+
+    final granted = await LocationPermissionHelper.ensureGranted(context);
+    if (!granted || !mounted) return;
+
+    final location = await showPickupMapPickerSheet(
+      context,
+      locationService: _locationService,
+      initialLatitude: _pickupLat,
+      initialLongitude: _pickupLng,
+    );
+    if (!mounted || location == null) return;
+
+    setState(() {
+      _isLoadingLocation = false;
+      _currentAddress = location.address;
+      _pickupLat = location.latitude;
+      _pickupLng = location.longitude;
+      _pickupController.text = location.address;
+      _canConfirmRoute = _canConfirmRouteNow();
+    });
+  }
+
+  void _onDestinationSelected(PlacePrediction prediction) {
+    _destinationPlaceId = prediction.placeId;
+    _refreshCanConfirmRoute();
+  }
+
+  void _confirmRoute(BuildContext context) async {
+    final l10n = context.l10n;
+    final pickup = _currentAddress?.trim();
+    final destination = _destinationController.text.trim();
+
+    if (pickup == null || pickup.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeLocationUnavailable)),
+      );
+      return;
+    }
+    if (destination.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeDestinationHint)),
+      );
+      return;
+    }
+    if (_pickupLat == null || _pickupLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeLocationUnavailable)),
+      );
+      return;
+    }
+    if (!ServiceAreaPolicy.isPickupEligibleForDispatch(
+      latitude: _pickupLat!,
+      longitude: _pickupLng!,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homePickupOutsideServiceArea)),
+      );
+      return;
+    }
+
+    final clientId = UserSession.instance.profile?.uid;
+    if (clientId != null) {
+      try {
+        final trips = await tripRepositoryOf(context)
+            .watchClientTrips(clientId)
+            .first;
+        final activeTrip = ClientActiveTripNavigator.findResumableTrip(trips);
+        if (!mounted) return;
+        if (activeTrip != null) {
+          ClientActiveTripNavigator.resume(context, activeTrip);
+          return;
+        }
+      } catch (_) {
+        // Continue with a new booking if the active-trip lookup fails.
+      }
+    }
+
+    AppNavigation.toTripConfirm(
+      context,
+      TripRouteDraft(
+        pickupAddress: pickup,
+        pickupLat: _pickupLat!,
+        pickupLng: _pickupLng!,
+        destinationAddress: destination,
+        destinationPlaceId: _destinationPlaceId,
+      ),
+    );
+  }
 
   @override
   void dispose() {
+    _destinationController.removeListener(_onDestinationChanged);
+    _pickupController.dispose();
     _destinationController.dispose();
     super.dispose();
-  }
-
-  void _openEventDetail(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
-    );
-  }
-
-  void _openJetski(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const JetskiScreen()),
-    );
-  }
-
-  void _onNavTap(BuildContext context, int index) {
-    setState(() => _navIndex = index);
-    if (index == 0) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const DiscoverScreen()),
-      );
-    } else if (index == 1) {
-      _openJetski(context);
-    } else if (index == 2) {
-      _openEventDetail(context);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      drawer: const ClientDrawer(selected: ClientDrawerSection.home),
       body: Stack(
         fit: StackFit.expand,
         children: [
           const _MapBackground(),
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _HomeAppBar(),
-              const SizedBox(height: 8),
+              SizedBox(height: 12.h),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: HomeScreen._marginMobile,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppLayout.marginMobile,
                 ),
-                child: const _BalanceCard(),
+                child: _BalanceCard(
+                  clientId: UserSession.instance.profile?.uid,
+                  balanceRepository:
+                      widget.balanceRepository ?? BalanceRepository(),
+                ),
               ),
               const Spacer(),
             ],
@@ -79,23 +293,38 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 0,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: HomeScreen._marginMobile,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppLayout.marginMobile,
                   ),
                   child: _QuickActionsRow(
-                    onPedir: () => _openJetski(context),
-                    onReservar: () => _openEventDetail(context),
+                    onPedir: _expandTripSheet,
+                    onReservar: () => AppNavigation.toTripDestination(context),
+                    onAlugar: () => AppNavigation.toVehicleRental(context),
+                    onHistorico: () => AppNavigation.toTripHistory(context),
+                    onSaldo: () => AppNavigation.toClientBalance(context),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: HomeScreen._gapActionsToSheet),
                 _TripBottomSheet(
+                  key: _tripSheetKey,
+                  currentAddress: _currentAddress,
+                  isLoadingLocation: _isLoadingLocation,
+                  onRefreshLocation: _requestLocationAccess,
+                  onSelectPickupOnMap: _selectPickupOnMap,
                   destinationController: _destinationController,
+                  onDestinationSelected: _onDestinationSelected,
+                  onConfirmRoute: () => _confirmRoute(context),
+                  canConfirmRoute: _canConfirmRoute,
+                  biasLatitude: _pickupLat,
+                  biasLongitude: _pickupLng,
                 ),
                 AppBottomNav(
-                  selectedIndex: _navIndex,
-                  onItemTap: (index) => _onNavTap(context, index),
+                  selectedIndex: AppNavIndex.inicio,
+                  onItemTap: (index) =>
+                      AppNavigation.onBottomNavTap(context, index),
                 ),
               ],
             ),
@@ -109,25 +338,27 @@ class _HomeScreenState extends State<HomeScreen> {
 class _MapBackground extends StatelessWidget {
   const _MapBackground();
 
+  static const String _citySkylineUrl = AppAssets.mapBackgroundImage;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        ColorFiltered(
-          colorFilter: const ColorFilter.matrix(<double>[
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0, 0, 0, 0.9, 0,
-          ]),
-          child: Image.network(
-            AppAssets.mapBackgroundImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => ColoredBox(
-              color: AppColors.primaryFixedDim.withValues(alpha: 0.3),
-              child: Center(
-                child: Icon(Icons.map, size: 64, color: AppColors.outline),
+        Image.network(
+          _citySkylineUrl,
+          fit: BoxFit.cover,
+          alignment: const Alignment(0, -0.15),
+          width: double.infinity,
+          height: double.infinity,
+          filterQuality: FilterQuality.medium,
+          errorBuilder: (context, error, stackTrace) => ColoredBox(
+            color: AppColors.background,
+            child: Center(
+              child: Icon(
+                Icons.location_city,
+                size: 64.sp,
+                color: AppColors.outline,
               ),
             ),
           ),
@@ -138,12 +369,12 @@ class _MapBackground extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.background.withValues(alpha: 0.8),
-                AppColors.background.withValues(alpha: 0),
-                AppColors.background.withValues(alpha: 0),
-                AppColors.background.withValues(alpha: 0.9),
+                AppColors.background.withValues(alpha: 0.88),
+                AppColors.background.withValues(alpha: 0.35),
+                Colors.transparent,
+                AppColors.surfaceContainerLowest.withValues(alpha: 0.82),
               ],
-              stops: const [0.0, 0.2, 0.8, 1.0],
+              stops: const [0.0, 0.22, 0.52, 1.0],
             ),
           ),
         ),
@@ -157,62 +388,53 @@ class _HomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SafeArea(
       bottom: false,
       child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: HomeScreen._marginMobile),
-        color: AppColors.background,
+        height: 56.h,
+        padding: EdgeInsets.symmetric(horizontal: AppLayout.marginMobile),
+        color: AppColors.surfaceContainerLowest,
         child: Row(
           children: [
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(999),
-                child: const SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Icon(Icons.menu, color: AppColors.primary, size: 24),
+            Builder(
+              builder: (context) => Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Scaffold.of(context).openDrawer(),
+                  borderRadius: BorderRadius.circular(999.r),
+                  child: SizedBox(
+                    width: 40.w,
+                    height: 40.h,
+                    child: Icon(
+                      Icons.menu,
+                      color: AppColors.primary,
+                      size: 24.sp,
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'Mobilidade Premium',
-                style: GoogleFonts.manrope(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 32 / 24,
-                  color: AppColors.primary,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    l10n.appNameLocalTransport,
+                    maxLines: 1,
+                    style: GoogleFonts.manrope(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 32 / 24,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  AppAssets.profileAvatarImage,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => ColoredBox(
-                    color: AppColors.surfaceContainerHigh,
-                    child: const Icon(Icons.person, color: AppColors.primary),
-                  ),
-                ),
-              ),
+            SessionProfileAvatar(
+              size: 40.w,
+              onTap: () => AppNavigation.toProfile(context),
             ),
           ],
         ),
@@ -222,23 +444,31 @@ class _HomeAppBar extends StatelessWidget {
 }
 
 class _BalanceCard extends StatelessWidget {
-  const _BalanceCard();
+  _BalanceCard({
+    required this.clientId,
+    required this.balanceRepository,
+  });
+
+  final String? clientId;
+  final BalanceRepository balanceRepository;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final uid = clientId;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: AppColors.surfaceVariant.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 8.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
@@ -249,40 +479,58 @@ class _BalanceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Saldo Disponível',
+                  l10n.homeAvailableBalance,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                     height: 16 / 12,
-                    color: AppColors.onSurfaceVariant,
+                    color: AppColors.labelMuted,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '42,50 €',
-                  style: GoogleFonts.manrope(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    height: 28 / 20,
-                    color: AppColors.primary,
-                  ),
-                ),
+                SizedBox(height: 4.h),
+                uid == null
+                    ? Text(
+                        '—',
+                        style: GoogleFonts.manrope(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w600,
+                          height: 28 / 20,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : StreamBuilder(
+                        stream: balanceRepository.watchClientBalance(uid),
+                        builder: (context, snapshot) {
+                          final balance = snapshot.data;
+                          final label = balance?.formattedAmount ??
+                              AppCurrencyFormatter.instance.formatEurMajor(0);
+                          return Text(
+                            label,
+                            style: GoogleFonts.manrope(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w600,
+                              height: 28 / 20,
+                              color: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
               ],
             ),
           ),
           FilledButton(
-            onPressed: () {},
+            onPressed: () => AppNavigation.toClientBalance(context),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.secondaryContainer,
-              foregroundColor: AppColors.onSecondaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              backgroundColor: AppColors.accent,
+              foregroundColor: AppColors.onAccent,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8),
               shape: const StadiumBorder(),
               elevation: 0,
             ),
             child: Text(
-              'Carregar',
+              l10n.homeTopUp,
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.1,
               ),
@@ -298,39 +546,58 @@ class _QuickActionsRow extends StatelessWidget {
   const _QuickActionsRow({
     required this.onPedir,
     required this.onReservar,
+    required this.onAlugar,
+    required this.onHistorico,
+    required this.onSaldo,
   });
 
   final VoidCallback onPedir;
   final VoidCallback onReservar;
+  final VoidCallback onAlugar;
+  final VoidCallback onHistorico;
+  final VoidCallback onSaldo;
 
-  static const _actions = [
-    (Icons.directions_car, 'Pedir'),
-    (Icons.calendar_today, 'Reservar'),
-    (Icons.history, 'Histórico'),
-    (Icons.account_balance_wallet, 'Saldo'),
+  static const _icons = [
+    Icons.directions_car,
+    Icons.calendar_today,
+    Icons.car_rental,
+    Icons.history,
+    Icons.account_balance_wallet,
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: _actions
-          .map(
-            (action) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+    final l10n = context.l10n;
+    final actions = [
+      (l10n.homeActionRequest, onPedir),
+      (l10n.homeActionBook, onReservar),
+      (l10n.homeActionRent, onAlugar),
+      (l10n.homeActionHistory, onHistorico),
+      (l10n.homeActionBalance, onSaldo),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gap = 8.w;
+        final tileWidth = (constraints.maxWidth - gap * 4) / 5;
+
+        return Row(
+          children: [
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
+              SizedBox(
+                width: tileWidth,
+                height: tileWidth,
                 child: _QuickActionButton(
-                  icon: action.$1,
-                  label: action.$2,
-                  onTap: switch (action.$2) {
-                    'Pedir' => onPedir,
-                    'Reservar' => onReservar,
-                    _ => () {},
-                  },
+                  icon: _icons[i],
+                  label: actions[i].$1,
+                  onTap: actions[i].$2,
                 ),
               ),
-            ),
-          )
-          .toList(),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -352,48 +619,62 @@ class _QuickActionButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Ink(
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: AppColors.surfaceVariant.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                blurRadius: 8.r,
+                offset: Offset(0, 2.h),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Column(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.05),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final iconSize = (constraints.maxHeight * 0.48).clamp(28.0, 40.0);
+              final labelSize = constraints.maxHeight < 72 ? 11.0 : 12.0;
+
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: iconSize,
+                      height: iconSize,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.accentSurface,
+                      ),
+                      child: Icon(
+                        icon,
+                        color: AppColors.accent,
+                        size: iconSize * 0.55,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(
+                        fontSize: labelSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1.0,
+                        color: AppColors.labelMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: AppColors.secondary, size: 22),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  height: 16 / 12,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -401,105 +682,163 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _TripBottomSheet extends StatelessWidget {
-  const _TripBottomSheet({required this.destinationController});
+class _TripBottomSheet extends StatefulWidget {
+  const _TripBottomSheet({
+    super.key,
+    required this.currentAddress,
+    required this.isLoadingLocation,
+    required this.onRefreshLocation,
+    required this.onSelectPickupOnMap,
+    required this.destinationController,
+    required this.onDestinationSelected,
+    required this.onConfirmRoute,
+    required this.canConfirmRoute,
+    this.biasLatitude,
+    this.biasLongitude,
+  });
 
+  final String? currentAddress;
+  final bool isLoadingLocation;
+  final VoidCallback onRefreshLocation;
+  final VoidCallback onSelectPickupOnMap;
   final TextEditingController destinationController;
+  final ValueChanged<PlacePrediction> onDestinationSelected;
+  final VoidCallback onConfirmRoute;
+  final bool canConfirmRoute;
+  final double? biasLatitude;
+  final double? biasLongitude;
+
+  @override
+  State<_TripBottomSheet> createState() => _TripBottomSheetState();
+}
+
+class _TripBottomSheetState extends State<_TripBottomSheet> {
+  bool _expanded = true;
+  double _dragDelta = 0;
+
+  static const _animDuration = Duration(milliseconds: 280);
+  static const _animCurve = Curves.easeOutCubic;
+  static const _dragThreshold = 40.0;
+  static const _velocityThreshold = 250.0;
+
+  void _toggle() => setState(() => _expanded = !_expanded);
+
+  void expand() => setState(() => _expanded = true);
+
+  void _onVerticalDragStart(DragStartDetails _) {
+    _dragDelta = 0;
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    _dragDelta += details.delta.dy;
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    setState(() {
+      if (velocity > _velocityThreshold || _dragDelta > _dragThreshold) {
+        _expanded = false;
+      } else if (velocity < -_velocityThreshold ||
+          _dragDelta < -_dragThreshold) {
+        _expanded = true;
+      }
+      _dragDelta = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: const BorderRadius.vertical(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(HomeScreen._sheetTopRadius),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
+            blurRadius: 24.r,
+            offset: Offset(0, -4.h),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 48,
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Para onde vamos hoje?',
-            style: GoogleFonts.manrope(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              height: 28 / 20,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Stack(
-            children: [
-              Positioned(
-                left: 23,
-                top: 48,
-                child: Container(
-                  width: 2,
-                  height: 40,
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                ),
-              ),
-              Column(
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _toggle,
+            onVerticalDragStart: _onVerticalDragStart,
+            onVerticalDragUpdate: _onVerticalDragUpdate,
+            onVerticalDragEnd: _onVerticalDragEnd,
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _LocationField(
-                    icon: Icons.my_location,
-                    iconColor: AppColors.secondary,
-                    label: 'Localização Atual',
-                    value: 'Av. da Liberdade, Lisboa',
-                    readOnly: true,
+                  Center(
+                    child: Container(
+                      width: 40.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(999.r),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _LocationField(
-                    icon: Icons.location_on,
-                    iconColor: AppColors.outline,
-                    label: 'Destino',
-                    hint: 'Para onde deseja ir?',
-                    controller: destinationController,
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.homeWhereToday,
+                          style: GoogleFonts.manrope(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w600,
+                            height: 28 / 20,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      AnimatedRotation(
+                        duration: _animDuration,
+                        curve: _animCurve,
+                        turns: _expanded ? 0 : 0.5,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.labelMuted,
+                          size: 24.sp,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: AppColors.onSecondary,
-                elevation: 8,
-                shadowColor: AppColors.secondary.withValues(alpha: 0.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Confirmar Trajeto',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
+          AnimatedSize(
+            duration: _animDuration,
+            curve: _animCurve,
+            alignment: Alignment.topCenter,
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: _expanded ? 1.0 : 0.0,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: _ExpandedSheetContent(
+                  currentAddress: widget.currentAddress,
+                  isLoadingLocation: widget.isLoadingLocation,
+                  onRefreshLocation: widget.onRefreshLocation,
+                  onSelectPickupOnMap: widget.onSelectPickupOnMap,
+                  destinationController: widget.destinationController,
+                  onDestinationSelected: widget.onDestinationSelected,
+                  onConfirmRoute: widget.onConfirmRoute,
+                  canConfirmRoute: widget.canConfirmRoute,
+                  biasLatitude: widget.biasLatitude,
+                  biasLongitude: widget.biasLongitude,
                 ),
               ),
             ),
@@ -510,88 +849,100 @@ class _TripBottomSheet extends StatelessWidget {
   }
 }
 
-class _LocationField extends StatelessWidget {
-  const _LocationField({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    this.value,
-    this.hint,
-    this.controller,
-    this.readOnly = false,
+class _ExpandedSheetContent extends StatelessWidget {
+  const _ExpandedSheetContent({
+    required this.currentAddress,
+    required this.isLoadingLocation,
+    required this.onRefreshLocation,
+    required this.onSelectPickupOnMap,
+    required this.destinationController,
+    required this.onDestinationSelected,
+    required this.onConfirmRoute,
+    required this.canConfirmRoute,
+    this.biasLatitude,
+    this.biasLongitude,
   });
 
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String? value;
-  final String? hint;
-  final TextEditingController? controller;
-  final bool readOnly;
+  final String? currentAddress;
+  final bool isLoadingLocation;
+  final VoidCallback onRefreshLocation;
+  final VoidCallback onSelectPickupOnMap;
+  final TextEditingController destinationController;
+  final ValueChanged<PlacePrediction> onDestinationSelected;
+  final VoidCallback onConfirmRoute;
+  final bool canConfirmRoute;
+  final double? biasLatitude;
+  final double? biasLongitude;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(height: 8.h),
+        Stack(
+          children: [
+            Positioned(
+              left: 19,
+              top: 42,
+              child: Container(
+                width: 2.w,
+                height: 32.h,
+                color: AppColors.outlineVariant.withValues(alpha: 0.35),
+              ),
+            ),
+            Column(
               children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    height: 16 / 12,
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                CurrentLocationField(
+                  address: currentAddress,
+                  isLoading: isLoadingLocation,
+                  onRefresh: onRefreshLocation,
+                  onMapTap: onSelectPickupOnMap,
                 ),
-                if (readOnly)
-                  Text(
-                    value ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 24 / 16,
-                      color: AppColors.onSurface,
-                    ),
-                  )
-                else
-                  TextField(
-                    controller: controller,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      hintText: hint,
-                      hintStyle: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: AppColors.outline,
-                      ),
-                    ),
-                  ),
+                SizedBox(height: 12.h),
+                AddressAutocompleteField(
+                  icon: Icons.location_on,
+                  iconColor: AppColors.outline,
+                  label: l10n.homeDestination,
+                  controller: destinationController,
+                  hint: l10n.homeDestinationHint,
+                  onPlaceSelected: onDestinationSelected,
+                  biasLatitude: biasLatitude,
+                  biasLongitude: biasLongitude,
+                ),
               ],
             ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        SizedBox(
+          height: 48.h,
+          child: ElevatedButton(
+            onPressed: canConfirmRoute ? onConfirmRoute : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              foregroundColor: AppColors.onAccent,
+              disabledBackgroundColor:
+                  AppColors.surfaceVariant.withValues(alpha: 0.55),
+              disabledForegroundColor: AppColors.onSurfaceVariant,
+              elevation: 4,
+              shadowColor: AppColors.accent.withValues(alpha: 0.25),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            ),
+            child: Text(
+              l10n.homeConfirmRoute,
+              style: GoogleFonts.inter(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

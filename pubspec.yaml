@@ -1,5 +1,5 @@
 name: local_ent_280
-description: "A new Flutter project."
+description: "Internal Transport App"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -30,15 +30,34 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
+  material_symbols_icons: ^4.2928.1
+  flutter_screenutil: ^5.9.3
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+  shared_preferences: ^2.5.3
+  http: ^1.4.0
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  firebase_storage: ^13.4.2
+  image_picker: ^1.2.2
+  google_maps_flutter: ^2.17.1
+  firebase_database: ^12.4.2
+  url_launcher: ^6.3.0
+  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -46,17 +65,28 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  fake_cloud_firestore: ^4.0.1
+  firebase_auth_mocks: ^0.15.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icons/app_icon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

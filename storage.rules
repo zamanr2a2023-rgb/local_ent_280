@@ -1,0 +1,75 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return firestore.get(/databases/(default)/documents/users/$(uid));
+    }
+
+    function userDocExists(uid) {
+      return firestore.exists(/databases/(default)/documents/users/$(uid));
+    }
+
+    function role() {
+      return !isSignedIn()
+        ? null
+        : (request.auth.token.keys().hasAny(['role'])
+            ? request.auth.token.role
+            : roleFromUserDoc());
+    }
+
+    function roleFromUserDoc() {
+      return !userDocExists(request.auth.uid)
+        ? null
+        : (userDoc(request.auth.uid).data.keys().hasAny(['role'])
+            ? userDoc(request.auth.uid).data.role
+            : null);
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function isManager() {
+      return role() == 'manager';
+    }
+
+    function hasManagerClaimsMap() {
+      return isManager()
+        && request.auth.token.keys().hasAny(['mp'])
+        && request.auth.token.mp is map;
+    }
+
+    function managerCanTp() {
+      return hasManagerClaimsMap()
+        && request.auth.token.mp.keys().hasAny(['tp'])
+        && request.auth.token.mp.tp == true;
+    }
+
+    match /users/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+    }
+
+    match /vehicles/{vehicleId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /tripPackages/{packageId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || managerCanTp();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,164 @@
+# Source of Truth: Pricing
+
+## Objetivo do domínio
+- Definir cálculo de preço previsível para estimativa e fecho final.
+- Garantir contrato monetário único e consistente em app + backend.
+
+## Contrato monetário canónico
+- Contrato obrigatório em runtime ativo: `{ amountMinor, currency }`.
+- `currency` é obrigatória e não vazia.
+- Operações monetárias exigem same-currency.
+- Não existe compat mode em runtime ativo: campos legados não são aceites.
+- Ledger/persistência mantém-se EUR-only (`currency: "EUR"`) em fluxos críticos de pricing, saldos, dívida e relatórios.
+- Multi-moeda (`CVE`/`EUR`/`USD`) é exclusivamente de apresentação e input administrativo, com reconversão para EUR antes de persistir.
+
+## FX de apresentação (admin-managed)
+- Fonte canónica: `config/currency`.
+- Leitura: utilizadores autenticados com papel `admin`, `manager`, `client` ou `driver`.
+- Escrita: apenas `admin`.
+- Campos:
+  - `cveToEur` (string decimal) => `1 CVE = X EUR`;
+  - `cveToUsd` (string decimal) => `1 CVE = Y USD`.
+- Conversão usa fixed-point (`BigInt`/racional), sem `double`.
+- Fórmulas:
+  - `EUR -> CVE = EUR / cveToEur`
+  - `EUR -> USD = (EUR / cveToEur) * cveToUsd`
+  - `CVE -> EUR = CVE * cveToEur`
+  - `USD -> EUR = (USD / cveToUsd) * cveToEur`
+- Rounding canónico: half-up em minor units.
+- Fallback operacional: sem FX válido para `CVE`/`USD`, a renderização usa EUR.
+
+## Entidades e snapshots
+- `Tariff` usa `Money` em `baseByTransportType`, `perKm` e `perWaitMinute`.
+- `Tariff.baseByTransportType` é um mapa `{transportTypeId -> Money}` persistido em `tariffs/admin_default` e espelhado para `tariffs/public_default`.
+- O `transportTypeId` é técnico e gerado automaticamente pelo backend na criação do tipo de transporte.
+- Esta modelação é uma decisão explícita de produto: o tipo de transporte deixou de multiplicar a tarifa inteira e passou a selecionar apenas a tarifa base.
+- `transport_types.packagePriceMultiplierBasisPoints` é um contrato separado e exclusivo de `tripPackages`; é ignorado no pricing normal das trips.
+- `Tariff.distanceTiers` define faixas de distância (`startMetersInclusive`, `endMetersExclusive?`, `perKm`).
+- Semântica canónica das faixas:
+  - início inclusivo;
+  - fim exclusivo;
+  - última faixa aberta (sem `endMetersExclusive`).
+- `TariffPenaltyFees` usa `Money` em `lateCancellation` e `noShow`.
+- `TripPricingSnapshot` persistido com campos monetários em `Money` para `base`, `perKm`, `perWaitMinute`, penalizações e snapshot de `distanceTiers`.
+- `trips.finalCost` é `Money` no fecho financeiro.
+- `balance_adjustments.delta` é `Money` nos débitos/créditos.
+- `tripPackageBookings` persistem `price`, `priceAdjustmentMinor`, `chargedAmount` e `transportType.packagePriceMultiplierBasisPoints` como snapshot financeiro autoritativo do checkout comercial.
+
+## Regras de cálculo
+- Estimativa no app usa tarifa base do tipo de transporte selecionado + distância + multiplicador dinâmico.
+- Valor final é calculado no backend no fecho (`finalizeTripPayment`) com metering real.
+- O checkout de `tripPackages` segue regra separada:
+  - `chargedAmount = roundHalfUp(price.amountMinor * packagePriceMultiplierBasisPoints / 10000)`
+  - `priceAdjustmentMinor = chargedAmount - price.amountMinor`
+  - este ajuste não altera nem contamina o pricing normal das trips.
+- Momento canónico de pricing lock:
+  - viagem imediata: `requestedAt` / criação do pedido;
+  - reserva: criação da viagem a partir da reserva, avaliando sempre `scheduledAt`.
+- Em reservas, `scheduledAt` é avaliado como instante absoluto projetado para `Europe/Lisbon`; não depende da hora efetiva do job de ativação.
+- Cálculo de distância usa metros inteiros (`totalMeters`) e arredondamento `half up`:
+  - por faixa: `roundHalfUp(metersInTier * perKmMinor / 1000)`.
+- `distanceTiers` é a fonte autoritativa quando presente; `perKm` mantém-se como compatibilidade transitória.
+- `tripDuration` / `elapsedTime` / timestamps mantêm-se operacionais e não entram no cálculo monetário normal.
+- Única componente temporal monetária da viagem principal: `waitCharge`.
+- Fórmula autoritativa da viagem principal:
+  - `baseFare = tariff.baseByTransportType[selectedTransportTypeId]`
+  - `combinedMultiplier = timeRangeMultiplier × holidayMultiplier`
+  - multiplicadores ausentes usam fator `1.0`
+  - `preMultiplierSubtotal = baseFare + distanceCharge + waitCharge`
+  - `subtotal = roundHalfUp(preMultiplierSubtotal * combinedMultiplier)`
+  - `multiplierCharge = subtotal - preMultiplierSubtotal`
+  - `total = max(subtotal - discountMinor, 0) + penalties + surcharge`
+- Componentes que recebem multiplicador:
+  - `baseFare`
+  - `distanceCharge`
+  - `waitCharge`
+- Componentes que não recebem multiplicador:
+  - `penalties`
+  - `manual surcharge`
+  - `postChargeExtension` charges
+  - descontos
+  - fees de cancelamento / no-show
+- Para o Trip Preview (pedido imediato), o breakdown canónico exposto à UI inclui:
+  - `baseMinor`
+  - `distanceMinor`
+  - `waitMinor` apenas quando existir preview de espera elegível
+  - `subtotalMinor`
+  - `multiplier`
+  - `multiplierId`
+  - `transportTypeId`
+  - `timeRangeRuleId`
+  - `timeRangeMultiplier`
+  - `holidayRuleId`
+  - `holidayMultiplier`
+  - `evaluationTimestamp`
+  - `evaluationTimeZone`
+  - `multiplierChargeMinor`
+  - `totalMinor`
+  - `distanceKm`
+  - `durationMinutes`
+- Regra canónica de rounding no preview:
+  - `subtotal = base + distance + wait`
+  - `total = ceil(subtotal * combinedMultiplier)`
+  - `multiplierCharge = total - subtotal`
+- Multiplicadores aplicáveis no tarifário: `time_range` e `holiday`.
+- Para `Tariff.multiplierRules` do tipo `time_range`:
+  - suporta `1..5` períodos;
+  - períodos não se podem sobrepor;
+  - overnight é permitido;
+  - semântica temporal canónica: início inclusivo e fim exclusivo;
+  - multiplicador canónico entre `0.50` e `3.00`.
+- Para `Tariff.multiplierRules` do tipo `holiday`:
+  - define datas locais explícitas (`YYYY-MM-DD`);
+  - não usa `timeRange`;
+  - acumula com `time_range` quando existir match no mesmo lock.
+- Precisão dos multiplicadores:
+  - o domínio usa representação decimal determinística / fixed-point;
+  - `double` não é fonte canónica de cálculo;
+  - o produto dos fatores não é arredondado passo a passo;
+  - a eventual limitação de casas decimais no formulário administrativo é apenas restrição temporária de UI, não contrato estrutural do domínio.
+- `TripPricingSnapshot` v3 persiste:
+  - `pricingSchemaVersion`
+  - `appliedMultiplier`
+  - `appliedMultiplierId`
+  - `pricingScheduleId`
+  - `specialDayId`
+  - `resolvedBaseTransportTypeId`
+  - `resolvedBaseSource = "tariff.baseByTransportType"`
+  - `timeRangeMultiplier`
+  - `holidayMultiplier`
+  - `evaluationTimestamp`
+  - `evaluationTimeZone`
+- Snapshots históricos v2 podem continuar a transportar `transportMultiplier`, mas esse campo é legado e não é escrito em novos locks.
+- O contrato ativo do tarifário não suporta multiplicador semanal nem campo dedicado de dias da semana.
+- Descontos do cliente são aplicados no backend durante a cobrança final.
+- Desconto temporal dedicado ao tempo de movimento não faz parte do contrato ativo.
+- Extensão pós-cobrança usa `pricingSnapshot.perWaitMinute` (snapshot da viagem), sem reavaliar horário/feriado e sem participar no mecanismo de multiplicadores temporais.
+- Pedido de extensão pós-cobrança aceita durações `15..60` minutos.
+- UI do cliente sugere `15/30/45/60` e mostra estimativa informativa por ciclo.
+- Fórmula da estimativa informativa: `estimatedCharge = requestedMinutes * perWaitMinute`.
+- A copy da estimativa deve explicitar que a cobrança final depende do tempo efetivamente utilizado.
+- Cada ciclo de extensão persiste `waitRateApplied`, `billedMinutes` e `chargedAmount`.
+- Cobrança de extensão por ciclo usa minutos faturáveis com arredondamento por minuto iniciado:
+  - `billedMinutes = max(1, ceil(actualSeconds / 60))`
+  - `chargedAmount = billedMinutes * waitRateApplied`.
+
+## Guardrails
+- Incompatibilidade de moeda falha com erro explícito.
+- Edição administrativa de tarifário usa valores formatados em unidades major, mas persiste sempre `amountMinor`.
+- No módulo de tarifários não existe FX: a edição exige moeda única e consistente em todo o `Tariff`.
+- Payload monetário inválido em paths críticos falha sem fallback legado.
+- Leitura com schema inválido falha de forma explícita (sem fallback de normalização) na camada base de repositório/validação.
+- Ausência de `tariffs/public_default` ou de `baseByTransportType[selectedTransportTypeId]` falha de forma explícita; não existe fallback monetário em runtime ativo.
+- Timestamps de Firestore em leitura são estritos (`Timestamp`/`DateTime`), sem parsing de string.
+- Formatação monetária é feita no edge (`CurrencyFormatter`), não no value object.
+
+## Referências de implementação
+- `lib/core/domain/value_objects/money.dart`
+- `lib/core/domain/value_objects/currency_metadata.dart`
+- `lib/core/services/currency_formatter.dart`
+- `lib/features/pricing/domain/usecases/calculate_distance_tier_charge.dart`
+- `lib/features/pricing/domain/usecases/estimate_trip_price.dart`
+- `functions/src/trips/buildTripsFunctions.ts`
+- `docs/adr/0003-money-contract-and-minor-units.md`
+- `docs/adr/0016-firestore-strict-read-validation.md`

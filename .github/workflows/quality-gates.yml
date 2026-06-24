@@ -1,0 +1,84 @@
+name: Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  flutter-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter project
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run Flutter tests
+        run: flutter test test/
+
+  rules-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: rules-test/package-lock.json
+
+      - name: Install rules test dependencies
+        run: npm ci
+        working-directory: rules-test
+
+      - name: Run Firestore, Realtime Database, and Storage rules tests
+        run: npm test
+        working-directory: rules-test
+
+  functions-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Functions dependencies
+        run: npm --prefix functions ci
+
+      - name: Lint Functions
+        run: npm --prefix functions run lint
+
+      - name: Build Functions
+        run: npm --prefix functions run build
+
+      - name: Run Functions tests
+        run: npm --prefix functions test

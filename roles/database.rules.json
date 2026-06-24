@@ -1,0 +1,21 @@
+{
+  /* Visit https://firebase.google.com/docs/database/security to learn more about security rules. */
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "driverLocations": {
+      ".indexOn": ["g"],
+      "$driverId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $driverId",
+        ".validate": "!newData.exists() || (newData.child('g').isString() && newData.child('g').val().matches(/^[0-9bcdefghjkmnpqrstuvwxyz]{9}$/) && newData.child('ts').isNumber() && newData.child('l/0').isNumber() && newData.child('l/1').isNumber() && newData.child('l/0').val() >= -90 && newData.child('l/0').val() <= 90 && newData.child('l/1').val() >= -180 && newData.child('l/1').val() <= 180 && (!newData.child('heading').exists() || newData.child('heading').isNumber()) && (!newData.child('speed').exists() || newData.child('speed').isNumber()))"
+      }
+    },
+    "driverPresence": {
+      "$driverId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $driverId"
+      }
+    }
+  }
+}

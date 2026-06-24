@@ -1,33 +1,38 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
-import 'package:local_ent_280/presentation/event/event_detail_screen.dart';
-import 'package:local_ent_280/presentation/home/home_screen.dart';
-import 'package:local_ent_280/presentation/jetski/jetski_screen.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/presentation/widgets/app_bottom_nav.dart';
+import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/catalog/data/catalog_repository.dart';
+import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
 
-  static const double _marginMobile = 20;
-  static const double _heroHeight = 280;
+    static double get _heroHeight => 300.h;
+  static double get _cardRadius => 16.r;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+        padding: EdgeInsets.only(bottom: 72.h + MediaQuery.paddingOf(context).bottom,
         ),
         child: FloatingActionButton(
           onPressed: () {},
           backgroundColor: AppColors.secondaryContainer,
           foregroundColor: AppColors.onSecondaryContainer,
           elevation: 8,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.add_location_alt, size: 28),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Icon(Icons.add_location_alt, size: 28.sp),
         ),
       ),
       body: Column(
@@ -35,36 +40,36 @@ class DiscoverScreen extends StatelessWidget {
           const _DiscoverAppBar(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.only(bottom: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: DiscoverScreen._marginMobile,
+                      horizontal: AppLayout.marginMobile,
                     ),
                     child: _DiscoverHero(),
                   ),
-                  const SizedBox(height: 16),
-                  const Padding(
+                  SizedBox(height: 16.h),
+                  Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: DiscoverScreen._marginMobile,
+                      horizontal: AppLayout.marginMobile,
                     ),
                     child: _SearchFilterBar(),
                   ),
-                  const SizedBox(height: 32),
-                  const Padding(
+                  SizedBox(height: 32.h),
+                  Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: DiscoverScreen._marginMobile,
+                      horizontal: AppLayout.marginMobile,
                     ),
                     child: _ExperiencesSection(),
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: 32.h),
                   const _EventsSection(),
-                  const SizedBox(height: 32),
-                  const Padding(
+                  SizedBox(height: 32.h),
+                  Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: DiscoverScreen._marginMobile,
+                      horizontal: AppLayout.marginMobile,
                     ),
                     child: _InteractiveMapSection(),
                   ),
@@ -73,31 +78,12 @@ class DiscoverScreen extends StatelessWidget {
             ),
           ),
           AppBottomNav(
-            selectedIndex: 0,
-            onItemTap: (index) => _onNavTap(context, index),
+            selectedIndex: AppNavIndex.inicio,
+            onItemTap: (index) => AppNavigation.onBottomNavTap(context, index),
           ),
         ],
       ),
     );
-  }
-
-  void _onNavTap(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
-        );
-      case 2:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const EventDetailScreen()),
-        );
-      case 3:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const JetskiScreen()),
-        );
-    }
   }
 }
 
@@ -109,33 +95,38 @@ class _DiscoverAppBar extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Container(
-        height: 56,
+        height: 56.h,
         color: AppColors.background,
-        padding: const EdgeInsets.symmetric(horizontal: DiscoverScreen._marginMobile),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppLayout.marginMobile,
+        ),
         child: Row(
           children: [
             IconButton(
               onPressed: () {},
               icon: const Icon(Icons.menu, color: AppColors.primary),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
             ),
-            const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'Mobilidade Premium',
-                style: GoogleFonts.manrope(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 32 / 24,
-                  color: AppColors.primary,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    context.l10n.appNameLocalTransport,
+                    maxLines: 1,
+                    style: GoogleFonts.manrope(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
-              width: 32,
-              height: 32,
+              width: 36.w,
+              height: 36.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.outlineVariant),
@@ -145,9 +136,9 @@ class _DiscoverAppBar extends StatelessWidget {
                 child: Image.network(
                   AppAssets.discoverProfileAvatarImage,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.person,
-                    size: 18,
+                    size: 18.sp,
                     color: AppColors.primary,
                   ),
                 ),
@@ -166,7 +157,7 @@ class _DiscoverHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(DiscoverScreen._cardRadius),
       child: SizedBox(
         height: DiscoverScreen._heroHeight,
         child: Stack(
@@ -177,62 +168,70 @@ class _DiscoverHero extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => ColoredBox(
                 color: AppColors.primary.withValues(alpha: 0.3),
-                child: const Icon(Icons.beach_access, color: Colors.white54, size: 48),
+                child: Icon(
+                  Icons.beach_access,
+                  color: Colors.white54,
+                  size: 48.sp,
+                ),
               ),
             ),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.8),
-                    AppColors.primary.withValues(alpha: 0.2),
                     Colors.transparent,
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.55),
+                    AppColors.primary.withValues(alpha: 0.85),
                   ],
+                  stops: const [0.0, 0.35, 0.65, 1.0],
                 ),
               ),
             ),
             Positioned(
-              left: 24,
-              right: 24,
-              bottom: 24,
+              left: 20,
+              right: 20,
+              bottom: 20,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.secondaryContainer,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(999.r),
                     ),
                     child: Text(
-                      'DESTAQUE DE VERÃO',
+                      context.l10n.discoverSummerHighlight,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.2,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.4,
                         color: AppColors.onSecondaryContainer,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 10.h),
                   Text(
-                    'A Essência do Mediterrâneo',
+                    context.l10n.discoverHeroTitle,
                     style: GoogleFonts.manrope(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      height: 36 / 28,
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 8.h),
                   Text(
-                    'Descubra refúgios secretos e experiências de luxo desenhadas para o viajante exigente.',
+                    context.l10n.discoverHeroSubtitle,
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w400,
-                      height: 28 / 18,
+                      height: 1.45,
                       color: AppColors.primaryFixedDim,
                     ),
                   ),
@@ -252,36 +251,42 @@ class _SearchFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DiscoverScreen._cardRadius),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 20.r,
+            offset: Offset(0, 6.h),
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            height: 48.h,
+            padding: EdgeInsets.symmetric(horizontal: 14.w),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12.r),
             ),
             child: Row(
               children: [
-                const Icon(Icons.search, color: AppColors.outline, size: 22),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.search_rounded,
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                  size: 22.sp,
+                ),
+                SizedBox(width: 10.w),
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Procurar restaurantes, festas ou praias...',
+                      hintText: context.l10n.discoverSearchHint,
                       hintStyle: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.onSurfaceVariant,
                       ),
                       border: InputBorder.none,
@@ -289,7 +294,7 @@ class _SearchFilterBar extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                     ),
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 14.sp,
                       color: AppColors.onSurface,
                     ),
                   ),
@@ -297,50 +302,56 @@ class _SearchFilterBar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 12.h),
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.filter_list, size: 20),
-                  label: Text(
-                    'Filtros',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.1,
+              Flexible(
+                flex: 2,
+                child: SizedBox(height: 48.h,
+                  child: TextButton.icon(
+                    onPressed: () {},
+                    icon: Icon(Icons.tune_rounded, size: 20.sp),
+                    label: Text(
+                      context.l10n.discoverFilters,
+                      style: GoogleFonts.inter(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.onSurface,
-                    backgroundColor: AppColors.surfaceContainerHigh,
-                    side: BorderSide.none,
-                    minimumSize: const Size(0, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.onSurface,
+                      backgroundColor: AppColors.surfaceContainerHigh,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () {},
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
-                    minimumSize: const Size(0, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              SizedBox(width: 10.w),
+              Flexible(
+                flex: 3,
+                child: SizedBox(height: 48.h,
+                  child: FilledButton(
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'Explorar Mapa',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.1,
+                    child: Text(
+                      context.l10n.discoverExploreMap,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                      style: GoogleFonts.inter(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -367,9 +378,9 @@ class _ExperiencesSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Experiências Exclusivas',
+                context.l10n.discoverExperiencesTitle,
                 style: GoogleFonts.manrope(
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w600,
                   height: 28 / 20,
                   color: AppColors.primary,
@@ -382,17 +393,17 @@ class _ExperiencesSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Ver tudo',
+                    context.l10n.seeAll,
                     style: GoogleFonts.inter(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.1,
                       color: AppColors.secondary,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward,
-                    size: 18,
+                    size: 18.sp,
                     color: AppColors.secondary,
                   ),
                 ],
@@ -400,19 +411,19 @@ class _ExperiencesSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         _ExperienceCard(
           imageUrl: AppAssets.discoverRestaurantImage,
-          category: 'Gastronomia',
-          title: 'Restaurantes de Autor',
-          height: 200,
+          category: context.l10n.discoverCategoryGastronomy,
+          title: context.l10n.discoverExperienceRestaurants,
+          height: 200.h,
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         _ExperienceCard(
           imageUrl: AppAssets.discoverPlacesImage,
-          category: 'Exploração',
-          title: 'Recantos Secretos',
-          height: 160,
+          category: context.l10n.discoverCategoryExploration,
+          title: context.l10n.discoverExperienceSecretSpots,
+          height: 160.h,
         ),
       ],
     );
@@ -435,7 +446,7 @@ class _ExperienceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: SizedBox(
         height: height,
         child: Stack(
@@ -457,7 +468,7 @@ class _ExperienceCard extends StatelessWidget {
                   Text(
                     category.toUpperCase(),
                     style: GoogleFonts.inter(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 2,
                       color: AppColors.primaryFixedDim,
@@ -466,7 +477,7 @@ class _ExperienceCard extends StatelessWidget {
                   Text(
                     title,
                     style: GoogleFonts.manrope(
-                      fontSize: 24,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.w600,
                       height: 32 / 24,
                       color: Colors.white,
@@ -485,102 +496,99 @@ class _ExperienceCard extends StatelessWidget {
 class _EventsSection extends StatelessWidget {
   const _EventsSection();
 
-  static const _events = [
-    (
-      image: AppAssets.discoverEventSunsetImage,
-      day: '15',
-      month: 'AGO',
-      venue: 'Blue Horizon Beach Club',
-      title: 'Sunset Ritual: Deep House',
-      description:
-          'Uma jornada musical inesquecível enquanto o sol se põe sobre o mar.',
-      price: '45,00€',
-    ),
-    (
-      image: AppAssets.discoverEventJazzImage,
-      day: '18',
-      month: 'AGO',
-      venue: 'Palácio das Oliveiras',
-      title: 'Noites de Jazz & Vinho',
-      description:
-          'Degustação premium acompanhada pelo melhor jazz contemporâneo.',
-      price: '30,00€',
-    ),
+  static const _fallbackImages = [
+    AppAssets.discoverEventSunsetImage,
+    AppAssets.discoverEventJazzImage,
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: DiscoverScreen._marginMobile,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Próximos Eventos',
-                  style: GoogleFonts.manrope(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    height: 28 / 20,
-                    color: AppColors.primary,
-                  ),
-                ),
+    return StreamBuilder<List<CatalogPackage>>(
+      stream: CatalogRepository().watchActivePackages(),
+      builder: (context, snapshot) {
+        final packages = snapshot.data ?? const [];
+        if (packages.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final formatter = AppCurrencyFormatter.instance;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppLayout.marginMobile,
               ),
-              Row(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _CircleNavButton(icon: Icons.chevron_left, onTap: () {}),
-                  const SizedBox(width: 4),
-                  _CircleNavButton(icon: Icons.chevron_right, onTap: () {}),
+                  Expanded(
+                    child: Text(
+                      context.l10n.discoverUpcomingEvents,
+                      style: GoogleFonts.manrope(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w600,
+                        height: 28 / 20,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _CircleNavButton(icon: Icons.chevron_left, onTap: () {}),
+                      SizedBox(width: 4.w),
+                      _CircleNavButton(icon: Icons.chevron_right, onTap: () {}),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(
-            horizontal: DiscoverScreen._marginMobile,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < _events.length; i++) ...[
-                if (i > 0) const SizedBox(width: 24),
-                Builder(
-                  builder: (context) {
-                    final event = _events[i];
-                    return _EventCard(
-                      imageUrl: event.image,
-                      day: event.day,
-                      month: event.month,
-                      venue: event.venue,
-                      title: event.title,
-                      description: event.description,
-                      price: event.price,
-                      onTickets: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const EventDetailScreen(),
-                          ),
+            ),
+            SizedBox(height: 24.h),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppLayout.marginMobile,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < packages.length && i < 6; i++) ...[
+                    if (i > 0) SizedBox(width: 24.w),
+                    Builder(
+                      builder: (context) {
+                        final item = packages[i];
+                        final scheduled = item.destination.trim().isNotEmpty
+                            ? item.destination
+                            : '—';
+                        return _EventCard(
+                          imageUrl: item.photoUrl ??
+                              _fallbackImages[i % _fallbackImages.length],
+                          day: '${(i + 1) * 5}',
+                          month: '—',
+                          venue: scheduled,
+                          title: item.title,
+                          description: item.description,
+                          price: formatter.formatEurMajor(item.priceEur),
+                          onTickets: () {
+                            AppNavigation.toEventBooking(
+                              context,
+                              packageId: item.id,
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
+
 
 class _CircleNavButton extends StatelessWidget {
   const _CircleNavButton({required this.icon, required this.onTap});
@@ -596,13 +604,13 @@ class _CircleNavButton extends StatelessWidget {
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Container(
-          width: 40,
-          height: 40,
+          width: 40.w,
+          height: 40.h,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.outlineVariant),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 22),
+          child: Icon(icon, color: AppColors.primary, size: 22.sp),
         ),
       ),
     );
@@ -633,15 +641,15 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
+      width: 300.w,
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.surfaceContainer),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
+            blurRadius: 8.r,
           ),
         ],
       ),
@@ -649,8 +657,7 @@ class _EventCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            height: 192,
+          SizedBox(height: 192.h,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -664,20 +671,19 @@ class _EventCard extends StatelessWidget {
                   top: 16,
                   right: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                    padding: EdgeInsets.symmetric(horizontal: 8.w,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Column(
                       children: [
                         Text(
                           day,
                           style: GoogleFonts.manrope(
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
                           ),
@@ -685,7 +691,7 @@ class _EventCard extends StatelessWidget {
                         Text(
                           month,
                           style: GoogleFonts.inter(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w500,
                             color: AppColors.outline,
                           ),
@@ -698,23 +704,23 @@ class _EventCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on,
-                      size: 18,
+                      size: 18.sp,
                       color: AppColors.secondary,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Expanded(
                       child: Text(
                         venue,
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.1,
                           color: AppColors.secondary,
@@ -723,33 +729,33 @@ class _EventCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   title,
                   style: GoogleFonts.manrope(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
                     height: 28 / 20,
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 Row(
                   children: [
                     Text(
                       price,
                       style: GoogleFonts.manrope(
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
                       ),
@@ -761,10 +767,10 @@ class _EventCard extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.secondaryContainer,
                           foregroundColor: AppColors.onSecondaryContainer,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
                           minimumSize: const Size(0, 44),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                         ),
                         child: Row(
@@ -772,17 +778,17 @@ class _EventCard extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                'Bilhetes',
+                                context.l10n.discoverTickets,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.inter(
-                                  fontSize: 14,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.1,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.confirmation_number, size: 18),
+                            SizedBox(width: 4.w),
+                            Icon(Icons.confirmation_number, size: 18.sp),
                           ],
                         ),
                       ),
@@ -807,36 +813,51 @@ class _InteractiveMapSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mapa Interativo',
+          context.l10n.discoverInteractiveMapTitle,
           style: GoogleFonts.manrope(
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
             height: 28 / 20,
             color: AppColors.primary,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Text(
-          'Explore os pontos de interesse perto de si.',
+          context.l10n.discoverInteractiveMapSubtitle,
           style: GoogleFonts.inter(
-            fontSize: 16,
+            fontSize: 13.sp,
             color: AppColors.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24.h),
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            height: 400,
+          borderRadius: BorderRadius.circular(12.r),
+          child: SizedBox(height: 400.h,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 ColorFiltered(
                   colorFilter: const ColorFilter.matrix(<double>[
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0, 0, 0, 0.95, 0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0.2126,
+                    0.7152,
+                    0.0722,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0.95,
+                    0,
                   ]),
                   child: Image.network(
                     AppAssets.discoverIslandMapImage,
@@ -851,7 +872,7 @@ class _InteractiveMapSection extends StatelessWidget {
                   child: Column(
                     children: [
                       _MapControlButton(icon: Icons.add, onTap: () {}),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       _MapControlButton(icon: Icons.remove, onTap: () {}),
                     ],
                   ),
@@ -860,7 +881,7 @@ class _InteractiveMapSection extends StatelessWidget {
                   left: MediaQuery.sizeOf(context).width * 0.22,
                   top: 120,
                   child: _MapMarker(
-                    label: 'Restaurante Maré',
+                    label: context.l10n.discoverMapRestaurantLabel,
                     color: AppColors.primary,
                   ),
                 ),
@@ -868,7 +889,7 @@ class _InteractiveMapSection extends StatelessWidget {
                   right: MediaQuery.sizeOf(context).width * 0.28,
                   bottom: 100,
                   child: _MapMarker(
-                    label: 'Praia Secreta',
+                    label: context.l10n.discoverMapBeachLabel,
                     color: AppColors.secondary,
                   ),
                 ),
@@ -877,11 +898,11 @@ class _InteractiveMapSection extends StatelessWidget {
                   bottom: 16,
                   child: FilledButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.my_location, size: 20),
+                    icon: Icon(Icons.my_location, size: 20.sp),
                     label: Text(
-                      'Localização Atual',
+                      context.l10n.discoverCurrentLocation,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.1,
                       ),
@@ -889,8 +910,7 @@ class _InteractiveMapSection extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
+                      padding: EdgeInsets.symmetric(horizontal: 24.w,
                         vertical: 8,
                       ),
                       shape: const StadiumBorder(),
@@ -916,14 +936,13 @@ class _MapControlButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(8.r),
       elevation: 4,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 48,
-          height: 48,
+        borderRadius: BorderRadius.circular(8.r),
+        child: SizedBox(width: 48.w,
+          height: 48.h,
           child: Icon(icon, color: AppColors.primary),
         ),
       ),
@@ -943,21 +962,21 @@ class _MapMarker extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8,
+                blurRadius: 8.r,
               ),
             ],
           ),
           child: Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               color: color == AppColors.primary
                   ? AppColors.onPrimary
@@ -965,7 +984,7 @@ class _MapMarker extends StatelessWidget {
             ),
           ),
         ),
-        Icon(Icons.location_on, color: color, size: 36),
+        Icon(Icons.location_on, color: color, size: 36.sp),
       ],
     );
   }

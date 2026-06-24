@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "451122835320",
+    "firebase_url": "https://local-transport-482015-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "local-transport-482015",
+    "storage_bucket": "local-transport-482015.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:451122835320:android:ebbb15573a453adc2ba28d",
+        "android_client_info": {
+          "package_name": "com.localtransport.app.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAogYxUvVE2X07N44fPXnvVCiN8zLxTpEE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

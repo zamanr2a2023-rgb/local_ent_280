@@ -1,0 +1,330 @@
+# Source of Truth: Admin
+
+## Objetivo do domínio
+- Centralizar operações administrativas e operacionais com controlo de permissões por papel.
+
+## Entidades e contratos
+- Entidades principais: utilizadores, motoristas, viaturas, tipos de transporte, tarifas, saldos, auditoria, eventos e relatórios.
+- Ações administrativas críticas são executadas por callables/backend com validação de papel.
+- Bootstrap inicial de admin em ambientes reais é feito por script não destrutivo `seed:admin`, que cria/atualiza apenas Auth + `users/{uid}` e garante claim `role=admin` sem limpar o projeto.
+
+## Capacidades administrativas
+- Gestão de utilizadores (`admin` completo; `manager` restrito a operação).
+- Na edição de utilizadores, `admin` pode redefinir a palavra-passe de qualquer conta diretamente no formulário; o campo é opcional e só produz alteração quando preenchido.
+- Gestão de incidentes operacionais:
+  - lista/detalhe leve para `admin` e `manager` com acesso operacional;
+  - revisão com `acknowledge`, `dismiss`, `confirm` e `approve_exception`;
+  - aprovação preventiva de reposicionamento com motivo e expiração obrigatórios;
+  - sem dashboard analítico pesado nem settings screen nesta fase.
+- Gestão de reservas operacionais one-off:
+  - workspace partilhado por `admin` e `manager`;
+  - lista de reservas futuras `internal_staff`;
+  - criação com cliente, motorista, data/hora, recolha, destino e tipo de transporte;
+  - cancelamento e edição simples de reservas `internal_staff`;
+  - pacotes partilhados não usam o domínio `reservations` no produto ativo.
+- Gestão de frota e associação motorista-viatura.
+  - picker de atribuição apresenta thumbnail da viatura (ou placeholder), matrícula, modelo e estado.
+- Gestão de pricing/tarifário e dias especiais.
+  - `admin_default` é a única fonte editável de tarifário;
+  - `public_default` é projeção derivada espelhada por backend;
+  - gravação privilegiada de tarifário passa sempre por callable autenticado `saveAdminTariff`.
+- Gestão de câmbio de apresentação (`config/currency`) com taxas definidas manualmente pelo admin:
+  - `1 CVE = X EUR` (`cveToEur`, string decimal);
+  - `1 CVE = Y USD` (`cveToUsd`, string decimal);
+  - metadados `updatedAt`, `updatedBy` e `version` opcional.
+  - leitura disponível para `manager` porque relatórios/tarifários operacionais usam o formatter multi-moeda, mas escrita continua exclusiva de `admin`.
+- Ecrã administrativo de FX com guardrails:
+  - helpers inversos somente leitura (`1 EUR ≈ ... CVE`, `1 USD ≈ ... CVE`);
+  - aviso não bloqueante quando configuração está em falta/inválida (renderização da app cai para EUR).
+  - metadata de “última atualização” mostra nome legível do utilizador quando a identidade é resolvível; fallback para o identificador técnico apenas quando não houver identidade disponível.
+- Gestão de contacto operacional de recuperação de password em `config/support`:
+  - campo `supportPhone` definido por admin;
+  - metadados `updatedAt`, `updatedBy`, `version` opcional.
+- Pedidos operacionais de recuperação de password:
+  - criados por callable público `requestPasswordHelp` (resposta invariável);
+  - visíveis em `supportRequests/{id}` para `admin|manager`;
+  - resolução via callable autenticado `resolvePasswordHelpRequest`.
+- Experiência administrativa partilha o seletor global de idioma da app (`EN`, `PT-PT`, `ES`) em tempo real:
+  - override manual em Definições;
+  - ação explícita para repor “idioma do dispositivo”;
+  - fallback para `pt_PT` quando idioma do dispositivo não é suportado.
+- Ajustes de saldo e consulta operacional.
+- Gestão de tipos de transporte:
+  - criação e edição de `transport_types/{id}` no backoffice admin;
+  - o identificador técnico é gerado automaticamente a partir do nome e não é apresentado na UI administrativa;
+  - `id` imutável em edição;
+  - criação usa callable autenticado `createTransportType` com `initialBaseFare` e `packagePriceMultiplierBasisPoints`, criando o catálogo e semeando `tariffs/admin_default.baseByTransportType[id]` de forma atómica;
+  - atualização de `name`, `description`, `baseFare` e `packagePriceMultiplierBasisPoints` via callable autenticado `updateTransportType`;
+  - `packagePriceMultiplierBasisPoints` existe apenas para pricing comercial de `tripPackages` e é ignorado no pricing normal das trips;
+  - a UI administrativa edita o fator em formato amigável (`1.25x`), mas persiste sempre basis points;
+  - o scope ativo é apenas `criar/editar`; não existe delete/retire neste change;
+  - backfill automático de `vehicles.defaultTransportType.name` para viaturas que referenciam esse tipo;
+  - viagens e reservas históricas não são regravadas.
+- Gestão de packages pré-pagos:
+  - modelo ativo: `tripPackages` -> `tripPackageBookings`;
+  - fotografia do template é obrigatória;
+  - admin pode criar, editar, desativar, arquivar e apagar templates elegíveis;
+  - manager só acede ao mesmo módulo quando tem a permissão `tp`;
+  - cada package define `allowedTransportTypes[]` com snapshot `{ id, name, packagePriceMultiplierBasisPoints }`;
+  - o checkout comercial mostra `preço base + ajuste + total`;
+  - o booking persiste `price`, `priceAdjustmentMinor`, `chargedAmount` e o snapshot do transporte aplicado;
+  - refunds e leitura histórica usam apenas o snapshot persistido no booking.
+- Consulta de auditoria e exportação de relatórios.
+  - `Relatórios` exporta `CSV` e `XLSX`.
+  - Em Android/iOS, a exportação grava ficheiro temporário e abre a share sheet nativa do sistema.
+  - Em web/desktop, a exportação grava/download o ficheiro diretamente via `FileSaver`.
+- Configuração de permissões por manager:
+  - ecrã dedicado `Permissões de managers` no home admin;
+  - presets rápidos (`Leitura`, `Operacional`) e aplicação em lote para managers não configurados;
+  - gravação via callable `setManagerPermissions` com merge seguro de claims e validação de payload `<= 1000 bytes`;
+  - espelho no perfil (`users/{uid}.managerPermissions`) com `updatedAt`/`updatedBy`.
+  - catálogo inclui `mt` para gestão de tarifário, `tp` para gestão de trip packages e `ch` para gerir conversas de clientes.
+- Leitura de chat cliente-motorista:
+  - não existe módulo autónomo `Conversas`;
+  - `admin` e `manager` com permissão `ch` acedem ao chat da viagem em modo só leitura a partir do detalhe operacional da viagem.
+- Módulo `Tickets de suporte`:
+  - disponível para `admin`;
+  - disponível para `manager` com permissão `vs`;
+  - suporte geral aberto por cliente fica em `supportRequests/{id}` com `requestedBy=client_support_ticket`;
+  - suporte durante viagem ativa fica em `supportRequests/{id}` com `sourceType=active_trip`, `tripId`, `chatThreadId` e `tripSnapshot`;
+  - cada ticket abre a conversa `support_request_{requestId}` para resposta direta com o contexto do pedido visível;
+  - pedidos de recuperação de password continuam na mesma coleção com `requestedBy=forgot_password`.
+- Consulta de avaliações de motorista com contexto operacional:
+  - header com avatar/foto do motorista;
+  - linhas com cliente legível, data+hora e feedback quando existir;
+  - cards não expõem referência curta da viagem;
+  - tocar numa avaliação abre o detalhe operacional da viagem.
+- Consulta operacional de recusas de motorista no detalhe da viagem (fonte `tripEvents`), acessível a `admin` e `manager`.
+- Consulta operacional de viagens sem motorista (`NO_DRIVERS_AVAILABLE`) com motivo legível e código técnico (`unfulfilledReason`) na lista e no detalhe, acessível a `manager`.
+- Relatórios operacionais em shell única `/admin/reports`:
+  - workspaces canónicos:
+    - `Panorama Operacional`
+    - `Extrato do Cliente`
+    - `Extrato do Motorista`
+  - `Panorama Operacional` e `Extrato do Motorista` disponíveis para `admin` e `manager` com permissão `vr`;
+  - `Extrato do Cliente` restrito a `admin`;
+  - `Panorama Operacional` expõe modos first-class:
+    - `Detalhe`
+    - `Por Cliente`
+    - `Por Motorista`
+    - `Por Viatura`
+    - `Por Período`
+  - todos os workspaces seguem o mesmo padrão:
+    - cabeçalho de contexto;
+    - filtros estruturados;
+    - faixa de KPIs;
+    - cada KPI expõe ação de ajuda contextual; tocar no ícone abre um bottom sheet curto com o significado da métrica;
+    - tabela densa;
+    - ações primárias `Exportar CSV` e `Exportar XLSX`;
+  - exportação é sempre derivada de `filtros estruturados + workspace/mode ativos`, nunca da página atualmente visível nem de colunas escondidas;
+  - a exportação tenta carregar o dataset filtrado completo até ao teto de `5000` linhas;
+  - acima desse teto, a app bloqueia a exportação e pede para refinar os filtros; nunca emite ficheiro parcial como se fosse completo;
+  - o reporting distingue:
+    - `source filters`: filtros suportados pela query base desta fase e que definem o universo exportável com confiança;
+    - `materialized filters`: filtros aplicados sobre o dataset já materializado localmente por snapshots/pós-filtragem;
+  - quando existirem `materialized filters`, o contexto do relatório indica explicitamente que a leitura é exploratória sobre dataset materializado;
+  - se o dataset não estiver completo, a exportação principal fica bloqueada com instrução explícita para refinar `período` e/ou outros filtros fonte; a app não exporta ficheiros semanticamente ambíguos;
+  - exports incluem proveniência explícita:
+    - `reportId`
+    - `schemaVersion`
+    - `workspace`
+    - `mode`
+    - `selectedEntity`
+    - `period`
+    - `timezone`
+    - `generatedAt`
+    - `generatedBy`
+    - `filtersApplied`
+    - `rowCount`
+    - `sourceState`
+    - `exportScope`
+    - `disclaimer`
+  - exports do `Panorama Operacional` incluem também secções de leitura antes dos dados:
+    - `Resumo executivo` com escopo, filtros, conversão, receita/dívida e risco operacional;
+    - `Pontos de atenção` com prioridade, área, sinal e ação sugerida;
+    - `Top operacional` com ranking dos grupos ou viagens mais relevantes;
+    - `Dados detalhados` com todas as viagens do universo filtrado quando o modo ativo é agrupado.
+  - `Panorama Operacional` suporta drill-through de modos agrupados para `Detalhe`, pré-preenchendo o filtro exato da entidade e mantendo o período;
+  - roadmap Fase 2 mantém-se: read models dedicados com Algolia para pesquisa textual/facetada e BigQuery para analytics e reconciliação histórica de maior escala.
+  - Período de viagens concluídas é avaliado por `completedAt` (janela temporal `[from, to)`).
+  - Identidade de cliente/motorista/viatura é resolvida em modo `snapshot-only` a partir de `clientSummary`/`driverSummary`/`vehicleSummary`.
+  - A identidade primária em tabelas, detalhe e export segue `human-readable first`; IDs completos ficam fora do fluxo principal e aparecem apenas em detalhes técnicos/colunas técnicas.
+  - Quando faltar summary legível, o fallback é `Referência ABCD...WXYZ` (sem ID cru por defeito).
+- Auditoria administrativa apresenta `Alvo` em formato legível; IDs completos ficam apenas em `Detalhes técnicos`.
+  - Quando o alvo representa um utilizador, a identidade principal é `nome - email`.
+  - Novos registos persistem `subjectDisplayName`/`subjectEmail` no momento da ação sempre que essa identidade já exista no fluxo.
+  - Registos legacy sem estes campos usam resolução best-effort em runtime via callable em lote + cache local do ecrã.
+- Criação de eventos administrativos com lembretes configuráveis por evento para motoristas:
+  - alvo `broadcast` (todos) ou `driver` com `targetIds` explícito
+  - seleção multi-motorista com pesquisa + checklist até `200` destinatários por evento direcionado
+  - `1..5` tempos por evento
+  - UI do formulário apresenta offsets em ordem crescente (`1 -> 60`) para melhor leitura
+  - cada tempo entre `1..60` minutos antes do horário agendado em novas gravações
+  - eventos legacy com offset `>60` continuam legíveis, mas não podem ser regravados sem correção
+  - fallback `[15]` quando a lista chega vazia/inválida ao backend
+  - normalização interna de persistência/dispatch mantém ordem canónica existente (descendente)
+  - contrato `targetId` (singular) removido do runtime
+- Edição de tarifário:
+  - admin configura `1..5` faixas contínuas de preço por km em `tariffs/admin_default`;
+  - `Tariff.baseByTransportType` define uma tarifa base obrigatória por tipo de transporte existente;
+  - o save falha se faltar algum tipo de transporte ativo ou se existirem chaves desconhecidas;
+  - a diferenciação por tipo de transporte aplica-se apenas à tarifa base; deixou de existir multiplicador de transporte sobre a tarifa inteira;
+  - `transport_types.packagePriceMultiplierBasisPoints` não participa no cálculo do tarifário/trip fare; o seu scope é exclusivamente comercial para `tripPackages`;
+  - o contrato ativo do tarifário não inclui preço por minuto de viagem nem tarifa própria de extensão;
+  - a única componente temporal monetária configurável é `perWaitMinute`;
+  - a edição das faixas de distância é sequencial: a faixa seguinte só desbloqueia quando a anterior estiver completa;
+  - valores monetários na UI são editados em unidades major formatadas (ex.: `12,50`), com persistência em `amountMinor`;
+  - o formulário de tipos de transporte usa o mesmo padrão de input monetário do módulo de tarifário;
+  - com multi-moeda de UI: edição pode ser feita em `CVE`/`EUR`/`USD`, com helper em tempo real `≈ €X.XX` e persistência sempre em EUR (`amountMinor`);
+  - se a moeda de exibição mudar com o formulário aberto, os valores monetários já introduzidos são reconvertidos para a nova moeda de UI; nunca são reinterpretados na nova moeda;
+  - admin configura `1..5` períodos de multiplicador `time_range` com regras:
+    - sem sobreposição;
+    - overnight permitido (ex.: `22:00-02:00`);
+    - início inclusivo e fim exclusivo;
+    - multiplicador entre `0.50` e `3.00`;
+  - admin pode configurar multiplicador `holiday` por lista explícita de datas;
+  - `time_range` e `holiday` acumulam entre si quando coincidirem no mesmo pricing lock;
+  - a UI administrativa pode continuar a limitar a edição a 2 casas decimais nesta fase, mas essa limitação não é contrato estrutural do domínio;
+  - o contrato ativo do tarifário não suporta multiplicador por dia da semana;
+  - `tariffs/public_default` é espelhado automaticamente por Cloud Function idempotente com projeção determinística completa (overwrite, não patch merge);
+  - `public_default` não é editável diretamente por write de cliente/app.
+- Padrão de validação de inputs administrativos:
+  - formulários operacionais com `Form` + erro inline;
+  - submit bloqueado quando inválido;
+  - foco/scroll para o primeiro erro apenas no submit;
+  - parsing numérico locale-aware (`pt-PT`) com aceitação de `,` e `.` no input.
+
+## Filtros e ordenação em listas administrativas (Fases 1 e 2)
+- Padrão de recuperação:
+  - quando existirem filtros ativos, a `FilterBar` expõe `Repor filtros` inline;
+  - se os filtros levarem a zero resultados, o cabeçalho e a `FilterBar` mantêm-se visíveis;
+  - o empty state filtrado expõe `Repor filtros` e `Ajustar filtros`.
+- Relatórios (`admin_reports_screen`):
+  - `Panorama Operacional`:
+    - alternador de modo com `Detalhe`, `Cliente`, `Motorista`, `Viatura` e `Período`;
+    - filtros estruturados fonte: `dateRange`, `debtFilter`, `tripStatus`, texto contextual por `cliente`, `motorista` e `viatura`, além de filtros exatos internos usados no drill-through;
+    - `Detalhe` mostra a tabela analítica por viagem e sheet de detalhe com blocos operacional, financeiro e auditoria;
+    - modos agrupados mostram visão consolidada e tocar numa linha reabre `Detalhe` já filtrado para a entidade/período;
+    - exportação `CSV`/`XLSX` usa o dataset filtrado completo até `5000` linhas/grupos;
+    - colunas visíveis são otimizadas para leitura; o export inclui leitura executiva, pontos de atenção, ranking, dados do modo ativo e detalhe completo quando a vista ativa é agrupada.
+    - no modo `Detalhe`, a proveniência de pricing exportada inclui o multiplicador combinado dinâmico e os fatores estruturados (`timeRangeMultiplier`, `holidayMultiplier`, `pricingScheduleId`, `specialDayId`, `evaluationTimestamp`, `evaluationTimeZone`); `transportMultiplier` aparece apenas em snapshots históricos v2.
+  - `Extrato do Cliente`:
+    - arranca por defeito em modo consolidado (`todos os clientes`);
+    - seleção exata de cliente é opcional e funciona como filtro adicional do ledger;
+    - mostra reconciliação completa do período: `saldo inicial`, `créditos`, `débitos`, `saldo final`, `dívida no fim do período`;
+    - lista densa com movimentos do ledger base `balance_adjustments`, enriquecidos com contexto de viagem/extensão/ajuste quando houver `tripId`;
+    - a tabela visível inclui `cliente` para suportar o modo consolidado;
+    - a coluna `saldo após movimento` (`runningBalanceAfter`) é visível e exportável;
+    - enriquecimento de viagem no extrato usa apenas snapshot leve dos campos mostrados (`driver`, `viatura`, `pickup`, `destination`, `receipt.totalMinor`) e não depende de campos legacy não exibidos da viagem;
+    - exportação `CSV`/`XLSX` usa o dataset filtrado completo até `5000` movimentos, nunca apenas a janela já desenhada.
+  - `Extrato do Motorista`:
+    - arranca por defeito em modo consolidado (`todos os motoristas`);
+    - seleção exata de motorista é opcional e funciona como filtro adicional operacional;
+    - é um relatório operacional bruto por viagens atribuídas ao motorista, não um extrato de payout;
+    - a tabela visível inclui `motorista` para suportar o modo consolidado;
+    - KPIs focam `assigned`, `accepted`, `completed`, cancelamentos após aceitação, taxa de aceitação, km, duração e bruto das viagens;
+    - exportação `CSV`/`XLSX` inclui disclaimer explícito de que não constitui liquidação ao motorista.
+  - todos os workspaces preservam estado próprio, não perdem scroll ao alternar e não fazem refresh destrutivo ao alterar filtros;
+  - cabeçalho, filtros e resultados participam no mesmo scroll vertical do workspace;
+  - exportação CSV/XLSX usa share sheet nativa em mobile e gravação/download direta em web/desktop;
+  - período mantém-se obrigatório para consulta.
+- Auditoria (`admin_audit_screen`):
+  - barra superior com tipo de ação rápido e ordenação (`mais recentes`/`mais antigas`);
+  - filtros avançados em bottom sheet (`dateRange`, `email do administrador`);
+  - cabeçalho, filtros e lista participam no mesmo scroll vertical do ecrã;
+  - ordenação ascendente/descendente aplicada localmente sobre os registos recebidos.
+  - `Alvo` com padrão human-friendly e fallback de referência curta em vez de ID cru.
+  - auditorias user-targeted apresentam `Nome - email` quando a identidade do alvo existe ou pode ser resolvida.
+  - novos registos usam `adminEmail` como identidade principal do actor quando disponível; `adminName` é legado/opcional.
+  - identidade principal do actor mostrada por `adminEmail` quando disponível;
+  - registos legacy sem `adminEmail` usam resolução best-effort por callable em lote + cache local do ecrã;
+  - `adminId` completo fica restrito a `Detalhes técnicos`.
+  - `subject` bruto continua apenas em `Detalhes técnicos`.
+- Utilizadores (`admin_users_screen`):
+  - barra superior com pesquisa, chips rápidos por papel (ou disponibilidade no modo restrito) e ordenação;
+  - filtros avançados em bottom sheet (`status`, `disponibilidade do motorista`);
+  - cabeçalho, filtros e lista participam no mesmo scroll vertical do ecrã;
+  - filtragem aplicada localmente sobre o stream combinado de utilizadores.
+  - cards de motorista em formato operacional human-friendly:
+    - primário: nome legível;
+    - secundário: contacto (`telefone` e/ou `email`);
+    - metadata: estado da conta, disponibilidade e viatura atribuída;
+    - IDs completos ocultos por defeito.
+  - fallback de identidade:
+    - pessoa: `displayName -> name -> email -> phone -> Referência ABCD...WXYZ`;
+    - viatura: `plate -> model -> Referência ABCD...WXYZ`.
+  - detalhes técnicos em bottom sheet dedicado com ação de copiar e dismiss explícito.
+- Frota (`admin_fleet_screen`):
+  - barra superior com pesquisa, chips rápidos por estado da viatura e ordenação;
+  - filtros avançados em bottom sheet (`atribuição`, `tipo de transporte`);
+  - cabeçalho, filtros e lista participam no mesmo scroll vertical do ecrã;
+  - filtragem aplicada localmente sobre o stream de viaturas e mapa de atribuições.
+- Saldos (`admin_balances_screen`):
+  - barra superior com pesquisa, chips rápidos de risco de saldo e ordenação;
+  - filtros avançados em bottom sheet (`estado do cliente`);
+  - cabeçalho, filtros e lista participam no mesmo scroll vertical do ecrã;
+  - filtragem aplicada localmente sobre o stream combinado de perfis/saldos.
+- Tipos de transporte (`admin_transport_types_screen`):
+  - cabeçalho, ação principal e lista participam no mesmo scroll vertical do ecrã;
+  - catálogo suporta criação e edição no mesmo bottom sheet;
+  - cartões expõem ação explícita de editar;
+  - updates com backfill parcial devolvem feedback com ação `Tentar novamente`.
+- Persistência local de filtros ativa para `adminReports`, `adminAudit`, `adminUsers`, `adminFleet` e `adminBalances`.
+
+## Regras de autorização
+- `admin`: permissões totais de administração.
+- `manager`: subconjunto operacional (suporte e operações de terreno).
+- `manager` com a claim `mt` pode consultar e editar tarifário via módulo dedicado, sempre por callable autenticado.
+- `manager` pode ler incidentes operacionais apenas com `vt + vd`.
+- `manager` pode rever incidentes/aprovar reposicionamento apenas com `ts`.
+- `manager` só acede a reservas operacionais quando tem as permissões `vt + vd + vc`.
+- `manager` não recebe leitura global de `users`; visibilidade transversal de recuperação de password é exclusivamente via `supportRequests`.
+- `manager` com `av` pode criar, atualizar e remover atribuições em `driverVehicleAssignments`, incluindo a remoção automática da atribuição anterior quando uma viatura é reatribuída.
+- Enforcement em três camadas para manager:
+  - UI/rota: guards por permissão (`vt`, `vd`, `vr`, `va`, `vs`, `me`, `mt`, `tp`, `ts` quando a ação é mutação operacional).
+  - Firestore Rules: gates explícitos `managerCan*` por coleção/ação.
+  - Callables: verificação de claims em operações sensíveis (`cs`, `rp`, revisão de incidentes operacionais, gestão de tarifário) e nas ações de gestão de catálogo quando aplicável.
+- Query safety (“rules are not filters”):
+  - no modo manager, consultas de utilizadores evitam query mista insegura;
+  - `vc=false`: query apenas `role == driver`;
+  - `vc=true`: duas queries separadas (`driver` + `client`) com merge local determinístico.
+  - superfícies específicas continuam a aplicar o seu escopo de produto; o módulo `Motoristas` do manager mostra apenas `driver`.
+- `client`/`driver`: sem permissões de administração global.
+- Firestore Rules e callables aplicam fronteiras de acesso.
+- O atalho de definições por ícone segue a política global de navegação:
+  - visível apenas no landing por role;
+  - oculto nos ecrãs internos administrativos/operacionais.
+
+## Operação de suporte (manager)
+- `supportStatus` no detalhe operacional é enum fechado com os códigos:
+  - `open`, `in_analysis`, `waiting_client`, `resolved`, `escalated`.
+- Cancelamento por suporte é pré-viagem:
+  - permitido apenas até `DRIVER_ARRIVED`;
+  - bloqueado de `IN_TRIP` em diante.
+- O bloqueio é aplicado em UI e callable backend (`failed-precondition`, `reason=cannot_cancel_after_trip_started`).
+- Lista e detalhe do gestor exibem estado operacional com chips coloridos + ícone + texto (acessível, sem depender apenas da cor).
+
+## Integrações e dependências
+- Firestore: coleções administrativas e operacionais.
+- Cloud Functions: ações administrativas sensíveis (ex.: delete user, eventos).
+- UI admin/manager para operação diária.
+
+## Estados de erro e edge cases
+- Operação negada por papel insuficiente (`permission-denied`).
+- Entidades em estado inválido para ação (ex.: associação de viatura inexistente).
+- Conflitos de consistência entre estado operacional e ação manual.
+
+## Fora de escopo
+- Workflow de aprovação multinível para ações administrativas.
+- Integração com IAM externo granular por recurso.
+
+## Desvios do baseline MVP
+- Papel `manager` mantém um subconjunto de capacidades operacionais de administração.
+- `manager` tem acesso a relatórios operacionais filtráveis via módulo de operações.
+
+## Referências de implementação
+- `lib/features/admin/presentation/screens/`
+- `lib/features/manager/presentation/screens/`
+- `functions/src/admin/buildAdminFunctions.ts`
+- `functions/src/index.ts` (composition root/export surface)
+- `firestore.rules`

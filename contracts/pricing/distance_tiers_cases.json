@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "name": "zero_distance",
+      "totalMeters": 0,
+      "durationMinutes": 0,
+      "baseMinor": 250,
+      "perWaitMinuteMinor": 10,
+      "fallbackPerKmMinor": 120,
+      "tiers": [
+        {
+          "startMetersInclusive": 0,
+          "perKmMinor": 120
+        }
+      ],
+      "multiplier": 1,
+      "expectedDistanceChargeMinor": 0,
+      "expectedEstimateMinor": 250
+    },
+    {
+      "name": "exact_boundary_100km",
+      "totalMeters": 100000,
+      "durationMinutes": 10,
+      "baseMinor": 250,
+      "perWaitMinuteMinor": 10,
+      "fallbackPerKmMinor": 120,
+      "tiers": [
+        {
+          "startMetersInclusive": 0,
+          "endMetersExclusive": 100000,
+          "perKmMinor": 120
+        },
+        {
+          "startMetersInclusive": 100000,
+          "perKmMinor": 90
+        }
+      ],
+      "multiplier": 1,
+      "expectedDistanceChargeMinor": 12000,
+      "expectedEstimateMinor": 12250
+    },
+    {
+      "name": "above_boundary_100_4km",
+      "totalMeters": 100400,
+      "durationMinutes": 10,
+      "baseMinor": 250,
+      "perWaitMinuteMinor": 10,
+      "fallbackPerKmMinor": 120,
+      "tiers": [
+        {
+          "startMetersInclusive": 0,
+          "endMetersExclusive": 100000,
+          "perKmMinor": 120
+        },
+        {
+          "startMetersInclusive": 100000,
+          "perKmMinor": 90
+        }
+      ],
+      "multiplier": 1.15,
+      "expectedDistanceChargeMinor": 12036,
+      "expectedEstimateMinor": 14129
+    },
+    {
+      "name": "multi_tier_high_distance",
+      "totalMeters": 280250,
+      "durationMinutes": 42,
+      "baseMinor": 300,
+      "perWaitMinuteMinor": 10,
+      "fallbackPerKmMinor": 150,
+      "tiers": [
+        {
+          "startMetersInclusive": 0,
+          "endMetersExclusive": 50000,
+          "perKmMinor": 150
+        },
+        {
+          "startMetersInclusive": 50000,
+          "endMetersExclusive": 150000,
+          "perKmMinor": 110
+        },
+        {
+          "startMetersInclusive": 150000,
+          "perKmMinor": 80
+        }
+      ],
+      "multiplier": 1,
+      "expectedDistanceChargeMinor": 28920,
+      "expectedEstimateMinor": 29220
+    },
+    {
+      "name": "round_half_up_distance",
+      "totalMeters": 333,
+      "durationMinutes": 0,
+      "baseMinor": 0,
+      "perWaitMinuteMinor": 0,
+      "fallbackPerKmMinor": 125,
+      "tiers": [
+        {
+          "startMetersInclusive": 0,
+          "perKmMinor": 125
+        }
+      ],
+      "multiplier": 1,
+      "expectedDistanceChargeMinor": 42,
+      "expectedEstimateMinor": 42
+    },
+    {
+      "name": "legacy_fallback_no_tiers",
+      "totalMeters": 12345,
+      "durationMinutes": 7,
+      "baseMinor": 100,
+      "perWaitMinuteMinor": 0,
+      "fallbackPerKmMinor": 120,
+      "tiers": [],
+      "multiplier": 1.2,
+      "expectedDistanceChargeMinor": 1481,
+      "expectedEstimateMinor": 1898
+    }
+  ]
+}

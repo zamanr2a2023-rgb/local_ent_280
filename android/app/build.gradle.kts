@@ -1,14 +1,58 @@
+import java.util.Base64
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.local_ent_280"
+    namespace = "com.localtransport.app.dev"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    val dartDefines: Map<String, String> = run {
+        val definesProperty = project.findProperty("dart-defines") as String?
+        if (definesProperty.isNullOrBlank()) {
+            emptyMap()
+        } else {
+            definesProperty.split(",")
+                .mapNotNull { encoded ->
+                    val decoded = String(Base64.getDecoder().decode(encoded))
+                    val separatorIndex = decoded.indexOf("=")
+                    if (separatorIndex <= 0) {
+                        null
+                    } else {
+                        decoded.substring(0, separatorIndex) to
+                            decoded.substring(separatorIndex + 1)
+                    }
+                }
+                .toMap()
+        }
+    }
+
+    val localProperties: Map<String, String> = run {
+        val propertiesFile = rootProject.file("local.properties")
+        if (!propertiesFile.exists()) {
+            emptyMap()
+        } else {
+            val properties = Properties()
+            propertiesFile.inputStream().use { properties.load(it) }
+            properties.stringPropertyNames().associateWith { key ->
+                properties.getProperty(key).orEmpty()
+            }
+        }
+    }
+
+    val googleMapsApiKey: String =
+        (project.findProperty("GOOGLE_MAPS_API_KEY") as String?)
+            ?: System.getenv("GOOGLE_MAPS_API_KEY")
+            ?: localProperties["GOOGLE_MAPS_API_KEY"]
+            ?: dartDefines["GOOGLE_MAPS_API_KEY"]
+            ?: "AIzaSyCfYetXZeDG082fWzLTgT8Mzldo6e7i6HE"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -20,20 +64,16 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.local_ent_280"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.localtransport.app.dev"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resValue("string", "google_maps_api_key", googleMapsApiKey)
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
