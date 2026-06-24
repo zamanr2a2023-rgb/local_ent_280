@@ -2,4 +2,4 @@ sdk.dir=C\:\\Users\\YourUser\\AppData\\Local\\Android\\Sdk
 flutter.sdk=C\:\\flutter
 
 # Google Maps key (Maps SDK + Places + Directions). Keep in sync with --dart-define.
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+GOOGLE_MAPS_API_KEY=AIzaSyCfYetXZeDG082fWzLTgT8Mzldo6e7i6HE

@@ -6,16 +6,20 @@ import 'package:local_ent_280/features/auth/data/models/app_user_profile.dart';
 import 'package:local_ent_280/features/auth/data/models/login_selected_role.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/auth/domain/repositories/auth_repository.dart';
+import 'package:local_ent_280/features/notifications/domain/repositories/notification_token_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     FirebaseAuth? firebaseAuth,
     FirebaseFirestore? firestore,
+    NotificationTokenRepository? notificationTokenRepository,
   })  : _auth = firebaseAuth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _notificationTokenRepository = notificationTokenRepository;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final NotificationTokenRepository? _notificationTokenRepository;
 
   @override
   User? get currentUser => _auth.currentUser;
@@ -179,9 +183,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signOut() {
+  Future<void> signOut() async {
+    final userId = _auth.currentUser?.uid ?? UserSession.instance.profile?.uid;
     UserSession.instance.clear();
-    return _auth.signOut();
+    if (userId != null && _notificationTokenRepository != null) {
+      try {
+        await _notificationTokenRepository.removeCurrentToken(userId: userId);
+      } catch (_) {}
+    }
+    await _auth.signOut();
   }
 
   AuthFailureCode _mapRegistrationAuthCode(String code) {

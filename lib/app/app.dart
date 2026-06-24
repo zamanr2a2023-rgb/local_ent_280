@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:local_ent_280/core/navigation/app_navigator_key.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/settings/user_preferences.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
+import 'package:local_ent_280/features/notifications/presentation/widgets/notification_banner_listener.dart';
+import 'package:local_ent_280/features/notifications/presentation/widgets/notification_open_listener.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
 import 'package:local_ent_280/presentation/splash/splash_gate.dart';
 
@@ -45,6 +48,7 @@ class _LocalTransportAppState extends State<LocalTransportApp> {
   Widget build(BuildContext context) {
     final locale = _resolveLocale(context);
     return MaterialApp(
+      navigatorKey: AppNavigatorKey.root,
       title: 'Local Transport',
       debugShowCheckedModeBanner: false,
       locale: locale,
@@ -64,6 +68,13 @@ class _LocalTransportAppState extends State<LocalTransportApp> {
           surface: AppColors.background,
         ),
       ),
+      builder: (context, child) {
+        return NotificationOpenListener(
+          child: NotificationBannerListener(
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
       home: const SplashGate(),
     );
   }
