@@ -9,10 +9,10 @@ import 'package:local_ent_280/core/data/firebase/messaging_service.dart';
 import 'package:local_ent_280/core/data/firebase/providers/messaging_service_provider.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/navigation/app_navigator_key.dart';
-import '../data/mappers/notification_event_mapper.dart';
-import '../domain/entities/notification_event.dart';
-import 'notification_open_route_resolver.dart';
-import 'notification_open_target.dart';
+import 'package:local_ent_280/features/notifications/data/mappers/notification_event_mapper.dart';
+import 'package:local_ent_280/features/notifications/domain/entities/notification_event.dart';
+import 'package:local_ent_280/features/notifications/presentation/notification_open_route_resolver.dart';
+import 'package:local_ent_280/features/notifications/presentation/notification_open_target.dart';
 
 class NotificationOpenListener extends ConsumerStatefulWidget {
   const NotificationOpenListener({super.key, required this.child});

@@ -271,7 +271,7 @@ class _NotificationBannerContent extends StatelessWidget {
           title,
           style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
-        SizedBox(height: AppLayout.xs),
+        SizedBox(height: AppLayout.unit),
         Text(message, style: textTheme.bodySmall),
       ],
     );
