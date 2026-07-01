@@ -7,11 +7,20 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 class LocationPermissionHelper {
   const LocationPermissionHelper._();
 
-  static Future<bool> ensureGranted(BuildContext context) async {
+  static Future<bool> ensureGranted(
+    BuildContext context, {
+    String? title,
+    String? message,
+    String? settingsMessage,
+    String? servicesDisabledMessage,
+  }) async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (!context.mounted) return false;
-      await _showLocationServicesDialog(context);
+      await _showLocationServicesDialog(
+        context,
+        servicesDisabledMessage: servicesDisabledMessage,
+      );
       return false;
     }
 
@@ -23,11 +32,19 @@ class LocationPermissionHelper {
 
     if (permission == LocationPermission.deniedForever) {
       if (!context.mounted) return false;
-      return _showOpenSettingsDialog(context);
+      return _showOpenSettingsDialog(
+        context,
+        title: title,
+        settingsMessage: settingsMessage,
+      );
     }
 
     if (!context.mounted) return false;
-    final shouldRequest = await _showRationaleDialog(context);
+    final shouldRequest = await _showRationaleDialog(
+      context,
+      title: title,
+      message: message,
+    );
     if (!shouldRequest) return false;
 
     permission = await Geolocator.requestPermission();
@@ -38,21 +55,29 @@ class LocationPermissionHelper {
 
     if (permission == LocationPermission.deniedForever) {
       if (!context.mounted) return false;
-      return _showOpenSettingsDialog(context);
+      return _showOpenSettingsDialog(
+        context,
+        title: title,
+        settingsMessage: settingsMessage,
+      );
     }
 
     return false;
   }
 
-  static Future<bool> _showRationaleDialog(BuildContext context) async {
+  static Future<bool> _showRationaleDialog(
+    BuildContext context, {
+    String? title,
+    String? message,
+  }) async {
     final l10n = context.l10n;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(l10n.homeLocationPermissionTitle),
-          content: Text(l10n.homeLocationPermissionMessage),
+          title: Text(title ?? l10n.homeLocationPermissionTitle),
+          content: Text(message ?? l10n.homeLocationPermissionMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -72,14 +97,20 @@ class LocationPermissionHelper {
     return result ?? false;
   }
 
-  static Future<bool> _showOpenSettingsDialog(BuildContext context) async {
+  static Future<bool> _showOpenSettingsDialog(
+    BuildContext context, {
+    String? title,
+    String? settingsMessage,
+  }) async {
     final l10n = context.l10n;
     final openSettings = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(l10n.homeLocationPermissionTitle),
-          content: Text(l10n.homeLocationPermissionSettingsMessage),
+          title: Text(title ?? l10n.homeLocationPermissionTitle),
+          content: Text(
+            settingsMessage ?? l10n.homeLocationPermissionSettingsMessage,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -103,14 +134,19 @@ class LocationPermissionHelper {
     return false;
   }
 
-  static Future<void> _showLocationServicesDialog(BuildContext context) async {
+  static Future<void> _showLocationServicesDialog(
+    BuildContext context, {
+    String? servicesDisabledMessage,
+  }) async {
     final l10n = context.l10n;
     final enable = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(l10n.homeLocationPermissionTitle),
-          content: Text(l10n.homeLocationServicesDisabled),
+          content: Text(
+            servicesDisabledMessage ?? l10n.homeLocationServicesDisabled,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),

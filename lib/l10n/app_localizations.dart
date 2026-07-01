@@ -665,24 +665,6 @@ abstract class AppLocalizations {
   /// **'Definições'**
   String get profileMenuSettings;
 
-  /// No description provided for @profileMenuPaymentMethods.
-  ///
-  /// In pt_PT, this message translates to:
-  /// **'Métodos de pagamento'**
-  String get profileMenuPaymentMethods;
-
-  /// No description provided for @profileMenuHelpCenter.
-  ///
-  /// In pt_PT, this message translates to:
-  /// **'Centro de ajuda'**
-  String get profileMenuHelpCenter;
-
-  /// No description provided for @profileMenuPrivacySecurity.
-  ///
-  /// In pt_PT, this message translates to:
-  /// **'Privacidade e segurança'**
-  String get profileMenuPrivacySecurity;
-
   /// No description provided for @profileSessionSection.
   ///
   /// In pt_PT, this message translates to:
@@ -1336,6 +1318,12 @@ abstract class AppLocalizations {
   /// In pt_PT, this message translates to:
   /// **'Atualizado: Agora'**
   String get adminFleetStatusUpdated;
+
+  /// No description provided for @adminFleetStatusUpdatedAt.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Atualizado: {time}'**
+  String adminFleetStatusUpdatedAt(String time);
 
   /// No description provided for @adminActiveTripsLabel.
   ///
@@ -2084,20 +2072,32 @@ abstract class AppLocalizations {
   /// No description provided for @adminBalancesTitle.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Vendas'**
+  /// **'Gerir saldos'**
   String get adminBalancesTitle;
 
   /// No description provided for @adminBalancesDesc.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Controlar saldos, limites e operações pendentes.'**
+  /// **'Ver, adicionar, remover e definir saldos dos clientes.'**
   String get adminBalancesDesc;
 
   /// No description provided for @adminBalancesEmpty.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Sem saldos'**
+  /// **'Nenhum cliente encontrado'**
   String get adminBalancesEmpty;
+
+  /// No description provided for @adminBalancesNoResults.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Nenhum cliente corresponde à pesquisa.'**
+  String get adminBalancesNoResults;
+
+  /// No description provided for @adminBalancesNoBalanceDoc.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Sem saldo'**
+  String get adminBalancesNoBalanceDoc;
 
   /// No description provided for @adminBalancesDebt.
   ///
@@ -2110,6 +2110,12 @@ abstract class AppLocalizations {
   /// In pt_PT, this message translates to:
   /// **'Crédito'**
   String get adminBalancesCredit;
+
+  /// No description provided for @adminBalancesSearchHint.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Pesquisar cliente...'**
+  String get adminBalancesSearchHint;
 
   /// No description provided for @adminBalanceCurrent.
   ///
@@ -2126,14 +2132,32 @@ abstract class AppLocalizations {
   /// No description provided for @adminBalanceAdjustAction.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Ajustar saldo'**
+  /// **'Gerir saldo'**
   String get adminBalanceAdjustAction;
 
   /// No description provided for @adminBalanceAdjustTitle.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Ajuste manual de saldo'**
+  /// **'Gerir saldo do cliente'**
   String get adminBalanceAdjustTitle;
+
+  /// No description provided for @adminBalanceModeAdd.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Adicionar'**
+  String get adminBalanceModeAdd;
+
+  /// No description provided for @adminBalanceModeRemove.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Remover'**
+  String get adminBalanceModeRemove;
+
+  /// No description provided for @adminBalanceModeSet.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Definir'**
+  String get adminBalanceModeSet;
 
   /// No description provided for @adminBalanceCredit.
   ///
@@ -2146,6 +2170,24 @@ abstract class AppLocalizations {
   /// In pt_PT, this message translates to:
   /// **'Débito'**
   String get adminBalanceDebt;
+
+  /// No description provided for @adminBalanceAddAmountLabel.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Valor a adicionar (EUR)'**
+  String get adminBalanceAddAmountLabel;
+
+  /// No description provided for @adminBalanceRemoveAmountLabel.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Valor a remover (EUR)'**
+  String get adminBalanceRemoveAmountLabel;
+
+  /// No description provided for @adminBalanceSetAmountLabel.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Novo saldo (EUR)'**
+  String get adminBalanceSetAmountLabel;
 
   /// No description provided for @adminBalanceAmountLabel.
   ///
@@ -2174,7 +2216,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminBalanceConfirm.
   ///
   /// In pt_PT, this message translates to:
-  /// **'Confirmar ajuste'**
+  /// **'Confirmar'**
   String get adminBalanceConfirm;
 
   /// No description provided for @adminBalanceAdjustSuccess.
@@ -3698,7 +3740,7 @@ abstract class AppLocalizations {
   /// No description provided for @homePickupOutsideServiceArea.
   ///
   /// In pt_PT, this message translates to:
-  /// **'A recolha está fora da área de serviço. Use uma localização em Cabo Verde (ou Portugal em testes dev).'**
+  /// **'A recolha está fora da área de serviço. Use uma localização em Cabo Verde.'**
   String get homePickupOutsideServiceArea;
 
   /// No description provided for @driverSearchOptimizing.
@@ -3958,6 +4000,120 @@ abstract class AppLocalizations {
   /// In pt_PT, this message translates to:
   /// **'Nenhum veículo atribuído'**
   String get driverNoVehicleAssigned;
+
+  /// No description provided for @driverAvailabilityInactiveHint.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Ative para receber novas viagens.'**
+  String get driverAvailabilityInactiveHint;
+
+  /// No description provided for @driverAvailabilityActiveHint.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'A localização será partilhada com a central.'**
+  String get driverAvailabilityActiveHint;
+
+  /// No description provided for @driverReadinessTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Requisitos para ficar disponível'**
+  String get driverReadinessTitle;
+
+  /// No description provided for @driverReadinessVehicleTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Viatura atribuída'**
+  String get driverReadinessVehicleTitle;
+
+  /// No description provided for @driverReadinessVehicleReady.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Viatura ativa e pronta.'**
+  String get driverReadinessVehicleReady;
+
+  /// No description provided for @driverReadinessVehicleMissing.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Apenas o administrador pode associar uma viatura.'**
+  String get driverReadinessVehicleMissing;
+
+  /// No description provided for @driverReadinessVehicleDialogTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Sem viatura atribuída'**
+  String get driverReadinessVehicleDialogTitle;
+
+  /// No description provided for @driverReadinessVehicleDialogMessage.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Apenas um administrador pode associar uma viatura à sua conta.'**
+  String get driverReadinessVehicleDialogMessage;
+
+  /// No description provided for @driverReadinessVehicleDialogGotIt.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Entendi'**
+  String get driverReadinessVehicleDialogGotIt;
+
+  /// No description provided for @driverReadinessVehicleHelpAction.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Saber mais'**
+  String get driverReadinessVehicleHelpAction;
+
+  /// No description provided for @driverReadinessVehicleSnackMessage.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Apenas um administrador pode associar uma viatura à sua conta.'**
+  String get driverReadinessVehicleSnackMessage;
+
+  /// No description provided for @driverReadinessLocationTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Localização do dispositivo'**
+  String get driverReadinessLocationTitle;
+
+  /// No description provided for @driverReadinessLocationReady.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Localização ativa.'**
+  String get driverReadinessLocationReady;
+
+  /// No description provided for @driverReadinessLocationMissing.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Ative a localização para receber viagens.'**
+  String get driverReadinessLocationMissing;
+
+  /// No description provided for @driverReadinessLocationAction.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Ativar localização'**
+  String get driverReadinessLocationAction;
+
+  /// No description provided for @driverLocationPermissionTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Permitir localização'**
+  String get driverLocationPermissionTitle;
+
+  /// No description provided for @driverLocationPermissionMessage.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'O motorista precisa de partilhar a localização em tempo real para receber viagens e ser encontrado pelos clientes.'**
+  String get driverLocationPermissionMessage;
+
+  /// No description provided for @driverLocationPermissionSettingsMessage.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'A permissão de localização está desativada. Abra as definições da app para permitir o acesso.'**
+  String get driverLocationPermissionSettingsMessage;
+
+  /// No description provided for @driverReadinessAllReady.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Tudo pronto. Pode ficar disponível.'**
+  String get driverReadinessAllReady;
 
   /// No description provided for @driverTripsLabel.
   ///

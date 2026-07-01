@@ -6,10 +6,7 @@ import 'package:local_ent_280/core/config/google_maps_config.dart';
 import 'package:local_ent_280/core/policies/place_autocomplete_policy.dart';
 
 class PlacePrediction {
-  const PlacePrediction({
-    required this.description,
-    required this.placeId,
-  });
+  const PlacePrediction({required this.description, required this.placeId});
 
   final String description;
   final String placeId;
@@ -20,8 +17,8 @@ class PlacesAutocompleteService {
   PlacesAutocompleteService({
     http.Client? client,
     PlaceAutocompletePolicy? policy,
-  })  : _client = client ?? http.Client(),
-        _policy = policy ?? PlaceAutocompletePolicy.resolve();
+  }) : _client = client ?? http.Client(),
+       _policy = policy ?? PlaceAutocompletePolicy.resolve();
 
   final http.Client _client;
   final PlaceAutocompletePolicy _policy;
@@ -34,17 +31,18 @@ class PlacesAutocompleteService {
     final query = input.trim();
     if (query.isEmpty) return [];
 
-    final components = _policy.countryCodes
-        .map((code) => 'country:${code.trim().toLowerCase()}')
-        .join('|');
-
     final params = <String, String>{
       'input': query,
       'key': GoogleMapsConfig.placesApiKey,
       'language': 'pt',
-      'components': components,
       'types': 'geocode',
     };
+
+    if (_policy.countryCodes.isNotEmpty) {
+      params['components'] = _policy.countryCodes
+          .map((code) => 'country:${code.trim().toLowerCase()}')
+          .join('|');
+    }
 
     if (_policy.usesLocationBias &&
         biasLatitude != null &&

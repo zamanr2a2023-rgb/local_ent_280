@@ -325,20 +325,25 @@ class AdminBalanceRecord {
   const AdminBalanceRecord({
     required this.userId,
     required this.userName,
+    required this.userEmail,
     required this.amountEur,
     required this.debtLimitEur,
     required this.isDebt,
+    required this.hasBalanceDocument,
   });
 
   final String userId;
   final String userName;
+  final String userEmail;
   final double amountEur;
   final double debtLimitEur;
   final bool isDebt;
+  final bool hasBalanceDocument;
 
   factory AdminBalanceRecord.fromFirestoreData({
     required String userId,
     required String userName,
+    required String userEmail,
     required Map<String, dynamic> data,
   }) {
     final amountMinor = adminMoneyMinor(data['balance']);
@@ -346,27 +351,35 @@ class AdminBalanceRecord {
     return AdminBalanceRecord(
       userId: userId,
       userName: userName,
+      userEmail: userEmail,
       amountEur: amountMinor / 100,
       debtLimitEur: debtLimitMinor / 100,
       isDebt: amountMinor < 0,
+      hasBalanceDocument: true,
     );
   }
 
   factory AdminBalanceRecord.fromAmount({
     required String userId,
     required String userName,
+    required String userEmail,
     required int amountMinor,
     int debtLimitMinor = -2000,
+    bool hasBalanceDocument = false,
   }) {
     return AdminBalanceRecord(
       userId: userId,
       userName: userName,
+      userEmail: userEmail,
       amountEur: amountMinor / 100,
       debtLimitEur: debtLimitMinor / 100,
       isDebt: amountMinor < 0,
+      hasBalanceDocument: hasBalanceDocument,
     );
   }
 }
+
+enum AdminBalanceAdjustmentMode { add, remove, set }
 
 class AdminAuditRecord {
   const AdminAuditRecord({

@@ -126,7 +126,7 @@ class AuthRepositoryImpl implements AuthRepository {
         await _firestore.collection('driverStatus').doc(uid).set({
           'isActive': true,
           'isAvailable': false,
-          'availabilityEnabled': false,
+          'availabilityEnabled': true,
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }

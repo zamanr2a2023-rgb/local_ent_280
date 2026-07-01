@@ -313,15 +313,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMenuSettings => 'Settings';
 
   @override
-  String get profileMenuPaymentMethods => 'Payment methods';
-
-  @override
-  String get profileMenuHelpCenter => 'Help center';
-
-  @override
-  String get profileMenuPrivacySecurity => 'Privacy and security';
-
-  @override
   String get profileSessionSection => 'Session';
 
   @override
@@ -662,6 +653,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminFleetStatusUpdated => 'Updated: Now';
+
+  @override
+  String adminFleetStatusUpdatedAt(String time) {
+    return 'Updated: $time';
+  }
 
   @override
   String get adminActiveTripsLabel => 'Active Trips';
@@ -1060,14 +1056,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminTariffPublicDefault => 'Public default tariff';
 
   @override
-  String get adminBalancesTitle => 'Sales';
+  String get adminBalancesTitle => 'Manage balances';
 
   @override
-  String get adminBalancesDesc =>
-      'Control balances, limits and pending operations.';
+  String get adminBalancesDesc => 'View, add, remove and set client balances.';
 
   @override
-  String get adminBalancesEmpty => 'No balances';
+  String get adminBalancesEmpty => 'No clients found';
+
+  @override
+  String get adminBalancesNoResults => 'No clients match your search.';
+
+  @override
+  String get adminBalancesNoBalanceDoc => 'No balance';
 
   @override
   String get adminBalancesDebt => 'Debt';
@@ -1076,22 +1077,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminBalancesCredit => 'Credit';
 
   @override
+  String get adminBalancesSearchHint => 'Search client...';
+
+  @override
   String get adminBalanceCurrent => 'Current balance';
 
   @override
   String get adminBalanceDebtLimit => 'Debt limit';
 
   @override
-  String get adminBalanceAdjustAction => 'Adjust balance';
+  String get adminBalanceAdjustAction => 'Manage balance';
 
   @override
-  String get adminBalanceAdjustTitle => 'Manual balance adjustment';
+  String get adminBalanceAdjustTitle => 'Manage client balance';
+
+  @override
+  String get adminBalanceModeAdd => 'Add';
+
+  @override
+  String get adminBalanceModeRemove => 'Remove';
+
+  @override
+  String get adminBalanceModeSet => 'Set';
 
   @override
   String get adminBalanceCredit => 'Credit';
 
   @override
   String get adminBalanceDebt => 'Debt';
+
+  @override
+  String get adminBalanceAddAmountLabel => 'Amount to add (EUR)';
+
+  @override
+  String get adminBalanceRemoveAmountLabel => 'Amount to remove (EUR)';
+
+  @override
+  String get adminBalanceSetAmountLabel => 'New balance (EUR)';
 
   @override
   String get adminBalanceAmountLabel => 'Value (EUR)';
@@ -1106,7 +1128,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminBalanceReasonRequired => 'Enter a reason.';
 
   @override
-  String get adminBalanceConfirm => 'Confirm adjustment';
+  String get adminBalanceConfirm => 'Confirm';
 
   @override
   String get adminBalanceAdjustSuccess => 'Balance updated';
@@ -1907,7 +1929,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePickupOutsideServiceArea =>
-      'Pickup is outside the service area. Use a location in Cabo Verde (or Portugal for dev testing).';
+      'Pickup is outside the service area. Use a location in Cabo Verde.';
 
   @override
   String get driverSearchOptimizing => 'Optimizing route in real time...';
@@ -2053,6 +2075,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get driverNoVehicleAssigned => 'No vehicle assigned';
+
+  @override
+  String get driverAvailabilityInactiveHint => 'Turn on to receive new trips.';
+
+  @override
+  String get driverAvailabilityActiveHint =>
+      'Your location will be shared with dispatch.';
+
+  @override
+  String get driverReadinessTitle => 'Requirements to go available';
+
+  @override
+  String get driverReadinessVehicleTitle => 'Vehicle assigned';
+
+  @override
+  String get driverReadinessVehicleReady => 'Vehicle is active and ready.';
+
+  @override
+  String get driverReadinessVehicleMissing =>
+      'Only an administrator can link a vehicle.';
+
+  @override
+  String get driverReadinessVehicleDialogTitle => 'No vehicle assigned';
+
+  @override
+  String get driverReadinessVehicleDialogMessage =>
+      'Only an administrator can link a vehicle to your account.';
+
+  @override
+  String get driverReadinessVehicleDialogGotIt => 'Got it';
+
+  @override
+  String get driverReadinessVehicleHelpAction => 'Learn more';
+
+  @override
+  String get driverReadinessVehicleSnackMessage =>
+      'Only an administrator can link a vehicle to your account.';
+
+  @override
+  String get driverReadinessLocationTitle => 'Device location';
+
+  @override
+  String get driverReadinessLocationReady => 'Location is active.';
+
+  @override
+  String get driverReadinessLocationMissing =>
+      'Enable location to receive trips.';
+
+  @override
+  String get driverReadinessLocationAction => 'Enable location';
+
+  @override
+  String get driverLocationPermissionTitle => 'Allow location';
+
+  @override
+  String get driverLocationPermissionMessage =>
+      'Drivers need to share real-time location to receive trips and be matched with clients.';
+
+  @override
+  String get driverLocationPermissionSettingsMessage =>
+      'Location permission is disabled. Open app settings to allow access.';
+
+  @override
+  String get driverReadinessAllReady => 'All set. You can go available.';
 
   @override
   String get driverTripsLabel => 'Trips';

@@ -150,10 +150,14 @@
 - Quando um pedido não se concretiza antes da criação da viagem ou termina em `noDriversAvailable`, o destino é guardado localmente por cliente para aparecer na próxima interação de escolha de destino.
 - Assim que o cliente começa a escrever (`query` não vazia), a lista de recentes deixa de ser mostrada e o fluxo passa a usar autocomplete de Places.
 - O autocomplete textual de moradas usa o endpoint legacy de Places Autocomplete.
-- Em `prod`, restringe a pesquisa a `Cabo Verde`.
-- Em builds `debug` e no flavor `dev`, restringe a pesquisa a `Cabo Verde` e `Portugal` e, quando a app já tem localização autorizada/disponível, aplica as coordenadas como bias de ranking.
-- Em `prod`, quando a app já tem localização autorizada/disponível, as sugestões usam essas coordenadas apenas como bias de ranking dentro dos países permitidos no ambiente ativo.
-- O fluxo de autocomplete do destino não pede nova permissão de localização; sem localização disponível, continua apenas com a restrição por país do ambiente ativo.
+- Não há restrição por país: as sugestões podem vir de qualquer país suportado pelo Google Places.
+- Quando a app já tem localização autorizada/disponível, as coordenadas atuais são usadas como bias de ranking (`location` + `radius`) para priorizar resultados próximos.
+- O fluxo de autocomplete do destino não pede nova permissão de localização; sem localização disponível, a pesquisa continua global, apenas sem bias de proximidade.
+
+## Área de serviço (recolha)
+- Não há restrição geográfica no cliente: a recolha pode ser definida em qualquer país suportado pelo Google Places.
+- O backend procura motoristas disponíveis primeiro por raios progressivos até `100 km` da recolha e, se não encontrar elegíveis, faz fallback global ao motorista disponível mais próximo (sem limite de país).
+- Pedidos só se concretizam quando existe pelo menos um motorista disponível com veículo atribuído, localização RTDB fresca e elegível para despacho.
 - O painel de seleção inclui filtro local por cliente:
   - `Recentes` (sugestões locais combinadas);
   - `Favoritos` (destinos guardados com estrela, persistidos no dispositivo atual).

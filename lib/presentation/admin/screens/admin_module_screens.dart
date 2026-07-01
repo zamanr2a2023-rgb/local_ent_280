@@ -34,6 +34,8 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
   List<AdminVehicleRecord> _vehicles = const [];
   List<AdminTransportTypeRecord> _transportTypes = const [];
   List<AdminUserRecord> _drivers = const [];
+  bool _hasLoadedFleet = false;
+  String? _processingVehicleId;
 
   @override
   void initState() {
@@ -41,7 +43,10 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
     _repo = widget.repository ?? AdminModulesRepository();
     _sub = _repo.watchFleet().listen((items) {
       if (!mounted) return;
-      setState(() => _vehicles = items);
+      setState(() {
+        _vehicles = items;
+        _hasLoadedFleet = true;
+      });
     });
     _typesSub = _repo.watchTransportTypes().listen((items) {
       if (!mounted) return;
@@ -89,6 +94,21 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
     );
   }
 
+  Future<void> _toggleVehicleActive(AdminVehicleRecord vehicle) async {
+    if (_processingVehicleId != null) return;
+    setState(() => _processingVehicleId = vehicle.id);
+    try {
+      await _repo.setVehicleActive(vehicle.id, !vehicle.isActive);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tryAgain)),
+      );
+    } finally {
+      if (mounted) setState(() => _processingVehicleId = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -111,7 +131,9 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
             subtitle: l10n.adminFleetDesc,
           ),
           Expanded(
-            child: _vehicles.isEmpty
+            child: !_hasLoadedFleet
+                ? const AdminLoadingState()
+                : _vehicles.isEmpty
                 ? AdminEmptyState(message: l10n.adminNoFleetVehicles)
                 : ListView.separated(
                     padding: EdgeInsets.fromLTRB(
@@ -154,15 +176,22 @@ class _AdminFleetScreenState extends State<AdminFleetScreen> {
                             },
                           ),
                           IconButton(
-                            icon: Icon(
-                              vehicle.isActive
-                                  ? Icons.pause_circle_outline
-                                  : Icons.check_circle_outline,
-                            ),
-                            onPressed: () => _repo.setVehicleActive(
-                              vehicle.id,
-                              !vehicle.isActive,
-                            ),
+                            icon: _processingVehicleId == vehicle.id
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Icon(
+                                    vehicle.isActive
+                                        ? Icons.pause_circle_outline
+                                        : Icons.check_circle_outline,
+                                  ),
+                            onPressed: _processingVehicleId == vehicle.id
+                                ? null
+                                : () => _toggleVehicleActive(vehicle),
                           ),
                         ],
                       );
@@ -188,6 +217,8 @@ class _AdminBalancesScreenState extends State<AdminBalancesScreen> {
   late final AdminModulesRepository _repo;
   StreamSubscription? _sub;
   List<AdminBalanceRecord> _balances = const [];
+  bool _hasLoaded = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -195,7 +226,10 @@ class _AdminBalancesScreenState extends State<AdminBalancesScreen> {
     _repo = widget.repository ?? AdminModulesRepository();
     _sub = _repo.watchBalances().listen((items) {
       if (!mounted) return;
-      setState(() => _balances = items);
+      setState(() {
+        _balances = items;
+        _hasLoaded = true;
+      });
     });
   }
 
@@ -205,50 +239,148 @@ class _AdminBalancesScreenState extends State<AdminBalancesScreen> {
     super.dispose();
   }
 
+  List<AdminBalanceRecord> get _filteredBalances {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return _balances;
+    return _balances
+        .where(
+          (item) =>
+              item.userName.toLowerCase().contains(query) ||
+              item.userEmail.toLowerCase().contains(query) ||
+              item.userId.toLowerCase().contains(query),
+        )
+        .toList();
+  }
+
+  Future<void> _openAdjustment(
+    BuildContext context,
+    AdminBalanceRecord item,
+    AdminBalanceAdjustmentMode mode,
+  ) async {
+    final adjusted = await showAdminBalanceAdjustmentSheet(
+      context,
+      balance: item,
+      repository: _repo,
+      initialMode: mode,
+    );
+    if (!context.mounted || !adjusted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.adminBalanceAdjustSuccess)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final filtered = _filteredBalances;
 
     return AdminScaffold(
       title: l10n.adminBalancesTitle,
       drawerSection: AdminDrawerSection.balances,
-      body: _balances.isEmpty
-          ? AdminEmptyState(message: l10n.adminBalancesEmpty)
-          : ListView.separated(
-              padding: EdgeInsets.fromLTRB(
-                AppLayout.marginMobile,
-                AppLayout.md,
-                AppLayout.marginMobile,
-                AppLayout.xxl,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppLayout.marginMobile,
+              AppLayout.md,
+              AppLayout.marginMobile,
+              0,
+            ),
+            child: AdminSectionHeader(
+              title: l10n.adminBalancesTitle,
+              subtitle: l10n.adminBalancesDesc,
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppLayout.marginMobile,
+              AppLayout.md,
+              AppLayout.marginMobile,
+              AppLayout.sm,
+            ),
+            child: TextField(
+              onChanged: (value) => setState(() => _searchQuery = value),
+              decoration: InputDecoration(
+                hintText: l10n.adminBalancesSearchHint,
+                prefixIcon: const Icon(Icons.search),
+                isDense: true,
               ),
-              itemCount: _balances.length,
-              separatorBuilder: (_, __) => SizedBox(height: AppLayout.md),
-              itemBuilder: (context, index) {
-                final item = _balances[index];
-                return AdminListCard(
-                  title: item.userName,
-                  subtitle:
-                      '${item.userId}\n${l10n.adminBalanceCurrent}: ${AppCurrencyFormatter.instance.formatEurMajor(item.amountEur)}\n${l10n.adminBalanceDebtLimit}: ${AppCurrencyFormatter.instance.formatEurMajor(item.debtLimitEur)}',
-                  badge: item.isDebt ? l10n.adminBalancesDebt : l10n.adminBalancesCredit,
-                  actions: [
-                    TextButton(
-                      onPressed: () async {
-                        final adjusted = await showAdminBalanceAdjustmentSheet(
-                          context,
-                          balance: item,
-                          repository: _repo,
-                        );
-                        if (!context.mounted || !adjusted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l10n.adminBalanceAdjustSuccess)),
+            ),
+          ),
+          Expanded(
+            child: !_hasLoaded
+                ? const AdminLoadingState()
+                : filtered.isEmpty
+                ? AdminEmptyState(
+                    message: _balances.isEmpty
+                        ? l10n.adminBalancesEmpty
+                        : l10n.adminBalancesNoResults,
+                  )
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      setState(() => _hasLoaded = false);
+                      await _repo.watchBalances().first;
+                      if (mounted) setState(() => _hasLoaded = true);
+                    },
+                    child: ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        AppLayout.marginMobile,
+                        AppLayout.sm,
+                        AppLayout.marginMobile,
+                        AppLayout.xxl,
+                      ),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) =>
+                          SizedBox(height: AppLayout.md),
+                      itemBuilder: (context, index) {
+                        final item = filtered[index];
+                        final emailLine = item.userEmail.trim().isNotEmpty
+                            ? item.userEmail
+                            : item.userId;
+                        return AdminListCard(
+                          title: item.userName,
+                          subtitle:
+                              '$emailLine\n${l10n.adminBalanceCurrent}: ${AppCurrencyFormatter.instance.formatEurMajor(item.amountEur)}\n${l10n.adminBalanceDebtLimit}: ${AppCurrencyFormatter.instance.formatEurMajor(item.debtLimitEur)}',
+                          badge: item.hasBalanceDocument
+                              ? (item.isDebt
+                                  ? l10n.adminBalancesDebt
+                                  : l10n.adminBalancesCredit)
+                              : l10n.adminBalancesNoBalanceDoc,
+                          actions: [
+                            TextButton(
+                              onPressed: () => _openAdjustment(
+                                context,
+                                item,
+                                AdminBalanceAdjustmentMode.add,
+                              ),
+                              child: Text(l10n.adminBalanceModeAdd),
+                            ),
+                            TextButton(
+                              onPressed: () => _openAdjustment(
+                                context,
+                                item,
+                                AdminBalanceAdjustmentMode.remove,
+                              ),
+                              child: Text(l10n.adminBalanceModeRemove),
+                            ),
+                            TextButton(
+                              onPressed: () => _openAdjustment(
+                                context,
+                                item,
+                                AdminBalanceAdjustmentMode.set,
+                              ),
+                              child: Text(l10n.adminBalanceModeSet),
+                            ),
+                          ],
                         );
                       },
-                      child: Text(l10n.adminBalanceAdjustAction),
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -4758,6 +4758,33 @@ export function buildTripsFunctions(params: {
       };
     }
 
+    const globalCandidates = await fetchGlobalDriverCandidates({
+      pickup,
+      availableDriverIds: new Set(availableDrivers.map((driver) => driver.driverId)),
+    });
+    const filteredGlobalCandidates = globalCandidates.flatMap((candidate) => {
+      const driverStatus = availableDriverMap.get(candidate.id);
+      if (!driverStatus) {
+        return [];
+      }
+      return [{ ...candidate, driverStatus }];
+    });
+    if (filteredGlobalCandidates.length > 0) {
+      filteredGlobalCandidates.sort((a, b) => a.distanceKm - b.distanceKm);
+      logger.info("Driver candidate resolution via global fallback.", {
+        eligibleCount: filteredGlobalCandidates.length,
+        nearestDistanceKm: filteredGlobalCandidates[0]?.distanceKm ?? null,
+      });
+      return {
+        candidates: filteredGlobalCandidates.slice(0, MAX_DRIVER_CANDIDATES),
+        attemptedRadiiKm,
+        matchedRadiusKm: null,
+        nearbyUniqueCount: nearbyByDriverId.size + globalCandidates.length,
+        filteredOutByStatusCount:
+          globalCandidates.length - filteredGlobalCandidates.length,
+      };
+    }
+
     return {
       candidates: [],
       attemptedRadiiKm,
@@ -5035,6 +5062,49 @@ export function buildTripsFunctions(params: {
       count: results.length,
     });
     return results;
+  }
+
+  async function fetchGlobalDriverCandidates(params: {
+    pickup: Coordinates;
+    availableDriverIds: Set<string>;
+  }): Promise<NearbyDriverCandidate[]> {
+    const { pickup, availableDriverIds } = params;
+    if (availableDriverIds.size === 0) {
+      return [];
+    }
+
+    const snapshot = await realtimeDb.ref(DRIVER_LOCATION_PATH).get();
+    if (!snapshot.exists()) {
+      return [];
+    }
+
+    const candidates: NearbyDriverCandidate[] = [];
+    snapshot.forEach((childSnapshot) => {
+      const driverId = childSnapshot.key;
+      if (!driverId || !availableDriverIds.has(driverId)) {
+        return;
+      }
+      const payload = childSnapshot.val();
+      const locationTimestamp = parseLocationTimestamp(payload);
+      if (locationTimestamp !== null) {
+        const ageMs = Date.now() - locationTimestamp;
+        if (ageMs > DRIVER_LOCATION_STALE_MS) {
+          return;
+        }
+      }
+      const location = parseCoordinates(payload);
+      if (!location) {
+        return;
+      }
+      const distanceKm = calculateDistanceKm(pickup, location);
+      candidates.push({ id: driverId, location, distanceKm });
+    });
+
+    candidates.sort((a, b) => a.distanceKm - b.distanceKm);
+    logger.info("Global driver candidates collected from RTDB.", {
+      count: candidates.length,
+    });
+    return candidates;
   }
 
   async function hasOverlappingReservations(params: {

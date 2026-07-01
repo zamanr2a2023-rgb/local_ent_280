@@ -5,11 +5,9 @@ import 'package:local_ent_280/features/admin/data/models/admin_stats.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 
 class AdminRepository {
-  AdminRepository({
-    FirebaseFirestore? firestore,
-    bool disabled = false,
-  })  : _firestore = firestore,
-        _disabled = disabled;
+  AdminRepository({FirebaseFirestore? firestore, bool disabled = false})
+    : _firestore = firestore,
+      _disabled = disabled;
 
   final FirebaseFirestore? _firestore;
   final bool _disabled;
@@ -62,8 +60,9 @@ class AdminRepository {
     }
 
     return watchTrips().asyncMap((trips) async {
-      final driversSnap =
-          await _driverStatus.where('isAvailable', isEqualTo: true).get();
+      final driversSnap = await _driverStatus
+          .where('isAvailable', isEqualTo: true)
+          .get();
       final availableDrivers = driversSnap.docs.where((doc) {
         return doc.data()['isActive'] as bool? ?? true;
       }).length;
@@ -89,7 +88,8 @@ class AdminRepository {
   }
 
   Stream<AdminReportsStats> watchReportsStats() {
-    if (_disabled) return Stream<AdminReportsStats>.value(AdminReportsStats.empty);
+    if (_disabled)
+      return Stream<AdminReportsStats>.value(AdminReportsStats.empty);
 
     return watchTrips().asyncMap((trips) async {
       final balancesSnap = await _balances.get();
@@ -165,27 +165,18 @@ class AdminRepository {
     }
 
     final subs = <StreamSubscription<dynamic>>[
-      watchTrips().listen(
-        (value) {
-          trips = value;
-          emit();
-        },
-        onError: controller.addError,
-      ),
-      _driverOperationalStates.limit(50).snapshots().listen(
-        (value) {
-          opsSnap = value;
-          emit();
-        },
-        onError: controller.addError,
-      ),
-      _marketConfig.snapshots().listen(
-        (value) {
-          marketSnap = value;
-          emit();
-        },
-        onError: controller.addError,
-      ),
+      watchTrips().listen((value) {
+        trips = value;
+        emit();
+      }, onError: controller.addError),
+      _driverOperationalStates.limit(50).snapshots().listen((value) {
+        opsSnap = value;
+        emit();
+      }, onError: controller.addError),
+      _marketConfig.snapshots().listen((value) {
+        marketSnap = value;
+        emit();
+      }, onError: controller.addError),
     ];
 
     controller.onCancel = () async {
@@ -277,8 +268,9 @@ class AdminRepository {
     final marketData = marketSnap?.data();
     final configLabel = marketData?['activityMapLabel'] as String?;
     final center = _readLatLng(marketData?['mapCenter']);
-    final driverCount =
-        markers.where((m) => m.kind == AdminMapMarkerKind.driver).length;
+    final driverCount = markers
+        .where((m) => m.kind == AdminMapMarkerKind.driver)
+        .length;
 
     return AdminActivityMapData(
       markers: markers,
@@ -311,54 +303,108 @@ class AdminRepository {
 
   Stream<List<AdminFleetRow>> watchRecentFleet() {
     if (_disabled) return Stream<List<AdminFleetRow>>.value(const []);
-    return _vehicles.limit(10).snapshots().asyncMap((vehiclesSnap) async {
-      if (vehiclesSnap.docs.isEmpty) return const <AdminFleetRow>[];
+    return _combineQuerySnapshots(
+      _vehicles.limit(10).snapshots(),
+      _assignments.snapshots(),
+      _mapRecentFleetRows,
+    );
+  }
 
-      final assignmentsSnap = await _assignments.get();
-      final assignmentByVehicle = <String, String>{};
-      for (final doc in assignmentsSnap.docs) {
-        final vehicleId = doc.data()['vehicleId'] as String?;
-        if (vehicleId != null) {
-          assignmentByVehicle[vehicleId] = doc.id;
-        }
+  Future<List<AdminFleetRow>> _mapRecentFleetRows(
+    QuerySnapshot<Map<String, dynamic>> vehiclesSnap,
+    QuerySnapshot<Map<String, dynamic>> assignmentsSnap,
+  ) async {
+    if (vehiclesSnap.docs.isEmpty) return const <AdminFleetRow>[];
+
+    final assignmentByVehicle = <String, String>{};
+    for (final doc in assignmentsSnap.docs) {
+      final vehicleId = doc.data()['vehicleId'] as String?;
+      if (vehicleId != null) {
+        assignmentByVehicle[vehicleId] = doc.id;
+      }
+    }
+
+    final rows = <AdminFleetRow>[];
+    for (final vehicleDoc in vehiclesSnap.docs.take(5)) {
+      final vehicleData = vehicleDoc.data();
+      final make = vehicleData['make'] as String? ?? '';
+      final model = vehicleData['model'] as String? ?? '';
+      final plate = vehicleData['plate'] as String? ?? '';
+      final vehicleName = make.trim().isNotEmpty ? make.trim() : model.trim();
+      final driverId = assignmentByVehicle[vehicleDoc.id];
+
+      var driverLabel = '—';
+      var isOnTrip = false;
+      if (driverId != null) {
+        final userDoc = await _users.doc(driverId).get();
+        final statusDoc = await _driverStatus.doc(driverId).get();
+        final name = userDoc.data()?['name'] as String? ?? '';
+        driverLabel = name.trim().isNotEmpty ? name.trim() : driverId;
+        final currentTripId = statusDoc.data()?['currentTripId'] as String?;
+        isOnTrip = currentTripId != null && currentTripId.trim().isNotEmpty;
       }
 
-      final rows = <AdminFleetRow>[];
-      for (final vehicleDoc in vehiclesSnap.docs.take(5)) {
-        final vehicleData = vehicleDoc.data();
-        final make = vehicleData['make'] as String? ?? '';
-        final model = vehicleData['model'] as String? ?? '';
-        final plate = vehicleData['plate'] as String? ?? '';
-        final vehicleName =
-            make.trim().isNotEmpty ? make.trim() : model.trim();
-        final driverId = assignmentByVehicle[vehicleDoc.id];
+      rows.add(
+        AdminFleetRow(
+          vehicleLabel: [
+            if (vehicleName.isNotEmpty) vehicleName,
+            if (plate.trim().isNotEmpty) plate.trim(),
+          ].join(' • '),
+          driverLabel: driverLabel == '—' ? '—' : 'Driver: $driverLabel',
+          isOnTrip: isOnTrip,
+        ),
+      );
+    }
+    return rows;
+  }
 
-        var driverLabel = '—';
-        var isOnTrip = false;
-        if (driverId != null) {
-          final userDoc = await _users.doc(driverId).get();
-          final statusDoc = await _driverStatus.doc(driverId).get();
-          final name = userDoc.data()?['name'] as String? ?? '';
-          driverLabel = name.trim().isNotEmpty ? name.trim() : driverId;
-          final currentTripId =
-              statusDoc.data()?['currentTripId'] as String?;
-          isOnTrip =
-              currentTripId != null && currentTripId.trim().isNotEmpty;
+  Stream<T> _combineQuerySnapshots<T>(
+    Stream<QuerySnapshot<Map<String, dynamic>>> primary,
+    Stream<QuerySnapshot<Map<String, dynamic>>> secondary,
+    Future<T> Function(
+      QuerySnapshot<Map<String, dynamic>> primary,
+      QuerySnapshot<Map<String, dynamic>> secondary,
+    )
+    mapper,
+  ) {
+    final controller = StreamController<T>();
+    QuerySnapshot<Map<String, dynamic>>? primarySnap;
+    QuerySnapshot<Map<String, dynamic>>? secondarySnap;
+
+    Future<void> publish() async {
+      final currentPrimary = primarySnap;
+      final currentSecondary = secondarySnap;
+      if (currentPrimary == null || currentSecondary == null) return;
+      if (controller.isClosed) return;
+      try {
+        controller.add(await mapper(currentPrimary, currentSecondary));
+      } catch (error, stackTrace) {
+        if (!controller.isClosed) {
+          controller.addError(error, stackTrace);
         }
-
-        rows.add(
-          AdminFleetRow(
-            vehicleLabel: [
-              if (vehicleName.isNotEmpty) vehicleName,
-              if (plate.trim().isNotEmpty) plate.trim(),
-            ].join(' • '),
-            driverLabel: driverLabel == '—' ? '—' : 'Driver: $driverLabel',
-            isOnTrip: isOnTrip,
-          ),
-        );
       }
-      return rows;
-    });
+    }
+
+    late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>>
+    primarySub;
+    late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>>
+    secondarySub;
+
+    primarySub = primary.listen((snap) {
+      primarySnap = snap;
+      publish();
+    }, onError: controller.addError);
+    secondarySub = secondary.listen((snap) {
+      secondarySnap = snap;
+      publish();
+    }, onError: controller.addError);
+
+    controller.onCancel = () async {
+      await primarySub.cancel();
+      await secondarySub.cancel();
+    };
+
+    return controller.stream;
   }
 
   int _readAmountMinor(Map<String, dynamic> data) {

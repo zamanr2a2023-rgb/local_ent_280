@@ -27,6 +27,7 @@ class AdminReportsStatementRepository {
             AdminBalanceRecord.fromFirestoreData(
               userId: doc.id,
               userName: userData['name'] as String? ?? doc.id,
+              userEmail: userData['email'] as String? ?? '',
               data: doc.data(),
             ),
           );

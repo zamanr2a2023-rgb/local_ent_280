@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
-
 /// Country and bias rules for Google Places Autocomplete.
 ///
-/// Matches `local_transport` / `docs/source_of_truth/trips.md`:
-/// - dev/debug: Cabo Verde + Portugal
-/// - prod: Cabo Verde only
+/// Empty [countryCodes] means no country filter — suggestions may come from any
+/// country supported by Google Places. When [usesLocationBias] is true and GPS
+/// coordinates are available, nearby results are ranked higher.
 class PlaceAutocompletePolicy {
   const PlaceAutocompletePolicy({
     required this.countryCodes,
@@ -15,14 +13,8 @@ class PlaceAutocompletePolicy {
   final bool usesLocationBias;
 
   static PlaceAutocompletePolicy resolve() {
-    if (kDebugMode) {
-      return const PlaceAutocompletePolicy(
-        countryCodes: ['cv', 'pt'],
-        usesLocationBias: true,
-      );
-    }
     return const PlaceAutocompletePolicy(
-      countryCodes: ['cv'],
+      countryCodes: [],
       usesLocationBias: true,
     );
   }

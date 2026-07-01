@@ -23,14 +23,7 @@ abstract final class ServiceAreaPolicy {
     required double latitude,
     required double longitude,
   }) {
-    final hubs = kDebugMode ? [_praia, _lisbon] : [_praia];
-    for (final hub in hubs) {
-      if (_distanceKm(latitude, longitude, hub.latitude, hub.longitude) <=
-          maxDispatchRadiusKm) {
-        return true;
-      }
-    }
-    return false;
+    return true;
   }
 
   static String nearestHubLabel({
@@ -41,8 +34,12 @@ abstract final class ServiceAreaPolicy {
     _ServiceHub? nearest;
     var nearestDistance = double.infinity;
     for (final hub in hubs) {
-      final distance =
-          _distanceKm(latitude, longitude, hub.latitude, hub.longitude);
+      final distance = _distanceKm(
+        latitude,
+        longitude,
+        hub.latitude,
+        hub.longitude,
+      );
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearest = hub;
@@ -60,7 +57,8 @@ abstract final class ServiceAreaPolicy {
     const earthRadiusKm = 6371.0;
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_toRadians(lat1)) *
             math.cos(_toRadians(lat2)) *
             math.sin(dLon / 2) *

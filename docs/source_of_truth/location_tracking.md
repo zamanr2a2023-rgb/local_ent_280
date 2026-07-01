@@ -20,7 +20,7 @@
    - A UI mantém o último ponto válido recebido quando a stream fica temporariamente sem localização, incluindo localização stale, para o veículo não desaparecer do mapa.
    - Quando a localização volta a atualizar depois de uma pausa, o marcador do veículo anima do último ponto apresentado até ao novo ponto em vez de saltar instantaneamente.
 5. Backend usa localização/presença para atribuição, monitorização de heartbeat e avaliação de monitorização operacional.
-6. A atribuição backend aplica pesquisa por raios progressivos (`12km` → `24km` → `40km` → `60km` → `80km` → `100km`) e seleciona o melhor candidato dentro do primeiro raio com elegíveis.
+6. A atribuição backend aplica pesquisa por raios progressivos (`12km` → `24km` → `40km` → `60km` → `80km` → `100km`) e seleciona o melhor candidato dentro do primeiro raio com elegíveis; se nenhum raio devolver elegíveis, faz fallback global ao motorista disponível mais próximo (sem limite geográfico).
 7. O trigger backend de monitorização operacional consome o RTDB como fonte high-frequency, atualiza `driverOperationalStates/{driverId}` e persiste apenas replay limitado + métricas agregadas, sem arquivo bruto always-on em Firestore.
 8. Se o motorista ativar disponibilidade mas a app não conseguir armar uma sessão RTDB/stream de localização válida, a disponibilidade é revertida para `false` no `driverStatus` para evitar falso positivo de despacho.
 9. Quando uma escrita RTDB de tracking falha com `permission-denied`, a app tenta refrescar o token Firebase uma vez; se a sessão continuar inválida, termina sessão local e exige novo login antes de voltar a prometer disponibilidade operacional.
@@ -41,6 +41,7 @@
 - Falha crítica de autorização RTDB durante tracking invalida imediatamente a disponibilidade operacional no cliente, mesmo que o toggle já estivesse ativo.
 - Encerramento de sessão remove/atualiza presença para evitar falso disponível.
 - O toggle de disponibilidade do motorista só pode permanecer ativo quando a partilha operacional consegue armar presença RTDB e stream de localização compatíveis com despacho.
+- No dashboard do motorista, antes de ficar disponível, a UI mostra requisitos explícitos: viatura atribuída pelo admin e permissão/localização do dispositivo, com ações guiadas (diálogo para viatura; fluxo de permissão para localização).
 - Paths RTDB canónicos (`driverLocations/{driverId}` e `driverPresence/{driverId}`) e contrato de `onDisconnect` mantêm-se.
 - O stream de dispositivo não é reiniciado apenas por transição foreground/background; a mudança de lifecycle altera apenas o perfil de publicação/throttling.
 - A posição real do cliente no mapa de recolha não altera automaticamente o ponto confirmado quando o utilizador move o pin; a confirmação usa sempre o centro/pin escolhido.

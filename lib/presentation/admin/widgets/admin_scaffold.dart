@@ -288,6 +288,42 @@ class AdminEmptyState extends StatelessWidget {
   }
 }
 
+class AdminLoadingState extends StatelessWidget {
+  const AdminLoadingState({super.key, this.message});
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppLayout.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 32.w,
+              height: 32.h,
+              child: const CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            if (message != null) ...[
+              SizedBox(height: AppLayout.md),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: AppTypography.inter(
+                  fontSize: 14.sp,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class AdminSearchField extends StatelessWidget {
   const AdminSearchField({
     super.key,

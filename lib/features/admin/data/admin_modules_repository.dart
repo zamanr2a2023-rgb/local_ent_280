@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,9 +17,9 @@ class AdminModulesRepository {
     AdminUserAuthService? authService,
     AdminFunctionsService? functionsService,
     this.disabled = false,
-  })  : _firestore = firestore,
-        _authService = authService ?? AdminUserAuthService(),
-        _functionsService = functionsService ?? AdminFunctionsService();
+  }) : _firestore = firestore,
+       _authService = authService ?? AdminUserAuthService(),
+       _functionsService = functionsService ?? AdminFunctionsService();
 
   final FirebaseFirestore? _firestore;
   final AdminUserAuthService _authService;
@@ -31,7 +32,9 @@ class AdminModulesRepository {
     if (disabled) return Stream.value(const []);
     return _db.collection('users').limit(200).snapshots().map((snap) {
       final users = snap.docs.map(AdminUserRecord.fromFirestore).toList();
-      users.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      users.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
       return users;
     });
   }
@@ -44,9 +47,7 @@ class AdminModulesRepository {
 
   Stream<List<AdminUserRecord>> watchDrivers() {
     return watchUsers().map(
-      (users) => users
-          .where((u) => u.role == 'driver' && u.isActive)
-          .toList(),
+      (users) => users.where((u) => u.role == 'driver' && u.isActive).toList(),
     );
   }
 
@@ -152,35 +153,90 @@ class AdminModulesRepository {
 
   Stream<List<AdminVehicleRecord>> watchFleet() {
     if (disabled) return Stream.value(const []);
-    return _db.collection('vehicles').limit(100).snapshots().asyncMap(
-      (vehiclesSnap) async {
-        final assignments = await _db.collection('driverVehicleAssignments').get();
-        final vehicleToDriver = <String, String>{};
-        for (final doc in assignments.docs) {
-          final vehicleId = doc.data()['vehicleId'] as String?;
-          if (vehicleId != null) vehicleToDriver[vehicleId] = doc.id;
-        }
-
-        final rows = <AdminVehicleRecord>[];
-        for (final doc in vehiclesSnap.docs) {
-          final driverId = vehicleToDriver[doc.id];
-          var driverName = '—';
-          if (driverId != null) {
-            final userDoc = await _db.collection('users').doc(driverId).get();
-            driverName = userDoc.data()?['name'] as String? ?? driverId;
-          }
-          rows.add(
-            AdminVehicleRecord.fromFirestore(
-              doc,
-              assignedDriverId: driverId,
-              assignedDriverName: driverName,
-            ),
-          );
-        }
-        rows.sort((a, b) => a.label.compareTo(b.label));
-        return rows;
-      },
+    return _combineQuerySnapshots(
+      _db.collection('vehicles').limit(100).snapshots(),
+      _db.collection('driverVehicleAssignments').snapshots(),
+      _mapFleetRecords,
     );
+  }
+
+  Future<List<AdminVehicleRecord>> _mapFleetRecords(
+    QuerySnapshot<Map<String, dynamic>> vehiclesSnap,
+    QuerySnapshot<Map<String, dynamic>> assignmentsSnap,
+  ) async {
+    final vehicleToDriver = <String, String>{};
+    for (final doc in assignmentsSnap.docs) {
+      final vehicleId = doc.data()['vehicleId'] as String?;
+      if (vehicleId != null) vehicleToDriver[vehicleId] = doc.id;
+    }
+
+    final rows = <AdminVehicleRecord>[];
+    for (final doc in vehiclesSnap.docs) {
+      final driverId = vehicleToDriver[doc.id];
+      var driverName = '—';
+      if (driverId != null) {
+        final userDoc = await _db.collection('users').doc(driverId).get();
+        driverName = userDoc.data()?['name'] as String? ?? driverId;
+      }
+      rows.add(
+        AdminVehicleRecord.fromFirestore(
+          doc,
+          assignedDriverId: driverId,
+          assignedDriverName: driverName,
+        ),
+      );
+    }
+    rows.sort((a, b) => a.label.compareTo(b.label));
+    return rows;
+  }
+
+  Stream<T> _combineQuerySnapshots<T>(
+    Stream<QuerySnapshot<Map<String, dynamic>>> primary,
+    Stream<QuerySnapshot<Map<String, dynamic>>> secondary,
+    Future<T> Function(
+      QuerySnapshot<Map<String, dynamic>> primary,
+      QuerySnapshot<Map<String, dynamic>> secondary,
+    )
+    mapper,
+  ) {
+    final controller = StreamController<T>();
+    QuerySnapshot<Map<String, dynamic>>? primarySnap;
+    QuerySnapshot<Map<String, dynamic>>? secondarySnap;
+
+    Future<void> publish() async {
+      final currentPrimary = primarySnap;
+      final currentSecondary = secondarySnap;
+      if (currentPrimary == null || currentSecondary == null) return;
+      if (controller.isClosed) return;
+      try {
+        controller.add(await mapper(currentPrimary, currentSecondary));
+      } catch (error, stackTrace) {
+        if (!controller.isClosed) {
+          controller.addError(error, stackTrace);
+        }
+      }
+    }
+
+    late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>>
+    primarySub;
+    late final StreamSubscription<QuerySnapshot<Map<String, dynamic>>>
+    secondarySub;
+
+    primarySub = primary.listen((snap) {
+      primarySnap = snap;
+      publish();
+    }, onError: controller.addError);
+    secondarySub = secondary.listen((snap) {
+      secondarySnap = snap;
+      publish();
+    }, onError: controller.addError);
+
+    controller.onCancel = () async {
+      await primarySub.cancel();
+      await secondarySub.cancel();
+    };
+
+    return controller.stream;
   }
 
   Future<void> setVehicleActive(String vehicleId, bool isActive) async {
@@ -215,13 +271,10 @@ class AdminModulesRepository {
         batch.delete(doc.reference);
       }
     }
-    batch.set(
-      _db.collection('driverVehicleAssignments').doc(trimmedDriverId),
-      {
-        'vehicleId': trimmedVehicleId,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-    );
+    batch.set(_db.collection('driverVehicleAssignments').doc(trimmedDriverId), {
+      'vehicleId': trimmedVehicleId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
     await batch.commit();
   }
 
@@ -245,38 +298,68 @@ class AdminModulesRepository {
         .orderBy('startedAt', descending: true)
         .limit(100)
         .snapshots()
-        .map((snap) => snap.docs.map(AdminIncidentRecord.fromFirestore).toList());
+        .map(
+          (snap) => snap.docs.map(AdminIncidentRecord.fromFirestore).toList(),
+        );
   }
 
   Stream<AdminIncidentRecord?> watchIncident(String id) {
     if (disabled) return Stream.value(null);
-    return _db.collection('operationalIncidents').doc(id).snapshots().map(
-      (doc) => doc.exists ? AdminIncidentRecord.fromFirestore(doc) : null,
-    );
+    return _db
+        .collection('operationalIncidents')
+        .doc(id)
+        .snapshots()
+        .map(
+          (doc) => doc.exists ? AdminIncidentRecord.fromFirestore(doc) : null,
+        );
   }
 
   Stream<List<AdminBalanceRecord>> watchBalances() {
     if (disabled) return Stream.value(const []);
-    return _db.collection('balances').limit(200).snapshots().asyncMap(
-      (snap) async {
-        final rows = <AdminBalanceRecord>[];
-        for (final doc in snap.docs) {
-          final userDoc = await _db.collection('users').doc(doc.id).get();
-          final userData = userDoc.data() ?? {};
-          if ((userData['role'] as String? ?? '') != 'client') continue;
-          final name = userData['name'] as String? ?? doc.id;
-          rows.add(
-            AdminBalanceRecord.fromFirestoreData(
-              userId: doc.id,
-              userName: name,
-              data: doc.data(),
-            ),
-          );
-        }
-        rows.sort((a, b) => a.userName.compareTo(b.userName));
-        return rows;
-      },
+    return _combineQuerySnapshots(
+      _db.collection('users').where('role', isEqualTo: 'client').limit(300).snapshots(),
+      _db.collection('balances').limit(300).snapshots(),
+      _mapClientBalances,
     );
+  }
+
+  Future<List<AdminBalanceRecord>> _mapClientBalances(
+    QuerySnapshot<Map<String, dynamic>> usersSnap,
+    QuerySnapshot<Map<String, dynamic>> balancesSnap,
+  ) async {
+    final balanceByUserId = <String, Map<String, dynamic>>{
+      for (final doc in balancesSnap.docs) doc.id: doc.data(),
+    };
+
+    final rows = <AdminBalanceRecord>[];
+    for (final userDoc in usersSnap.docs) {
+      final userData = userDoc.data();
+      final name = (userData['name'] as String? ?? '').trim();
+      final email = (userData['email'] as String? ?? '').trim();
+      final displayName = name.isNotEmpty ? name : (email.isNotEmpty ? email : userDoc.id);
+      final balanceData = balanceByUserId[userDoc.id];
+      if (balanceData != null) {
+        rows.add(
+          AdminBalanceRecord.fromFirestoreData(
+            userId: userDoc.id,
+            userName: displayName,
+            userEmail: email,
+            data: balanceData,
+          ),
+        );
+      } else {
+        rows.add(
+          AdminBalanceRecord.fromAmount(
+            userId: userDoc.id,
+            userName: displayName,
+            userEmail: email,
+            amountMinor: 0,
+          ),
+        );
+      }
+    }
+    rows.sort((a, b) => a.userName.compareTo(b.userName));
+    return rows;
   }
 
   Future<void> applyBalanceAdjustment({
@@ -284,7 +367,7 @@ class AdminModulesRepository {
     required String clientName,
     required String clientEmail,
     required double amountEur,
-    required bool isCredit,
+    required AdminBalanceAdjustmentMode mode,
     required String reason,
   }) async {
     if (disabled) return;
@@ -292,8 +375,7 @@ class AdminModulesRepository {
     if (admin == null) {
       throw const AdminFunctionsException('Not signed in.');
     }
-    final deltaMinor = ((isCredit ? amountEur : -amountEur) * 100).round();
-    if (deltaMinor == 0) {
+    if (amountEur < 0) {
       throw const AdminFunctionsException('Enter a valid amount.');
     }
 
@@ -305,6 +387,16 @@ class AdminModulesRepository {
     final previousDebtLimit = balanceSnap.exists
         ? adminMoneyMinor(balanceSnap.data()?['debtLimit'])
         : -2000;
+
+    final deltaMinor = switch (mode) {
+      AdminBalanceAdjustmentMode.add => (amountEur * 100).round(),
+      AdminBalanceAdjustmentMode.remove => -(amountEur * 100).round(),
+      AdminBalanceAdjustmentMode.set =>
+        (amountEur * 100).round() - previousMinor,
+    };
+    if (deltaMinor == 0) {
+      throw const AdminFunctionsException('No balance change to apply.');
+    }
 
     if (!balanceSnap.exists) {
       await balanceRef.set({
@@ -484,7 +576,9 @@ class AdminModulesRepository {
     String? photoUrl,
   }) async {
     if (allowedTypes.isEmpty) {
-      throw const AdminFunctionsException('Select at least one transport type.');
+      throw const AdminFunctionsException(
+        'Select at least one transport type.',
+      );
     }
     await _functionsService.saveTripPackageTemplate({
       if (id != null) 'id': id,
@@ -572,17 +666,26 @@ class AdminModulesRepository {
 
   Stream<List<AdminTransportTypeRecord>> watchTransportTypes() {
     if (disabled) return Stream.value(const []);
-    return _db.collection('transport_types').limit(50).snapshots().map(
-      (snap) =>
-          snap.docs.map(AdminTransportTypeRecord.fromFirestore).toList(),
-    );
+    return _db
+        .collection('transport_types')
+        .limit(50)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map(AdminTransportTypeRecord.fromFirestore).toList(),
+        );
   }
 
   Stream<List<AdminTripPackageRecord>> watchTripPackages() {
     if (disabled) return Stream.value(const []);
-    return _db.collection('tripPackages').limit(50).snapshots().map(
-      (snap) => snap.docs.map(AdminTripPackageRecord.fromFirestore).toList(),
-    );
+    return _db
+        .collection('tripPackages')
+        .limit(50)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map(AdminTripPackageRecord.fromFirestore).toList(),
+        );
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> watchTariff(String id) {
@@ -594,26 +697,29 @@ class AdminModulesRepository {
 
   Stream<AdminConfigSnapshot> watchConfig(String docId) {
     if (disabled) {
-      return Stream.value(AdminConfigSnapshot(docId: docId, data: const {}, exists: false));
+      return Stream.value(
+        AdminConfigSnapshot(docId: docId, data: const {}, exists: false),
+      );
     }
-    return _db.collection('config').doc(docId).snapshots().map(
-      (doc) => AdminConfigSnapshot(
-        docId: docId,
-        data: doc.data() ?? {},
-        exists: doc.exists,
-      ),
-    );
+    return _db
+        .collection('config')
+        .doc(docId)
+        .snapshots()
+        .map(
+          (doc) => AdminConfigSnapshot(
+            docId: docId,
+            data: doc.data() ?? {},
+            exists: doc.exists,
+          ),
+        );
   }
 
   Future<void> saveConfig(String docId, Map<String, dynamic> fields) async {
     if (disabled) return;
-    await _db.collection('config').doc(docId).set(
-      {
-        ...fields,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _db.collection('config').doc(docId).set({
+      ...fields,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> setManagerPermissions({

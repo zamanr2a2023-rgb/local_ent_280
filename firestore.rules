@@ -556,7 +556,8 @@ service cloud.firestore {
         || (managerCanVc() && resource.data.role == 'client');
       allow create: if (isSignedIn()
           && request.auth.uid == uid
-          && request.resource.data.role == 'client'
+          && (request.resource.data.role == 'client'
+              || request.resource.data.role == 'driver')
           && request.resource.data.keys().hasOnly([
             'role',
             'name',

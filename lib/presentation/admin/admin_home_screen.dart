@@ -34,6 +34,7 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   late final AdminRepository _repository;
+  final _activityMapSectionKey = GlobalKey<_ActivityMapSectionState>();
   StreamSubscription? _dashboardSubscription;
   StreamSubscription? _tariffSubscription;
   StreamSubscription? _fleetSubscription;
@@ -46,6 +47,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   AdminActivityMapData _activityMap = AdminActivityMapData.empty;
   List<AdminFleetRow> _fleet = const [];
   String? _loadError;
+  DateTime? _lastRefreshedAt;
+  bool _isRefreshing = false;
 
   void _onStreamError(Object error) {
     if (!mounted) return;
@@ -107,6 +110,45 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.dispose();
   }
 
+  Future<void> _onRefresh() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    try {
+      final results = await Future.wait<dynamic>([
+        _repository.watchDashboardStats().first,
+        _repository.watchTariffSummary().first,
+        _repository.watchRecentFleet().first,
+        _repository.watchMarketSummary().first,
+        _repository.watchActivityMap().first,
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _stats = results[0] as AdminDashboardStats;
+        _tariff = results[1] as AdminTariffSummary?;
+        _fleet = results[2] as List<AdminFleetRow>;
+        _market = results[3] as AdminMarketSummary?;
+        _activityMap = results[4] as AdminActivityMapData;
+        _lastRefreshedAt = DateTime.now();
+        _loadError = null;
+      });
+      _activityMapSectionKey.currentState?.recenterMap();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadError = context.l10n.tryAgain);
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
+  }
+
+  String _fleetStatusUpdatedLabel(BuildContext context) {
+    final refreshedAt = _lastRefreshedAt;
+    if (refreshedAt == null) {
+      return context.l10n.adminFleetStatusUpdated;
+    }
+    final time = TimeOfDay.fromDateTime(refreshedAt).format(context);
+    return context.l10n.adminFleetStatusUpdatedAt(time);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,30 +158,44 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bottom: false,
         child: Column(
           children: [
-            const _AdminAppBar(),
+            _AdminAppBar(
+              onRefresh: _onRefresh,
+              isRefreshing: _isRefreshing,
+            ),
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppLayout.marginMobile,
-                  AppLayout.md,
-                  AppLayout.marginMobile,
-                  AppLayout.xxl,
-                ),
-                children: [
-                  if (_loadError != null) ...[
-                    _DashboardErrorBanner(message: _loadError!),
-                    SizedBox(height: AppLayout.md),
+              child: RefreshIndicator(
+                color: AppColors.secondary,
+                onRefresh: _onRefresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    AppLayout.marginMobile,
+                    AppLayout.md,
+                    AppLayout.marginMobile,
+                    AppLayout.xxl,
+                  ),
+                  children: [
+                    if (_loadError != null) ...[
+                      _DashboardErrorBanner(message: _loadError!),
+                      SizedBox(height: AppLayout.md),
+                    ],
+                    _FleetStatusSection(
+                      stats: _stats,
+                      updatedLabel: _fleetStatusUpdatedLabel(context),
+                    ),
+                    SizedBox(height: AppLayout.lg),
+                    _CriticalOperationsSection(stats: _stats),
+                    SizedBox(height: AppLayout.lg),
+                    _ActivityMapSection(
+                      key: _activityMapSectionKey,
+                      activityMap: _activityMap,
+                    ),
+                    SizedBox(height: AppLayout.lg),
+                    _RatesSection(tariff: _tariff, market: _market),
+                    SizedBox(height: AppLayout.lg),
+                    _RecentFleetSection(fleet: _fleet),
                   ],
-                  _FleetStatusSection(stats: _stats),
-                  SizedBox(height: AppLayout.lg),
-                  _CriticalOperationsSection(stats: _stats),
-                  SizedBox(height: AppLayout.lg),
-                  _ActivityMapSection(activityMap: _activityMap),
-                  SizedBox(height: AppLayout.lg),
-                  _RatesSection(tariff: _tariff, market: _market),
-                  SizedBox(height: AppLayout.lg),
-                  _RecentFleetSection(fleet: _fleet),
-                ],
+                ),
               ),
             ),
           ],
@@ -150,7 +206,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 }
 
 class _AdminAppBar extends StatelessWidget {
-  const _AdminAppBar();
+  const _AdminAppBar({this.onRefresh, this.isRefreshing = false});
+
+  final VoidCallback? onRefresh;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +240,19 @@ class _AdminAppBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (onRefresh != null)
+            IconButton(
+              onPressed: isRefreshing ? null : onRefresh,
+              icon: isRefreshing
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.h,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.refresh, color: AppColors.primary, size: 24.sp),
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.h),
+            ),
           SessionProfileAvatar(
             size: 32.w,
             fontSize: 11.sp,
@@ -193,9 +265,13 @@ class _AdminAppBar extends StatelessWidget {
 }
 
 class _FleetStatusSection extends StatelessWidget {
-  const _FleetStatusSection({required this.stats});
+  const _FleetStatusSection({
+    required this.stats,
+    required this.updatedLabel,
+  });
 
   final AdminDashboardStats stats;
+  final String updatedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +293,7 @@ class _FleetStatusSection extends StatelessWidget {
               ),
             ),
             Text(
-              context.l10n.adminFleetStatusUpdated,
+              updatedLabel,
               style: AppTypography.inter(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
@@ -522,7 +598,7 @@ class _CriticalOpRow extends StatelessWidget {
 }
 
 class _ActivityMapSection extends StatefulWidget {
-  const _ActivityMapSection({required this.activityMap});
+  const _ActivityMapSection({super.key, required this.activityMap});
 
   final AdminActivityMapData activityMap;
 
@@ -532,6 +608,8 @@ class _ActivityMapSection extends StatefulWidget {
 
 class _ActivityMapSectionState extends State<_ActivityMapSection> {
   final _mapKey = GlobalKey<AdminActivityMapLayerState>();
+
+  void recenterMap() => _mapKey.currentState?.recenter();
 
   @override
   Widget build(BuildContext context) {

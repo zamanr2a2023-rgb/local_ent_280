@@ -669,22 +669,9 @@ class _InfoRow extends StatelessWidget {
 class _MenuSection extends StatelessWidget {
   const _MenuSection();
 
-  static const _icons = [
-    Icons.settings_outlined,
-    Icons.payment_outlined,
-    Icons.help_outline,
-    Icons.shield_outlined,
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final items = [
-      (l10n.profileMenuSettings, () => AppNavigation.toSettings(context)),
-      (l10n.profileMenuPaymentMethods, null),
-      (l10n.profileMenuHelpCenter, null),
-      (l10n.profileMenuPrivacySecurity, null),
-    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,18 +693,10 @@ class _MenuSection extends StatelessWidget {
               color: AppColors.surfaceVariant.withValues(alpha: 0.4),
             ),
           ),
-          child: Column(
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0)
-                  Divider(height: 1.h, color: AppColors.surfaceVariant),
-                _MenuTile(
-                  icon: _icons[i],
-                  label: items[i].$1,
-                  onTap: items[i].$2,
-                ),
-              ],
-            ],
+          child: _MenuTile(
+            icon: Icons.settings_outlined,
+            label: l10n.profileMenuSettings,
+            onTap: () => AppNavigation.toSettings(context),
           ),
         ),
       ],
