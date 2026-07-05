@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:local_ent_280/core/services/client_functions_service.dart';
 import 'package:local_ent_280/core/services/client_tariff_service.dart';
+import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/features/trips/data/trip_request_payload_builder.dart';
 import 'package:local_ent_280/features/trips/domain/entities/create_trip_input.dart';
@@ -107,13 +108,26 @@ class TripRepositoryImpl implements TripRepository {
   }
 
   @override
-  Future<void> cancelTripByClient(String tripId) async {
+  Future<void> cancelTripByClient(
+    String tripId, {
+    required String reason,
+  }) async {
     if (disabled) return;
-    await _trips.doc(tripId).update({
-      'status': 'CANCELLED_BY_CLIENT',
-      'isActive': false,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _functionsService.cancelTrip(tripId: tripId, reason: reason);
+    await _waitForCancelledTrip(tripId);
+  }
+
+  Future<void> _waitForCancelledTrip(String tripId) async {
+    for (var attempt = 0; attempt < 12; attempt++) {
+      final trip = await getTrip(tripId);
+      if (trip != null && ClientTripFlow.isCancelled(trip.status)) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    throw const ClientFunctionsException(
+      'Trip cancellation could not be confirmed. Please try again.',
+    );
   }
 
   @override
@@ -127,12 +141,10 @@ class TripRepositoryImpl implements TripRepository {
     await _trips.doc(tripId).update({
       'rating': {
         'stars': stars.clamp(1, 5),
-        if (feedback != null && feedback.trim().isNotEmpty)
-          'feedback': feedback.trim(),
+        'feedback': (feedback ?? '').trim(),
         'clientId': clientId,
         'createdAt': FieldValue.serverTimestamp(),
       },
-      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 }

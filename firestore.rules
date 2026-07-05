@@ -346,7 +346,8 @@ service cloud.firestore {
         ])
         && status in [
           'COMPLETED',
-          'CHARGE_APPLIED'
+          'CHARGE_APPLIED',
+          'TRIP_COMPLETED'
         ]
         && !resource.data.keys().hasAny(['rating'])
         && rating is map
@@ -779,7 +780,10 @@ service cloud.firestore {
         || (canManageOperationalReservations()
           && isInternalStaffReservation(resource.data))
         || (isSignedIn()
-          && resource.data.assignedDriverId == request.auth.uid);
+          && resource.data.assignedDriverId == request.auth.uid)
+        || (isClient()
+          && resource.data.clientId == request.auth.uid
+          && resource.data.source == 'vehicle_rental');
       allow create: if canManageOperationalReservations()
         && isInternalStaffReservationCreateAllowed();
       allow update: if canManageOperationalReservations()

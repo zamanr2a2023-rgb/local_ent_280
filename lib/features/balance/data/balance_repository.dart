@@ -31,6 +31,11 @@ class ClientBalanceProfile {
 
   bool get isBlockedByDebtLimit => balanceMinor <= debtLimitMinor;
 
+  bool canAffordMinor(int amountMinor) {
+    if (amountMinor <= 0) return true;
+    return balanceMinor - amountMinor >= debtLimitMinor;
+  }
+
   /// Wallet amounts are stored in EUR — always display operation currency.
   String formatMoney(int minor) =>
       AppCurrencyFormatter.instance.formatEurMinor(minor);
@@ -135,6 +140,29 @@ class BalanceRepository {
         updatedAt: _timestamp(data['updatedAt']),
       );
     });
+  }
+
+  Future<ClientBalanceProfile?> getClientBalanceProfile(String clientId) async {
+    if (disabled) return _mockProfile;
+    final doc = await _db.collection('balances').doc(clientId).get();
+    if (!doc.exists) {
+      return ClientBalanceProfile(
+        clientId: clientId,
+        balanceMinor: 0,
+        debtLimitMinor: -2000,
+        currency: 'EUR',
+      );
+    }
+    final data = doc.data() ?? {};
+    final balance = data['balance'] as Map<String, dynamic>?;
+    final debtLimit = data['debtLimit'] as Map<String, dynamic>?;
+    return ClientBalanceProfile(
+      clientId: clientId,
+      balanceMinor: _moneyMinor(balance ?? data['amount']),
+      debtLimitMinor: _moneyMinor(debtLimit),
+      currency: balance?['currency'] as String? ?? 'EUR',
+      updatedAt: _timestamp(data['updatedAt']),
+    );
   }
 
   Stream<List<BalanceAdjustmentRecord>> watchClientBalanceAdjustments(

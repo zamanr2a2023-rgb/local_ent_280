@@ -9,6 +9,10 @@ import 'package:local_ent_280/core/constants/app_assets.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
+import 'package:local_ent_280/core/services/support_contact_service.dart';
+import 'package:local_ent_280/core/services/support_phone_launcher.dart';
+import 'package:local_ent_280/features/balance/data/balance_repository.dart';
 import 'package:local_ent_280/features/rental/data/rental_booking_draft.dart';
 import 'package:intl/intl.dart';
 import 'package:local_ent_280/features/reservations/data/reservation_repository.dart';
@@ -25,9 +29,11 @@ class ReservationReviewScreen extends StatefulWidget {
 }
 
 class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
-  bool _creditCardSelected = true;
   bool _isSubmitting = false;
   final _reservationRepository = ReservationRepository();
+  final _balanceRepository = BalanceRepository();
+  final _supportContactService = SupportContactService();
+  final _supportPhoneLauncher = const SupportPhoneLauncher();
   final _draft = RentalBookingDraft.instance;
 
   static final _cardDecoration = BoxDecoration(
@@ -52,6 +58,17 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
       );
       return;
     }
+
+    final totalMinor = (_draft.estimatedTotalEur * 100).round();
+    final balance = await _balanceRepository.getClientBalanceProfile(
+      profile.uid,
+    );
+    if (!mounted) return;
+    if (balance == null || !balance.canAffordMinor(totalMinor)) {
+      await _showInsufficientBalanceDialog();
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       await _reservationRepository.createVehicleRentalReservation(
@@ -68,9 +85,18 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
       _draft.clear();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.reservationConfirmAndPay)),
+        SnackBar(content: Text(context.l10n.reservationBookingConfirmed)),
       );
-      AppNavigation.toClientBalance(context);
+      AppNavigation.toReservations(context);
+    } on ClientFunctionsException catch (error) {
+      if (!mounted) return;
+      if (error.isLimitExceeded) {
+        await _showInsufficientBalanceDialog(message: error.message);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
     } on FirebaseException catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +105,46 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  Future<void> _showInsufficientBalanceDialog({String? message}) async {
+    final phone = await _supportContactService.fetchSupportPhone();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final l10n = context.l10n;
+        final body = message ?? l10n.tripConfirmLimitExceeded;
+        final content = phone.isEmpty
+            ? body
+            : '$body\n\n${l10n.clientBalanceContactSupport}: $phone';
+        return AlertDialog(
+          title: Text(l10n.tripConfirmLimitExceeded),
+          content: Text(content),
+          actions: [
+            if (phone.isNotEmpty)
+              TextButton(
+                onPressed: () async {
+                  final result = await _supportPhoneLauncher.call(phone);
+                  if (!dialogContext.mounted) return;
+                  if (!result.launched) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.clientBalanceSupportCallFailed),
+                      ),
+                    );
+                  }
+                },
+                child: Text(l10n.tripConfirmLimitExceededCallSupport),
+              ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -103,17 +169,13 @@ class _ReservationReviewScreenState extends State<ReservationReviewScreen> {
                   SizedBox(height: 24.h),
                   _ItineraryCard(decoration: _cardDecoration, draft: _draft),
                   SizedBox(height: 16.h),
-                  const _SecurityBanner(),
+                  const _BalancePaymentBanner(),
                   SizedBox(height: 24.h),
-                  _CostAndPaymentCard(
+                  _CostSummaryCard(
                     decoration: _cardDecoration,
                     draft: _draft,
-                    creditCardSelected: _creditCardSelected,
+                    balanceRepository: _balanceRepository,
                     isSubmitting: _isSubmitting,
-                    onCreditCardTap: () =>
-                        setState(() => _creditCardSelected = true),
-                    onApplePayTap: () =>
-                        setState(() => _creditCardSelected = false),
                     onConfirm: _confirmBooking,
                   ),
                 ],
@@ -449,8 +511,8 @@ class _ItineraryStop extends StatelessWidget {
   }
 }
 
-class _SecurityBanner extends StatelessWidget {
-  const _SecurityBanner();
+class _BalancePaymentBanner extends StatelessWidget {
+  const _BalancePaymentBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -467,7 +529,7 @@ class _SecurityBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Symbols.security,
+            Symbols.account_balance_wallet,
             size: 24.sp,
             color: AppColors.secondaryContainer,
             fill: 1,
@@ -478,7 +540,7 @@ class _SecurityBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  context.l10n.reservationSecurePayment,
+                  context.l10n.homeAvailableBalance,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
@@ -489,7 +551,7 @@ class _SecurityBanner extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  context.l10n.reservationSecurePaymentDesc,
+                  context.l10n.reservationPayFromBalance,
                   style: GoogleFonts.inter(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
@@ -506,22 +568,18 @@ class _SecurityBanner extends StatelessWidget {
   }
 }
 
-class _CostAndPaymentCard extends StatelessWidget {
-  const _CostAndPaymentCard({
+class _CostSummaryCard extends StatelessWidget {
+  const _CostSummaryCard({
     required this.decoration,
     required this.draft,
-    required this.creditCardSelected,
-    required this.onCreditCardTap,
-    required this.onApplePayTap,
+    required this.balanceRepository,
     required this.onConfirm,
     this.isSubmitting = false,
   });
 
   final BoxDecoration decoration;
   final RentalBookingDraft draft;
-  final bool creditCardSelected;
-  final VoidCallback onCreditCardTap;
-  final VoidCallback onApplePayTap;
+  final BalanceRepository balanceRepository;
   final VoidCallback onConfirm;
   final bool isSubmitting;
 
@@ -538,6 +596,7 @@ class _CostAndPaymentCard extends StatelessWidget {
         (context.l10n.reservationInsuranceLine, formatter.formatEurMajor(15)),
     ];
     final totalLabel = formatter.formatEurMajor(draft.estimatedTotalEur);
+    final clientId = UserSession.instance.profile?.uid;
 
     return Container(
       padding: EdgeInsets.all(24.w),
@@ -639,118 +698,39 @@ class _CostAndPaymentCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 32.h),
-          Text(
-            context.l10n.reservationPaymentMethod,
-            style: GoogleFonts.inter(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              height: 20 / 14,
-              letterSpacing: 0.1,
-              color: AppColors.primary,
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Material(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(8.r),
-            child: InkWell(
-              onTap: onCreditCardTap,
-              borderRadius: BorderRadius.circular(8.r),
-              child: Ink(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(
-                    color: creditCardSelected
-                        ? AppColors.secondaryContainer
-                        : AppColors.outlineVariant,
-                    width: creditCardSelected ? 2 : 1,
-                  ),
-                ),
-                child: Row(
+          if (clientId != null) ...[
+            SizedBox(height: 16.h),
+            StreamBuilder<ClientBalanceProfile?>(
+              stream: balanceRepository.watchClientBalanceProfile(clientId),
+              builder: (context, snapshot) {
+                final balanceLabel =
+                    snapshot.data?.formattedBalance ??
+                    AppCurrencyFormatter.instance.formatEurMinor(0);
+                return Row(
                   children: [
-                    const Icon(
-                      Symbols.credit_card,
-                      color: AppColors.secondaryContainer,
-                      fill: 1,
-                    ),
-                    SizedBox(width: 16.w),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.reservationCreditCard,
-                            style: GoogleFonts.inter(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          Text(
-                            '•••• •••• •••• 4242',
-                            style: GoogleFonts.inter(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 20.w,
-                      height: 20.h,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.secondaryContainer,
-                          width: creditCardSelected ? 6 : 2,
-                        ),
-                        color: AppColors.surfaceContainerLowest,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 16.h),
-          Material(
-            color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(8.r),
-            child: InkWell(
-              onTap: onApplePayTap,
-              borderRadius: BorderRadius.circular(8.r),
-              child: Ink(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: AppColors.outlineVariant),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Symbols.ios, color: AppColors.primary),
-                      SizedBox(width: 16.w),
-                      Text(
-                        context.l10n.reservationPayWithApplePay,
+                      child: Text(
+                        context.l10n.homeAvailableBalance,
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.1,
-                          color: AppColors.primary,
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                    Text(
+                      balanceLabel,
+                      style: GoogleFonts.manrope(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
+          ],
           SizedBox(height: 32.h),
           Material(
             color: AppColors.secondary,

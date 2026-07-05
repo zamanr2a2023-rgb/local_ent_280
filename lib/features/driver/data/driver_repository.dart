@@ -35,6 +35,15 @@ class DriverRepository {
 
   bool get disabled => _disabled;
 
+  static const driverTripFinishedStatuses = {
+    'COMPLETED',
+    'CHARGE_APPLIED',
+    'TRIP_COMPLETED',
+  };
+
+  static bool isTripFinished(String status) =>
+      driverTripFinishedStatuses.contains(status.toUpperCase());
+
   Stream<DriverStatus?> watchDriverStatus(String driverId) {
     if (_disabled) return Stream<DriverStatus?>.value(null);
     return _driverStatus.doc(driverId).snapshots().map((doc) {
@@ -205,16 +214,61 @@ class DriverRepository {
     required AppUserProfile profile,
   }) async {
     if (_disabled) return;
-    await _functionsService.transitionTripState(
-      tripId: tripId,
-      targetStatus: 'DRIVER_ACCEPTED',
-      actorId: driverId,
-    );
-    await _functionsService.transitionTripState(
-      tripId: tripId,
-      targetStatus: 'DRIVER_EN_ROUTE',
-      actorId: driverId,
-    );
+
+    const navigableStatuses = {
+      'DRIVER_ACCEPTED',
+      'DRIVER_EN_ROUTE',
+      'DRIVER_ARRIVED',
+      'IN_TRIP',
+      'ARRIVED_DESTINATION',
+      'EXTENSION_WINDOW',
+    };
+
+    var status = await _readTripStatus(tripId, preferServer: true);
+
+    if (status == 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE') {
+      await _functionsService.transitionTripState(
+        tripId: tripId,
+        targetStatus: 'DRIVER_ACCEPTED',
+        actorId: driverId,
+      );
+      status = await _waitForTripStatus(
+        tripId,
+        expected: 'DRIVER_ACCEPTED',
+        acceptAlso: navigableStatuses,
+      );
+    }
+
+    if (status == 'DRIVER_ACCEPTED') {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          await _functionsService.transitionTripState(
+            tripId: tripId,
+            targetStatus: 'DRIVER_EN_ROUTE',
+            actorId: driverId,
+          );
+          status = await _waitForTripStatus(
+            tripId,
+            expected: 'DRIVER_EN_ROUTE',
+            acceptAlso: navigableStatuses,
+          );
+          if (status != 'DRIVER_ACCEPTED') break;
+        } on ClientFunctionsException {
+          status = await _readTripStatus(tripId, preferServer: true);
+          if (status != 'DRIVER_ACCEPTED') break;
+          if (attempt == 2) rethrow;
+          await Future<void>.delayed(
+            Duration(milliseconds: 350 * (attempt + 1)),
+          );
+        }
+      }
+    }
+
+    status = await _readTripStatus(tripId, preferServer: true);
+    if (!navigableStatuses.contains(status)) {
+      throw StateError('Trip could not be started (status: $status).');
+    }
+
     await _driverStatus.doc(driverId).set({
       'isAvailable': false,
       'availabilityEnabled': true,
@@ -222,6 +276,35 @@ class DriverRepository {
       'currentTripId': tripId,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<String> _readTripStatus(
+    String tripId, {
+    bool preferServer = false,
+  }) async {
+    final snap = await _trips.doc(tripId).get(
+      GetOptions(
+        source: preferServer ? Source.server : Source.serverAndCache,
+      ),
+    );
+    return (snap.data()?['status'] as String? ?? '').toUpperCase();
+  }
+
+  Future<String> _waitForTripStatus(
+    String tripId, {
+    required String expected,
+    Set<String>? acceptAlso,
+    int maxAttempts = 30,
+  }) async {
+    final acceptable = {expected, ...?acceptAlso};
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final status = await _readTripStatus(tripId, preferServer: true);
+      if (acceptable.contains(status)) return status;
+      if (attempt < maxAttempts - 1) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    }
+    return _readTripStatus(tripId, preferServer: true);
   }
 
   Future<void> declineTrip(
@@ -257,20 +340,50 @@ class DriverRepository {
 
   Future<void> markArrived(String tripId, {required String driverId}) async {
     if (_disabled) return;
-    await _functionsService.transitionTripState(
+    var status = await _readTripStatus(tripId);
+    if (isTripFinished(status)) return;
+    if (status == 'DRIVER_ARRIVED' ||
+        status == 'IN_TRIP' ||
+        status == 'ARRIVED_DESTINATION' ||
+        status == 'EXTENSION_WINDOW') {
+      return;
+    }
+    if (status != 'DRIVER_EN_ROUTE') {
+      throw StateError('Cannot mark arrived (status: $status).');
+    }
+    await _transitionTripTo(
       tripId: tripId,
+      driverId: driverId,
       targetStatus: 'DRIVER_ARRIVED',
-      actorId: driverId,
     );
   }
 
   Future<void> startTrip(String tripId, {required String driverId}) async {
     if (_disabled) return;
-    await _functionsService.transitionTripState(
-      tripId: tripId,
-      targetStatus: 'IN_TRIP',
-      actorId: driverId,
-    );
+    var status = await _readTripStatus(tripId);
+    if (isTripFinished(status)) return;
+    if (status == 'IN_TRIP' ||
+        status == 'ARRIVED_DESTINATION' ||
+        status == 'EXTENSION_WINDOW') {
+      return;
+    }
+    if (status == 'DRIVER_EN_ROUTE') {
+      await _transitionTripTo(
+        tripId: tripId,
+        driverId: driverId,
+        targetStatus: 'DRIVER_ARRIVED',
+      );
+      status = await _readTripStatus(tripId);
+    }
+    if (status == 'DRIVER_ARRIVED') {
+      await _transitionTripTo(
+        tripId: tripId,
+        driverId: driverId,
+        targetStatus: 'IN_TRIP',
+      );
+      return;
+    }
+    throw StateError('Cannot start trip (status: $status).');
   }
 
   Future<void> completeTrip({
@@ -278,28 +391,62 @@ class DriverRepository {
     required String tripId,
   }) async {
     if (_disabled) return;
-    final snap = await _trips.doc(tripId).get();
-    if (!snap.exists) {
+
+    var status = await _readTripStatus(tripId);
+    if (status.isEmpty) {
       throw StateError('Trip not found');
     }
-    final status = snap.data()?['status'] as String? ?? '';
 
-    if (status == 'IN_TRIP') {
-      await _functionsService.transitionTripState(
-        tripId: tripId,
-        targetStatus: 'ARRIVED_DESTINATION',
-        actorId: driverId,
-      );
-    }
+    const completable = {
+      'DRIVER_EN_ROUTE',
+      'DRIVER_ARRIVED',
+      'IN_TRIP',
+      'ARRIVED_DESTINATION',
+      'EXTENSION_WINDOW',
+    };
+    const finished = driverTripFinishedStatuses;
 
-    final effectiveStatus = status == 'IN_TRIP' ? 'ARRIVED_DESTINATION' : status;
-    if (effectiveStatus == 'ARRIVED_DESTINATION' ||
-        effectiveStatus == 'EXTENSION_WINDOW') {
-      await _functionsService.transitionTripState(
-        tripId: tripId,
-        targetStatus: 'COMPLETED',
-        actorId: driverId,
-      );
+    if (!finished.contains(status)) {
+      if (!completable.contains(status)) {
+        throw StateError('Trip cannot be finished (status: $status).');
+      }
+
+      if (status == 'DRIVER_EN_ROUTE') {
+        await _transitionTripTo(
+          tripId: tripId,
+          driverId: driverId,
+          targetStatus: 'DRIVER_ARRIVED',
+        );
+        status = await _readTripStatus(tripId);
+      }
+      if (status == 'DRIVER_ARRIVED') {
+        await _transitionTripTo(
+          tripId: tripId,
+          driverId: driverId,
+          targetStatus: 'IN_TRIP',
+        );
+        status = await _readTripStatus(tripId);
+      }
+      if (status == 'IN_TRIP') {
+        await _transitionTripTo(
+          tripId: tripId,
+          driverId: driverId,
+          targetStatus: 'ARRIVED_DESTINATION',
+        );
+        status = await _readTripStatus(tripId);
+      }
+      if (status == 'ARRIVED_DESTINATION' || status == 'EXTENSION_WINDOW') {
+        await _transitionTripTo(
+          tripId: tripId,
+          driverId: driverId,
+          targetStatus: 'COMPLETED',
+        );
+        status = await _readTripStatus(tripId);
+      }
+
+      if (!finished.contains(status)) {
+        throw StateError('Trip could not be completed (status: $status).');
+      }
     }
 
     await _driverStatus.doc(driverId).set({
@@ -309,6 +456,18 @@ class DriverRepository {
       'currentTripId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> _transitionTripTo({
+    required String tripId,
+    required String driverId,
+    required String targetStatus,
+  }) async {
+    await _functionsService.transitionTripState(
+      tripId: tripId,
+      targetStatus: targetStatus,
+      actorId: driverId,
+    );
   }
 
   Future<void> recordPathPoint({

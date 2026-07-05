@@ -11,7 +11,10 @@ abstract class TripRepository {
 
   Stream<List<TripRecord>> watchClientTrips(String clientId);
 
-  Future<void> cancelTripByClient(String tripId);
+  Future<void> cancelTripByClient(
+    String tripId, {
+    required String reason,
+  });
 
   Future<void> submitTripRating({
     required String tripId,

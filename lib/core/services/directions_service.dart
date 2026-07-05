@@ -15,6 +15,8 @@ class DirectionsRouteResult {
   });
 
   final TripDirectionsResult? directions;
+
+  /// True only when distance uses a straight-line approximation (no road geometry).
   final bool usedFallback;
 }
 
@@ -23,6 +25,7 @@ class DirectionsService {
   DirectionsService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
+  static const _requestTimeout = Duration(seconds: 12);
 
   Future<TripDirectionsResult> getDrivingRoute({
     required LatLng origin,
@@ -44,33 +47,68 @@ class DirectionsService {
     required LatLng origin,
     required LatLng destination,
   }) async {
+    for (final apiKey in GoogleMapsConfig.directionsApiKeys) {
+      final googleResult = await _fetchGoogleDirections(
+        origin: origin,
+        destination: destination,
+        apiKey: apiKey,
+      );
+      if (googleResult != null) {
+        return DirectionsRouteResult(
+          directions: googleResult,
+          usedFallback: false,
+        );
+      }
+    }
+
+    final osrmResult = await _fetchOsrmDirections(
+      origin: origin,
+      destination: destination,
+    );
+    if (osrmResult != null) {
+      debugPrint('Directions: using OSRM road route fallback.');
+      return DirectionsRouteResult(
+        directions: osrmResult,
+        usedFallback: false,
+      );
+    }
+
+    return _straightLineFallback(origin, destination);
+  }
+
+  Future<TripDirectionsResult?> _fetchGoogleDirections({
+    required LatLng origin,
+    required LatLng destination,
+    required String apiKey,
+  }) async {
+    if (apiKey.trim().isEmpty) return null;
+
     final uri = Uri.https('maps.googleapis.com', '/maps/api/directions/json', {
       'origin': '${origin.latitude},${origin.longitude}',
       'destination': '${destination.latitude},${destination.longitude}',
       'mode': 'driving',
       'language': 'en',
-      'key': GoogleMapsConfig.placesApiKey,
+      'key': apiKey,
     });
 
     try {
-      final response = await _client.get(uri);
-      if (response.statusCode != 200) {
-        return _fallbackResult(origin, destination);
-      }
+      final response = await _client.get(uri).timeout(_requestTimeout);
+      if (response.statusCode != 200) return null;
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final status = data['status'] as String? ?? 'UNKNOWN';
       if (status != 'OK') {
-        debugPrint('Directions API status: $status');
-        return _fallbackResult(origin, destination);
+        final message = data['error_message'] as String? ?? status;
+        debugPrint('Directions API status: $status ($message)');
+        return null;
       }
 
       final routes = data['routes'] as List<dynamic>? ?? [];
-      if (routes.isEmpty) return _fallbackResult(origin, destination);
+      if (routes.isEmpty) return null;
 
       final route = routes.first as Map<String, dynamic>;
       final legs = route['legs'] as List<dynamic>? ?? [];
-      if (legs.isEmpty) return _fallbackResult(origin, destination);
+      if (legs.isEmpty) return null;
 
       final leg = legs.first as Map<String, dynamic>;
       final distanceMeters =
@@ -84,42 +122,88 @@ class DirectionsService {
       final polylinePoints = encodedPolyline == null
           ? [origin, destination]
           : decodePolyline(encodedPolyline);
+      if (polylinePoints.length < 2) return null;
 
       final directions = TripDirectionsResult(
         distanceKm: distanceMeters / 1000,
         durationMinutes: (durationSeconds / 60).ceil().clamp(1, 999),
         polylinePoints: polylinePoints,
       );
-      if (directions.distanceKm <= 0) {
-        return const DirectionsRouteResult(
-          directions: null,
-          usedFallback: true,
-        );
-      }
-      return DirectionsRouteResult(directions: directions, usedFallback: false);
+      if (directions.distanceKm <= 0) return null;
+      return directions;
     } catch (e) {
       debugPrint('Directions request failed: $e');
-      return _fallbackResult(origin, destination);
+      return null;
     }
   }
 
-  DirectionsRouteResult _fallbackResult(LatLng origin, LatLng destination) {
-    final directions = _fallback(origin, destination);
-    if (directions.distanceKm <= 0) {
-      return const DirectionsRouteResult(directions: null, usedFallback: true);
+  Future<TripDirectionsResult?> _fetchOsrmDirections({
+    required LatLng origin,
+    required LatLng destination,
+  }) async {
+    final path =
+        '${origin.longitude},${origin.latitude};'
+        '${destination.longitude},${destination.latitude}';
+    final uri = Uri.https(
+      'router.project-osrm.org',
+      '/route/v1/driving/$path',
+      {
+        'overview': 'full',
+        'geometries': 'polyline',
+        'steps': 'false',
+      },
+    );
+
+    try {
+      final response = await _client.get(uri).timeout(_requestTimeout);
+      if (response.statusCode != 200) return null;
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (data['code'] != 'Ok') return null;
+
+      final routes = data['routes'] as List<dynamic>? ?? [];
+      if (routes.isEmpty) return null;
+
+      final route = routes.first as Map<String, dynamic>;
+      final encodedPolyline = route['geometry'] as String?;
+      if (encodedPolyline == null || encodedPolyline.isEmpty) return null;
+
+      final polylinePoints = decodePolyline(encodedPolyline);
+      if (polylinePoints.length < 2) return null;
+
+      final distanceMeters = (route['distance'] as num?)?.toDouble() ?? 0;
+      final durationSeconds = (route['duration'] as num?)?.toDouble() ?? 0;
+      if (distanceMeters <= 0) return null;
+
+      return TripDirectionsResult(
+        distanceKm: distanceMeters / 1000,
+        durationMinutes: (durationSeconds / 60).ceil().clamp(1, 999),
+        polylinePoints: polylinePoints,
+      );
+    } catch (e) {
+      debugPrint('OSRM directions failed: $e');
+      return null;
     }
-    return DirectionsRouteResult(directions: directions, usedFallback: true);
   }
 
-  TripDirectionsResult _fallback(LatLng origin, LatLng destination) {
+  DirectionsRouteResult _straightLineFallback(
+    LatLng origin,
+    LatLng destination,
+  ) {
     final distanceKm = PlacesDetailsService.estimateDistanceKm(
       origin,
       destination,
     );
-    return TripDirectionsResult(
-      distanceKm: distanceKm,
-      durationMinutes: PlacesDetailsService.estimateDurationMinutes(distanceKm),
-      polylinePoints: [origin, destination],
+    if (distanceKm <= 0) {
+      return const DirectionsRouteResult(directions: null, usedFallback: true);
+    }
+    return DirectionsRouteResult(
+      directions: TripDirectionsResult(
+        distanceKm: distanceKm,
+        durationMinutes: PlacesDetailsService.estimateDurationMinutes(distanceKm),
+        polylinePoints: [origin, destination],
+      ),
+      usedFallback: true,
     );
   }
 }

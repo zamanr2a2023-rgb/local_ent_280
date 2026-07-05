@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:local_ent_280/core/data/driver_home_data.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/services/current_location_service.dart';
@@ -15,6 +16,7 @@ import 'package:local_ent_280/features/auth/data/user_session.dart';
 import 'package:local_ent_280/features/driver/data/driver_location_tracker.dart';
 import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/presentation/driver/widgets/driver_trip_cancelled_dialog.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
 import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
@@ -54,6 +56,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
   String _distanceStat = '—';
   String _passengerRating = '—';
   bool _isVipPassenger = false;
+  bool _handledClientCancellation = false;
+  bool _handledTripFinished = false;
 
   String? get _driverId => UserSession.instance.profile?.uid;
 
@@ -79,8 +83,18 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
       (_) => _refreshRouteMetrics(),
     );
     _tripSubscription = _tripRepository.watchTrip(widget.tripId).listen((trip) {
-      if (!mounted) return;
-      if (trip == null) return;
+      if (!mounted || trip == null) return;
+      if (!_handledClientCancellation &&
+          trip.status.toUpperCase() == 'CANCELLED_BY_CLIENT') {
+        _handledClientCancellation = true;
+        _routeRefreshTimer?.cancel();
+        unawaited(_showClientCancelledDialog(trip));
+        return;
+      }
+      if (!_handledTripFinished && DriverRepository.isTripFinished(trip.status)) {
+        unawaited(_exitAfterTripFinished());
+        return;
+      }
       final previousPhase = _phase;
       setState(() {
         _trip = trip;
@@ -91,6 +105,36 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
         _refreshRouteMetrics();
       }
     });
+    if (_trip != null && DriverRepository.isTripFinished(_trip!.status)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_exitAfterTripFinished());
+      });
+    }
+  }
+
+  Future<void> _exitAfterTripFinished() async {
+    if (_handledTripFinished || !mounted) return;
+    _handledTripFinished = true;
+    _routeRefreshTimer?.cancel();
+    _tripSubscription?.cancel();
+
+    final driverId = _driverId;
+    if (driverId != null) {
+      try {
+        await _driverRepository.completeTrip(
+          driverId: driverId,
+          tripId: widget.tripId,
+        );
+      } catch (_) {
+        // Trip already finished on server; still return driver to home.
+      }
+    }
+    if (!mounted) return;
+    AppNavigation.toDriverHome(context);
+  }
+
+  Future<void> _showClientCancelledDialog(TripRecord trip) async {
+    await showDriverTripCancelledByClientDialog(context, trip: trip);
   }
 
   void _syncPassengerMeta(TripRecord? trip) {
@@ -146,7 +190,7 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
 
   void _syncPhaseFromTrip(TripRecord? trip) {
     if (trip == null) return;
-    switch (trip.status) {
+    switch (trip.status.toUpperCase()) {
       case 'DRIVER_ARRIVED':
         _phase = _DriverTripPhase.arrived;
       case 'IN_TRIP':
@@ -164,6 +208,19 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
     _DriverTripPhase.inProgress => context.l10n.driverTripInProgressStatus,
   };
 
+  String _actionErrorMessage(Object error, BuildContext context) {
+    if (error is ClientFunctionsException) return error.message;
+    if (error is StateError) return error.message;
+    return context.l10n.tryAgain;
+  }
+
+  void _showActionError(Object error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_actionErrorMessage(error, context))),
+    );
+  }
+
   Future<void> _onArrived() async {
     if (_isUpdating) return;
     final driverId = _driverId;
@@ -172,12 +229,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
     try {
       await _driverRepository.markArrived(widget.tripId, driverId: driverId);
       if (mounted) setState(() => _phase = _DriverTripPhase.arrived);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
-      }
+    } catch (error) {
+      _showActionError(error);
     } finally {
       if (mounted) setState(() => _isUpdating = false);
     }
@@ -191,12 +244,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
     try {
       await _driverRepository.startTrip(widget.tripId, driverId: driverId);
       if (mounted) setState(() => _phase = _DriverTripPhase.inProgress);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
-      }
+    } catch (error) {
+      _showActionError(error);
     } finally {
       if (mounted) setState(() => _isUpdating = false);
     }
@@ -214,12 +263,8 @@ class _DriverActiveTripScreenState extends State<DriverActiveTripScreen> {
       );
       if (!mounted) return;
       AppNavigation.toDriverHome(context);
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.tryAgain)));
-      }
+    } catch (error) {
+      _showActionError(error);
     } finally {
       if (mounted) setState(() => _isUpdating = false);
     }
@@ -621,7 +666,7 @@ class _WorkflowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isDestructive
-        ? AppColors.error
+        ? (isEnabled ? AppColors.error : AppColors.labelMuted)
         : isEnabled
         ? AppColors.primary
         : AppColors.labelMuted;

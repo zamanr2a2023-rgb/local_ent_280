@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
 import 'package:local_ent_280/core/data/driver_home_data.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
@@ -18,6 +19,7 @@ import 'package:local_ent_280/features/driver/data/driver_repository.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
 import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
+import 'package:local_ent_280/presentation/driver/widgets/driver_trip_cancelled_dialog.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Pedido de viagem recebido — aceitar ou recusar dentro de 12 segundos.
@@ -53,6 +55,7 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
   String _pickupDistance = DriverTripRequestData.pickupDistance;
   String _destinationInfo = DriverTripRequestData.destinationInfo;
   bool _isSubmitting = false;
+  bool _handledClientCancellation = false;
 
   String? get _driverId => UserSession.instance.profile?.uid;
 
@@ -73,6 +76,13 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
     _tripSubscription =
         _tripRepository.watchTrip(widget.tripId).listen((trip) {
       if (!mounted || trip == null) return;
+      if (!_handledClientCancellation &&
+          trip.status.toUpperCase() == 'CANCELLED_BY_CLIENT') {
+        _handledClientCancellation = true;
+        _countdownTimer?.cancel();
+        unawaited(showDriverTripCancelledByClientDialog(context, trip: trip));
+        return;
+      }
       setState(() => _trip = trip);
     });
     _secondsLeft = DriverTripRequestScreen.acceptCountdownSeconds;
@@ -131,6 +141,34 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
     );
   }
 
+  static const _navigableAfterAccept = {
+    'DRIVER_ACCEPTED',
+    'DRIVER_EN_ROUTE',
+    'DRIVER_ARRIVED',
+    'IN_TRIP',
+    'ARRIVED_DESTINATION',
+    'EXTENSION_WINDOW',
+  };
+
+  Future<TripRecord?> _loadTripForNavigation() async {
+    for (var attempt = 0; attempt < 30; attempt++) {
+      final doc = await FirebaseFirestore.instance
+          .collection('trips')
+          .doc(widget.tripId)
+          .get(const GetOptions(source: Source.server));
+      if (doc.exists) {
+        final trip = TripRecord.fromFirestore(doc);
+        if (_navigableAfterAccept.contains(trip.status.toUpperCase())) {
+          return trip;
+        }
+      }
+      if (attempt < 29) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    }
+    return _tripRepository.getTrip(widget.tripId);
+  }
+
   Future<void> _accept() async {
     if (_isSubmitting) return;
     final driverId = _driverId;
@@ -146,19 +184,43 @@ class _DriverTripRequestScreenState extends State<DriverTripRequestScreen> {
         profile: profile,
       );
       if (!mounted) return;
-      AppNavigation.toDriverTripAccepted(
+
+      final activeTrip = await _loadTripForNavigation();
+
+      if (!mounted) return;
+      if (activeTrip == null ||
+          !_navigableAfterAccept.contains(activeTrip.status.toUpperCase())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.tryAgain)),
+        );
+        return;
+      }
+      AppNavigation.toDriverActiveTrip(
         context,
         tripId: widget.tripId,
-        trip: _trip,
+        trip: activeTrip,
         driverRepository: _driverRepository,
       );
+    } on ClientFunctionsException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
+    } on StateError catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
     } catch (_) {
       if (mounted) {
-        setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.tryAgain)),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

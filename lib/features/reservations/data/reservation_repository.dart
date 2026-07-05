@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:local_ent_280/core/data/reservations_data.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
 
 class ClientReservationRecord {
   const ClientReservationRecord({
@@ -47,12 +48,15 @@ class ClientReservationRecord {
 class ReservationRepository {
   ReservationRepository({
     FirebaseFirestore? firestore,
+    ClientFunctionsService? functionsService,
     this.disabled = false,
     List<ClientReservationRecord>? mockReservations,
   })  : _firestore = firestore,
+        _functionsService = functionsService ?? ClientFunctionsService(),
         _mockReservations = mockReservations;
 
   final FirebaseFirestore? _firestore;
+  final ClientFunctionsService _functionsService;
   final bool disabled;
   final List<ClientReservationRecord>? _mockReservations;
 
@@ -128,22 +132,15 @@ class ReservationRepository {
     bool fullInsurance = false,
   }) async {
     if (disabled) return '';
-    final ref = _db.collection('reservations').doc();
-    await ref.set({
-      'source': 'vehicle_rental',
-      'clientId': clientId,
-      'vehicleId': vehicleId,
-      'vehicleLabel': vehicleLabel,
-      'scheduledAt': Timestamp.fromDate(scheduledAt),
-      'status': 'pending',
-      'pickup': {'address': pickupAddress},
-      'destination': {'address': returnAddress},
-      'transportType': {'id': 'vehicle_rental', 'name': 'Vehicle rental'},
-      'estimatedTotalMinor': (totalEur * 100).round(),
-      'fullInsurance': fullInsurance,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    return ref.id;
+    final totalMinor = (totalEur * 100).round();
+    return _functionsService.bookVehicleRental(
+      vehicleId: vehicleId,
+      vehicleLabel: vehicleLabel,
+      scheduledAt: scheduledAt,
+      pickupAddress: pickupAddress,
+      returnAddress: returnAddress,
+      totalMinor: totalMinor,
+      fullInsurance: fullInsurance,
+    );
   }
 }

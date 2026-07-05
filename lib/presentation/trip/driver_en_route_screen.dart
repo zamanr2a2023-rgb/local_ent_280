@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
+import 'package:local_ent_280/core/navigation/app_navigation.dart';
 import 'package:local_ent_280/core/data/driver_en_route_data.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
+import 'package:local_ent_280/core/services/support_phone_launcher.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
@@ -12,7 +16,9 @@ import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/client_trip_flow.dart';
 import 'package:local_ent_280/features/trips/data/client_trip_watcher.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
+import 'package:local_ent_280/features/trips/data/trip_driver_contact_repository.dart';
 import 'package:local_ent_280/features/trips/data/trip_repository.dart';
+import 'package:local_ent_280/presentation/trip/widgets/client_trip_cancel_dialog.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// Motorista a caminho — viagem ativa (`roles/details.md`).
@@ -37,12 +43,22 @@ class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
   late final AnimationController _pulseController;
   late final ClientTripWatcher _tripWatcher;
   final _driverLocationRepository = DriverLocationRepository();
+  final _driverContactRepository = TripDriverContactRepository();
+  final _phoneLauncher = const SupportPhoneLauncher();
   StreamSubscription<DriverLocationSnapshot?>? _driverLocationSubscription;
   TripRecord? _trip;
   DriverLocationSnapshot? _driverLocation;
+  bool _isCancelling = false;
+  TripRepository? _tripRepository;
 
   String get _tripId =>
       widget.tripId ?? ActiveTripSession.instance.tripId ?? '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tripRepository ??= widget.tripRepository ?? tripRepositoryOf(context);
+  }
 
   @override
   void initState() {
@@ -77,6 +93,97 @@ class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
       if (!mounted || location == null) return;
       setState(() => _driverLocation = location);
     });
+  }
+
+  Future<String?> _resolveDriverPhone() async {
+    final summaryPhone = _trip?.driverSummary?.phone?.trim();
+    if (summaryPhone != null && summaryPhone.isNotEmpty) {
+      return summaryPhone;
+    }
+
+    final tripId = _tripId;
+    if (tripId.isEmpty) return null;
+
+    final contact = await _driverContactRepository.fetchContact(tripId);
+    final contactPhone = contact?.phone.trim();
+    if (contactPhone != null && contactPhone.isNotEmpty) {
+      return contactPhone;
+    }
+    return null;
+  }
+
+  Future<void> _callDriver() async {
+    final phone = await _resolveDriverPhone();
+    if (!mounted) return;
+
+    if (phone == null || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.driverEnRoutePhoneUnavailable)),
+      );
+      return;
+    }
+
+    final result = await _phoneLauncher.call(phone);
+    if (!mounted || result.launched) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.clientBalanceSupportCallFailed)),
+    );
+  }
+
+  Future<void> _messageDriver() async {
+    final phone = await _resolveDriverPhone();
+    if (!mounted) return;
+
+    if (phone == null || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.driverEnRoutePhoneUnavailable)),
+      );
+      return;
+    }
+
+    final result = await _phoneLauncher.message(phone);
+    if (!mounted || result.launched) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.driverEnRouteMessageFailed)),
+    );
+  }
+
+  Future<void> _cancelTrip() async {
+    final tripId = _tripId;
+    if (tripId.isEmpty || _isCancelling) return;
+
+    final reason = await showClientTripCancelReasonDialog(
+      context,
+      confirmMessage: context.l10n.driverEnRouteCancelConfirm,
+    );
+    if (reason == null || reason.isEmpty || !mounted) return;
+
+    setState(() => _isCancelling = true);
+    try {
+      final repository = _tripRepository;
+      if (repository == null) {
+        throw StateError('Trip repository unavailable.');
+      }
+      await repository.cancelTripByClient(tripId, reason: reason);
+      _tripWatcher.dispose();
+      ActiveTripSession.instance.clear();
+      if (!mounted) return;
+      AppNavigation.toHomeAfterLogin(context);
+    } on ClientFunctionsException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.driverSearchCancelFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
   }
 
   @override
@@ -126,15 +233,22 @@ class _DriverEnRouteScreenState extends State<DriverEnRouteScreen>
                   left: AppLayout.marginMobile,
                   child: _StatusPill(pulse: _pulseController),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _TripBottomSheet(
-                    trip: trip,
-                    onMessage: () {},
-                    onCall: () {},
-                  ),
+                DraggableScrollableSheet(
+                  initialChildSize: 0.48,
+                  minChildSize: 0.28,
+                  maxChildSize: 0.88,
+                  snap: true,
+                  snapSizes: const [0.28, 0.48, 0.88],
+                  builder: (context, scrollController) {
+                    return _TripBottomSheet(
+                      scrollController: scrollController,
+                      trip: trip,
+                      isCancelling: _isCancelling,
+                      onMessage: _messageDriver,
+                      onCall: _callDriver,
+                      onCancel: _cancelTrip,
+                    );
+                  },
                 ),
               ],
             ),
@@ -436,14 +550,20 @@ class _CarMarker extends StatelessWidget {
 
 class _TripBottomSheet extends StatelessWidget {
   const _TripBottomSheet({
+    required this.scrollController,
     required this.trip,
+    required this.isCancelling,
     required this.onMessage,
     required this.onCall,
+    required this.onCancel,
   });
 
+  final ScrollController scrollController;
   final TripRecord? trip;
+  final bool isCancelling;
   final VoidCallback onMessage;
   final VoidCallback onCall;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -455,38 +575,31 @@ class _TripBottomSheet extends StatelessWidget {
     final etaMinutes = trip == null
         ? DriverEnRouteData.etaMinutes
         : '${trip!.meteringSnapshot.totalMinutes}';
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      child: Material(
         color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        border: Border(
-          top: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.1),
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 32.r,
-            offset: Offset(0, -4.h),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(32.w, 16.h, 32.w, 48.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 48.w,
-              height: 6.h,
-              margin: EdgeInsets.only(bottom: 24.h),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(999.r),
+        elevation: 12,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        child: SingleChildScrollView(
+          controller: scrollController,
+          padding: EdgeInsets.fromLTRB(32.w, 16.h, 32.w, 24.h + bottomInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 48.w,
+                  height: 6.h,
+                  margin: EdgeInsets.only(bottom: 24.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(999.r),
+                  ),
+                ),
               ),
-            ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -637,8 +750,50 @@ class _TripBottomSheet extends StatelessWidget {
                 ),
               ],
             ),
+            SizedBox(height: 16.h),
+            SizedBox(
+              width: double.infinity,
+              height: 56.h,
+              child: FilledButton(
+                onPressed: isCancelling ? null : onCancel,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.errorContainer,
+                  foregroundColor: AppColors.onErrorContainer,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                child: isCancelling
+                    ? SizedBox(
+                        width: 20.w,
+                        height: 20.h,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.onErrorContainer,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.close, size: 20.sp),
+                          SizedBox(width: 12.w),
+                          Text(
+                            context.l10n.driverSearchCancelTrip,
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              height: 20 / 14,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
           ],
         ),
+      ),
       ),
     );
   }

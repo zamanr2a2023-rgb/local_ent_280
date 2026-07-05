@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:local_ent_280/core/services/app_currency_formatter.dart';
+import 'package:local_ent_280/features/trips/data/models/trip_cancellation.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_location.dart';
 
 class TripTransportType {
@@ -127,6 +128,7 @@ class TripRecord {
     this.clientSupport,
     this.driverSummary,
     this.unfulfilledReason,
+    this.cancellation,
   });
 
   final String id;
@@ -144,6 +146,7 @@ class TripRecord {
   final TripClientSupport? clientSupport;
   final TripDriverSummary? driverSummary;
   final String? unfulfilledReason;
+  final TripCancellation? cancellation;
 
   bool get hasAssignedDriver =>
       assignedDriverId != null && assignedDriverId!.trim().isNotEmpty;
@@ -210,6 +213,11 @@ class TripRecord {
             )
           : null,
       unfulfilledReason: data['unfulfilledReason'] as String?,
+      cancellation: data['cancellation'] is Map<String, dynamic>
+          ? TripCancellation.fromFirestore(
+              data['cancellation'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 

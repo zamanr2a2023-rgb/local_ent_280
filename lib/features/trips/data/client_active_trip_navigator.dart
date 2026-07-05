@@ -20,6 +20,7 @@ abstract final class ClientActiveTripNavigator {
   static TripRecord? findActiveTrip(List<TripRecord> trips) {
     for (final trip in trips) {
       final status = trip.status.toUpperCase();
+      if (ClientTripFlow.isCancelled(status)) continue;
       if (!trip.isActive) continue;
       if (_activeStatuses.contains(status)) {
         return trip;
@@ -31,6 +32,7 @@ abstract final class ClientActiveTripNavigator {
   static TripRecord? findResumableTrip(List<TripRecord> trips) {
     for (final trip in trips) {
       final status = trip.status.toUpperCase();
+      if (ClientTripFlow.isCancelled(status)) continue;
       if (!trip.isActive) continue;
       if (!_activeStatuses.contains(status)) continue;
       // Keep searching on home until the user explicitly opens the flow.

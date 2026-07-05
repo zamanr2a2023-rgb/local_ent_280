@@ -34,5 +34,7 @@ module.exports = {
     "require-jsdoc": 0,
     "quote-props": 0,
     "max-len": 0,
+    // Windows checkouts use CRLF; do not block deploy on line endings.
+    "linebreak-style": 0,
   },
 };

@@ -9,6 +9,8 @@ import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/features/auth/data/user_session.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
+import 'package:local_ent_280/features/support/data/support_request_repository.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
 import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
@@ -33,10 +35,12 @@ class TripCompletedScreen extends StatefulWidget {
 
 class _TripCompletedScreenState extends State<TripCompletedScreen> {
   late final TripRepository _tripRepository;
+  final SupportRequestRepository _supportRepository = SupportRequestRepository();
   int _rating = TripCompletedData.defaultRating;
   final _commentController = TextEditingController();
   TripRecord? _trip;
   bool _isSubmitting = false;
+  bool _isReportingIssue = false;
   bool _ratingSubmitted = false;
 
   String get _tripId =>
@@ -87,14 +91,127 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.tripCompletedRatingSent)),
       );
-    } on FirebaseException catch (_) {
+    } on FirebaseException catch (error) {
+      if (!mounted) return;
+      final message = error.message?.trim();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message != null && message.isNotEmpty
+                ? message
+                : context.l10n.tryAgain,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _reportIssue() async {
+    if (_isReportingIssue) return;
+
+    FocusScope.of(context).unfocus();
+    final tripId = _tripId;
+    if (tripId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tripConfirmSessionInvalid)),
+      );
+      return;
+    }
+
+    final descriptionController = TextEditingController(
+      text: _commentController.text.trim(),
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(context.l10n.tripCompletedReportIssue),
+          content: TextField(
+            controller: descriptionController,
+            maxLines: 4,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: context.l10n.tripCompletedReportIssueDescription,
+              hintText: context.l10n.tripCompletedCommentHint,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(context.l10n.tripCompletedReportIssueSubmit),
+            ),
+          ],
+        );
+      },
+    );
+
+    final issueDescription = descriptionController.text.trim();
+    descriptionController.dispose();
+    if (confirmed != true || !mounted) return;
+
+    if (issueDescription.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.adminSupportReplyRequired)),
+      );
+      return;
+    }
+
+    setState(() => _isReportingIssue = true);
+    try {
+      final trip = _trip;
+      final message = _buildIssueMessage(
+        tripId: tripId,
+        trip: trip,
+        issueDescription: issueDescription,
+      );
+      await _supportRepository.requestTicket(
+        subject: 'Trip issue: $tripId',
+        message: message,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.tripCompletedReportIssueSent)),
+      );
+    } on ClientFunctionsException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.tryAgain)),
       );
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isReportingIssue = false);
     }
+  }
+
+  String _buildIssueMessage({
+    required String tripId,
+    required TripRecord? trip,
+    required String issueDescription,
+  }) {
+    final buffer = StringBuffer('Trip ID: $tripId\n');
+    buffer.writeln('Rating: $_rating/5');
+    if (trip != null) {
+      buffer.writeln('Pickup: ${trip.pickup.address}');
+      buffer.writeln('Destination: ${trip.destination.address}');
+      buffer.writeln('Fare: ${trip.fareFormatted}');
+    }
+    buffer.writeln('\nIssue:\n$issueDescription');
+    return buffer.toString().trim();
   }
 
   @override
@@ -138,7 +255,8 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                     ),
                     SizedBox(height: 12.h),
                     _FooterActions(
-                      onReport: () {},
+                      onReport: _reportIssue,
+                      isReporting: _isReportingIssue,
                       onHome: () => AppNavigation.toHomeAfterLogin(context),
                     ),
                   ],
@@ -601,10 +719,12 @@ class _FooterActions extends StatelessWidget {
   const _FooterActions({
     required this.onReport,
     required this.onHome,
+    this.isReporting = false,
   });
 
   final VoidCallback onReport;
   final VoidCallback onHome;
+  final bool isReporting;
 
   @override
   Widget build(BuildContext context) {
@@ -614,7 +734,7 @@ class _FooterActions extends StatelessWidget {
           width: double.infinity,
           height: 56.h,
           child: OutlinedButton(
-            onPressed: onReport,
+            onPressed: isReporting ? null : onReport,
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.onSurfaceVariant,
               backgroundColor: AppColors.surfaceContainerHigh,
@@ -626,7 +746,14 @@ class _FooterActions extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.report_problem_outlined, size: 20.sp),
+                if (isReporting)
+                  SizedBox(
+                    width: 18.w,
+                    height: 18.h,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(Icons.report_problem_outlined, size: 20.sp),
                 SizedBox(width: 8.w),
                 Text(
                   context.l10n.tripCompletedReportIssue,

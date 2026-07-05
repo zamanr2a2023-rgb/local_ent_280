@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_ent_280/core/navigation/app_navigation.dart';
+import 'package:local_ent_280/core/services/client_functions_service.dart';
 import 'package:local_ent_280/features/trips/data/active_trip_session.dart';
 import 'package:local_ent_280/features/trips/data/models/trip_record.dart';
-import 'package:local_ent_280/features/trips/data/repositories/trip_repository_impl.dart';
 import 'package:local_ent_280/app/presentation/providers/repository_scope.dart';
 import 'package:local_ent_280/features/trips/domain/repositories/trip_repository.dart';
 import 'package:local_ent_280/core/theme/app_colors.dart';
 import 'package:local_ent_280/core/theme/app_screen_util.dart';
 import 'package:local_ent_280/core/localization/l10n_extensions.dart';
 import 'package:local_ent_280/l10n/app_localizations.dart';
+import 'package:local_ent_280/presentation/trip/widgets/client_trip_cancel_dialog.dart';
 import 'package:local_ent_280/presentation/widgets/driver_map_layer.dart';
 
 /// A procurar motorista disponível — `roles/details.md`.
@@ -113,13 +114,20 @@ class _DriverSearchScreenState extends State<DriverSearchScreen> {
       return;
     }
 
+    final reason = await showClientTripCancelReasonDialog(context);
+    if (reason == null || reason.isEmpty || !mounted) return;
+
     setState(() => _isCancelling = true);
+    _tripSubscription?.cancel();
     try {
-      final repository = _tripRepository ?? TripRepositoryImpl(disabled: true);
-      await repository.cancelTripByClient(tripId);
+      final repository = _tripRepository ?? tripRepositoryOf(context);
+      await repository.cancelTripByClient(tripId, reason: reason);
       ActiveTripSession.instance.clear();
       if (!mounted) return;
-      AppNavigation.cancelToTripDestination(context);
+      AppNavigation.toHomeAfterLogin(context);
+    } on ClientFunctionsException catch (error) {
+      if (!mounted) return;
+      _showMessage(error.message);
     } catch (_) {
       if (!mounted) return;
       _showMessage(context.l10n.driverSearchCancelFailed);

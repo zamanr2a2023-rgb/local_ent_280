@@ -1745,6 +1745,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get reservationNoHiddenFees => 'Sem custos ocultos';
 
   @override
+  String get reservationPayFromBalance =>
+      'O total será debitado do seu saldo disponível.';
+
+  @override
+  String get reservationBookingConfirmed => 'Reserva confirmada';
+
+  @override
   String get reservationPaymentMethod => 'Método de Pagamento';
 
   @override
@@ -1894,6 +1901,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tripCompletedReportIssue => 'Reportar problema';
 
   @override
+  String get tripCompletedReportIssueDescription => 'Descreva o que correu mal';
+
+  @override
+  String get tripCompletedReportIssueSubmit => 'Enviar reporte';
+
+  @override
+  String get tripCompletedReportIssueSent =>
+      'Problema reportado. O suporte entrará em contacto em breve.';
+
+  @override
   String get tripInProgressStatusLabel => 'Status da Viagem';
 
   @override
@@ -1981,6 +1998,66 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get driverEnRouteCall => 'Ligar';
+
+  @override
+  String get driverEnRoutePhoneUnavailable =>
+      'Número de telefone do motorista indisponível.';
+
+  @override
+  String get driverEnRouteMessageFailed =>
+      'Não foi possível abrir a app de mensagens neste dispositivo.';
+
+  @override
+  String get driverEnRouteCancelConfirm =>
+      'O motorista já está a caminho. Tem a certeza de que pretende cancelar esta viagem?';
+
+  @override
+  String get tripCancelReasonTitle => 'Porque está a cancelar?';
+
+  @override
+  String get tripCancelReasonSubtitle =>
+      'Selecione um motivo para o motorista saber o que aconteceu.';
+
+  @override
+  String get tripCancelReasonChangedPlans => 'Mudei de planos';
+
+  @override
+  String get tripCancelReasonDriverTooLong =>
+      'O motorista está a demorar demasiado';
+
+  @override
+  String get tripCancelReasonWrongPickup => 'Local de recolha errado';
+
+  @override
+  String get tripCancelReasonBookedByMistake => 'Reservei por engano';
+
+  @override
+  String get tripCancelReasonOther => 'Outro';
+
+  @override
+  String get tripCancelReasonOtherHint => 'Conte-nos mais (obrigatório)';
+
+  @override
+  String get tripCancelReasonRequired =>
+      'Selecione ou escreva um motivo de cancelamento.';
+
+  @override
+  String get tripCancelReasonUnknown => 'Sem motivo indicado';
+
+  @override
+  String get tripCancelSubmit => 'Confirmar cancelamento';
+
+  @override
+  String get driverTripCancelledTitle => 'Viagem cancelada pelo cliente';
+
+  @override
+  String get driverTripCancelledBody => 'O cliente cancelou esta viagem.';
+
+  @override
+  String get driverTripCancelledReasonLabel => 'Motivo';
+
+  @override
+  String get driverTripCancelledAcknowledge => 'Voltar ao início';
 
   @override
   String get tripDestinationSubtitle =>
@@ -4283,6 +4360,13 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
   String get reservationNoHiddenFees => 'Sem custos ocultos';
 
   @override
+  String get reservationPayFromBalance =>
+      'O total será debitado do seu saldo disponível.';
+
+  @override
+  String get reservationBookingConfirmed => 'Reserva confirmada';
+
+  @override
   String get reservationPaymentMethod => 'Método de Pagamento';
 
   @override
@@ -4432,6 +4516,16 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
   String get tripCompletedReportIssue => 'Reportar problema';
 
   @override
+  String get tripCompletedReportIssueDescription => 'Descreva o que correu mal';
+
+  @override
+  String get tripCompletedReportIssueSubmit => 'Enviar reporte';
+
+  @override
+  String get tripCompletedReportIssueSent =>
+      'Problema reportado. O suporte entrará em contacto em breve.';
+
+  @override
   String get tripInProgressStatusLabel => 'Status da Viagem';
 
   @override
@@ -4519,6 +4613,66 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get driverEnRouteCall => 'Ligar';
+
+  @override
+  String get driverEnRoutePhoneUnavailable =>
+      'Número de telefone do motorista indisponível.';
+
+  @override
+  String get driverEnRouteMessageFailed =>
+      'Não foi possível abrir a app de mensagens neste dispositivo.';
+
+  @override
+  String get driverEnRouteCancelConfirm =>
+      'O motorista já está a caminho. Tem a certeza de que pretende cancelar esta viagem?';
+
+  @override
+  String get tripCancelReasonTitle => 'Porque está a cancelar?';
+
+  @override
+  String get tripCancelReasonSubtitle =>
+      'Selecione um motivo para o motorista saber o que aconteceu.';
+
+  @override
+  String get tripCancelReasonChangedPlans => 'Mudei de planos';
+
+  @override
+  String get tripCancelReasonDriverTooLong =>
+      'O motorista está a demorar demasiado';
+
+  @override
+  String get tripCancelReasonWrongPickup => 'Local de recolha errado';
+
+  @override
+  String get tripCancelReasonBookedByMistake => 'Reservei por engano';
+
+  @override
+  String get tripCancelReasonOther => 'Outro';
+
+  @override
+  String get tripCancelReasonOtherHint => 'Conte-nos mais (obrigatório)';
+
+  @override
+  String get tripCancelReasonRequired =>
+      'Selecione ou escreva um motivo de cancelamento.';
+
+  @override
+  String get tripCancelReasonUnknown => 'Sem motivo indicado';
+
+  @override
+  String get tripCancelSubmit => 'Confirmar cancelamento';
+
+  @override
+  String get driverTripCancelledTitle => 'Viagem cancelada pelo cliente';
+
+  @override
+  String get driverTripCancelledBody => 'O cliente cancelou esta viagem.';
+
+  @override
+  String get driverTripCancelledReasonLabel => 'Motivo';
+
+  @override
+  String get driverTripCancelledAcknowledge => 'Voltar ao início';
 
   @override
   String get tripDestinationSubtitle =>

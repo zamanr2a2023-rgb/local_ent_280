@@ -553,13 +553,13 @@ abstract final class AppNavigation {
   }
 
   /// Motorista — novo pedido de viagem.
-  static void toDriverTripRequest(
+  static Future<void> toDriverTripRequest(
     BuildContext context, {
     required String tripId,
     TripRecord? trip,
     DriverRepository? driverRepository,
   }) {
-    Navigator.of(context).push(
+    return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => DriverTripRequestScreen(
           tripId: tripId,
@@ -605,13 +605,13 @@ abstract final class AppNavigation {
   }
 
   /// Motorista — viagem ativa.
-  static void toDriverActiveTrip(
+  static Future<void> toDriverActiveTrip(
     BuildContext context, {
     required String tripId,
     TripRecord? trip,
     DriverRepository? driverRepository,
   }) {
-    Navigator.of(context).pushReplacement(
+    return Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => DriverActiveTripScreen(
           tripId: tripId,

@@ -141,7 +141,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
             tripId: trip.id,
             trip: trip,
             driverRepository: _driverRepository,
-          );
+          ).whenComplete(() {
+            _handlingTripNavigation = false;
+          });
         });
 
     _pendingSubscription = _driverRepository
@@ -154,7 +156,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
             tripId: trip.id,
             trip: trip,
             driverRepository: _driverRepository,
-          );
+          ).whenComplete(() {
+            _handlingTripNavigation = false;
+          });
         });
 
     _statsSubscription = _driverRepository

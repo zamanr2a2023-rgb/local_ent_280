@@ -3347,6 +3347,18 @@ abstract class AppLocalizations {
   /// **'Sem custos ocultos'**
   String get reservationNoHiddenFees;
 
+  /// No description provided for @reservationPayFromBalance.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'O total será debitado do seu saldo disponível.'**
+  String get reservationPayFromBalance;
+
+  /// No description provided for @reservationBookingConfirmed.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Reserva confirmada'**
+  String get reservationBookingConfirmed;
+
   /// No description provided for @reservationPaymentMethod.
   ///
   /// In pt_PT, this message translates to:
@@ -3635,6 +3647,24 @@ abstract class AppLocalizations {
   /// **'Reportar problema'**
   String get tripCompletedReportIssue;
 
+  /// No description provided for @tripCompletedReportIssueDescription.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Descreva o que correu mal'**
+  String get tripCompletedReportIssueDescription;
+
+  /// No description provided for @tripCompletedReportIssueSubmit.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Enviar reporte'**
+  String get tripCompletedReportIssueSubmit;
+
+  /// No description provided for @tripCompletedReportIssueSent.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Problema reportado. O suporte entrará em contacto em breve.'**
+  String get tripCompletedReportIssueSent;
+
   /// No description provided for @tripInProgressStatusLabel.
   ///
   /// In pt_PT, this message translates to:
@@ -3790,6 +3820,114 @@ abstract class AppLocalizations {
   /// In pt_PT, this message translates to:
   /// **'Ligar'**
   String get driverEnRouteCall;
+
+  /// No description provided for @driverEnRoutePhoneUnavailable.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Número de telefone do motorista indisponível.'**
+  String get driverEnRoutePhoneUnavailable;
+
+  /// No description provided for @driverEnRouteMessageFailed.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Não foi possível abrir a app de mensagens neste dispositivo.'**
+  String get driverEnRouteMessageFailed;
+
+  /// No description provided for @driverEnRouteCancelConfirm.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'O motorista já está a caminho. Tem a certeza de que pretende cancelar esta viagem?'**
+  String get driverEnRouteCancelConfirm;
+
+  /// No description provided for @tripCancelReasonTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Porque está a cancelar?'**
+  String get tripCancelReasonTitle;
+
+  /// No description provided for @tripCancelReasonSubtitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Selecione um motivo para o motorista saber o que aconteceu.'**
+  String get tripCancelReasonSubtitle;
+
+  /// No description provided for @tripCancelReasonChangedPlans.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Mudei de planos'**
+  String get tripCancelReasonChangedPlans;
+
+  /// No description provided for @tripCancelReasonDriverTooLong.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'O motorista está a demorar demasiado'**
+  String get tripCancelReasonDriverTooLong;
+
+  /// No description provided for @tripCancelReasonWrongPickup.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Local de recolha errado'**
+  String get tripCancelReasonWrongPickup;
+
+  /// No description provided for @tripCancelReasonBookedByMistake.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Reservei por engano'**
+  String get tripCancelReasonBookedByMistake;
+
+  /// No description provided for @tripCancelReasonOther.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Outro'**
+  String get tripCancelReasonOther;
+
+  /// No description provided for @tripCancelReasonOtherHint.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Conte-nos mais (obrigatório)'**
+  String get tripCancelReasonOtherHint;
+
+  /// No description provided for @tripCancelReasonRequired.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Selecione ou escreva um motivo de cancelamento.'**
+  String get tripCancelReasonRequired;
+
+  /// No description provided for @tripCancelReasonUnknown.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Sem motivo indicado'**
+  String get tripCancelReasonUnknown;
+
+  /// No description provided for @tripCancelSubmit.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Confirmar cancelamento'**
+  String get tripCancelSubmit;
+
+  /// No description provided for @driverTripCancelledTitle.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Viagem cancelada pelo cliente'**
+  String get driverTripCancelledTitle;
+
+  /// No description provided for @driverTripCancelledBody.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'O cliente cancelou esta viagem.'**
+  String get driverTripCancelledBody;
+
+  /// No description provided for @driverTripCancelledReasonLabel.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Motivo'**
+  String get driverTripCancelledReasonLabel;
+
+  /// No description provided for @driverTripCancelledAcknowledge.
+  ///
+  /// In pt_PT, this message translates to:
+  /// **'Voltar ao início'**
+  String get driverTripCancelledAcknowledge;
 
   /// No description provided for @tripDestinationSubtitle.
   ///

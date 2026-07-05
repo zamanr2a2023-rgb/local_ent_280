@@ -1,31 +1,35 @@
-import 'dart:convert';
-
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
-import 'package:local_ent_280/firebase_options.dart';
 
-/// Calls client Cloud Functions via the callable HTTP endpoint.
-///
-/// Uses [http] + Firebase Auth token instead of the native
-/// [cloud_functions] plugin to avoid platform-channel setup issues.
+/// Calls client Cloud Functions via the official [cloud_functions] plugin.
 class ClientFunctionsService {
   ClientFunctionsService({
     FirebaseAuth? auth,
-    http.Client? httpClient,
-    String? projectId,
+    FirebaseFunctions? functions,
     String? region,
   })  : _auth = auth ?? FirebaseAuth.instance,
-        _http = httpClient ?? http.Client(),
-        _projectId =
-            projectId ?? DefaultFirebaseOptions.currentPlatform.projectId,
-        _region = region ?? _defaultRegion;
+        _region = region ?? _defaultRegion,
+        _functions = functions;
 
   static const _defaultRegion = 'europe-southwest1';
 
+  static const _callableRegions = {
+    'requestTrip': _defaultRegion,
+    'transitionTripState': _defaultRegion,
+    'cancelTrip': _defaultRegion,
+    'requestSupportTicket': _defaultRegion,
+    'bookVehicleRental': _defaultRegion,
+  };
+
   final FirebaseAuth _auth;
-  final http.Client _http;
-  final String _projectId;
   final String _region;
+  final FirebaseFunctions? _functions;
+
+  FirebaseFunctions _resolveFunctions(String name) {
+    if (_functions != null) return _functions;
+    final region = _callableRegions[name] ?? _region;
+    return FirebaseFunctions.instanceFor(region: region);
+  }
 
   Future<void> requestTrip({
     required String tripId,
@@ -56,95 +60,131 @@ class ClientFunctionsService {
     });
   }
 
+  Future<void> cancelTrip({
+    required String tripId,
+    String actor = 'client',
+    String type = 'pre_arrival',
+    int feeAmountMinor = 0,
+    String feeCurrency = 'EUR',
+    String? reason,
+  }) async {
+    await call('cancelTrip', {
+      'tripId': tripId,
+      'actor': actor,
+      'type': type,
+      'fee': {
+        'amountMinor': feeAmountMinor,
+        'currency': feeCurrency,
+      },
+      if (reason != null && reason.isNotEmpty) 'reason': reason,
+    });
+  }
+
+  Future<void> requestSupportTicket({
+    required String subject,
+    required String message,
+  }) async {
+    await call('requestSupportTicket', {
+      'subject': subject.trim(),
+      'message': message.trim(),
+    });
+  }
+
+  Future<String> bookVehicleRental({
+    required String vehicleId,
+    required String vehicleLabel,
+    required DateTime scheduledAt,
+    required String pickupAddress,
+    required String returnAddress,
+    required int totalMinor,
+    bool fullInsurance = false,
+  }) async {
+    final result = await callWithResult('bookVehicleRental', {
+      'vehicleId': vehicleId,
+      'vehicleLabel': vehicleLabel,
+      'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      'pickupAddress': pickupAddress,
+      'returnAddress': returnAddress,
+      'totalMinor': totalMinor,
+      'fullInsurance': fullInsurance,
+    });
+    final reservationId = result?['reservationId'] as String? ?? '';
+    if (reservationId.isEmpty) {
+      throw const ClientFunctionsException('Reservation could not be confirmed.');
+    }
+    return reservationId;
+  }
+
   Future<void> call(String name, Map<String, dynamic> parameters) async {
-    final token = await _requireIdToken(forceRefresh: false);
+    await callWithResult(name, parameters);
+  }
+
+  Future<Map<String, dynamic>?> callWithResult(
+    String name,
+    Map<String, dynamic> parameters,
+  ) async {
+    await _ensureSignedIn();
     try {
-      await _postCallable(name: name, parameters: parameters, token: token);
-    } on ClientFunctionsException catch (error) {
-      if (!error.retryWithFreshToken) rethrow;
-      final refreshed = await _requireIdToken(forceRefresh: true);
-      await _postCallable(name: name, parameters: parameters, token: refreshed);
+      return await _invokeCallable(name: name, parameters: parameters);
+    } on FirebaseFunctionsException catch (error) {
+      if (error.code != 'unauthenticated') {
+        throw _mapFunctionsException(error);
+      }
+      await _auth.currentUser?.getIdToken(true);
+      try {
+        return await _invokeCallable(name: name, parameters: parameters);
+      } on FirebaseFunctionsException catch (retryError) {
+        throw _mapFunctionsException(retryError);
+      }
     }
   }
 
-  Future<String> _requireIdToken({required bool forceRefresh}) async {
+  Future<Map<String, dynamic>?> _invokeCallable({
+    required String name,
+    required Map<String, dynamic> parameters,
+  }) async {
+    final functions = _resolveFunctions(name);
+    final result = await functions.httpsCallable(name).call(parameters);
+    final data = result.data;
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return null;
+  }
+
+  Future<void> _ensureSignedIn() async {
     final user = _auth.currentUser;
     if (user == null) {
       throw const ClientFunctionsException('Not signed in.');
     }
-    final token = await user.getIdToken(forceRefresh);
+    final token = await user.getIdToken();
     if (token == null || token.isEmpty) {
       throw const ClientFunctionsException('Could not obtain auth token.');
     }
-    return token;
   }
 
-  Future<void> _postCallable({
-    required String name,
-    required Map<String, dynamic> parameters,
-    required String token,
-  }) async {
-    final uri = Uri.parse(
-      'https://$_region-$_projectId.cloudfunctions.net/$name',
+  ClientFunctionsException _mapFunctionsException(
+    FirebaseFunctionsException error,
+  ) {
+    final status = error.code.toUpperCase();
+    final message = error.message?.trim().isNotEmpty == true
+        ? error.message!.trim()
+        : 'Cloud function failed.';
+    return ClientFunctionsException(
+      _mapCallableStatus(status, message),
+      status: status,
+      details: error.details,
+      retryWithFreshToken: error.code == 'unauthenticated',
     );
-    final response = await _http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'data': parameters}),
-    );
-
-    Map<String, dynamic>? body;
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        body = decoded;
-      } else if (decoded is Map) {
-        body = Map<String, dynamic>.from(decoded);
-      }
-    } catch (_) {
-      throw ClientFunctionsException(
-        'Invalid response from $name (${response.statusCode}).',
-      );
-    }
-
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      throw const ClientFunctionsException(
-        'Authentication failed. Sign in again and retry.',
-        retryWithFreshToken: true,
-      );
-    }
-
-    final error = body?['error'];
-    if (error is Map) {
-      final status = error['status']?.toString() ?? '';
-      final message = error['message']?.toString() ?? 'Cloud function failed.';
-      final details = error['details'];
-      throw ClientFunctionsException(
-        _mapCallableStatus(status, message),
-        status: status,
-        details: details is Map
-            ? Map<String, dynamic>.from(details)
-            : details,
-        retryWithFreshToken: status == 'UNAUTHENTICATED',
-      );
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ClientFunctionsException(
-        'Cloud function failed (${response.statusCode}).',
-      );
-    }
   }
 
   String _mapCallableStatus(String status, String message) {
     return switch (status) {
-      'FAILED_PRECONDITION' => message,
-      'INVALID_ARGUMENT' => message,
-      'ALREADY_EXISTS' => message,
-      'UNAUTHENTICATED' => 'Authentication failed. Sign in again and retry.',
+      'FAILED_PRECONDITION' || 'failed-precondition' => message,
+      'INVALID_ARGUMENT' || 'invalid-argument' => message,
+      'ALREADY_EXISTS' || 'already-exists' => message,
+      'UNAUTHENTICATED' || 'unauthenticated' =>
+        'Authentication failed. Sign in again and retry.',
       _ => message,
     };
   }

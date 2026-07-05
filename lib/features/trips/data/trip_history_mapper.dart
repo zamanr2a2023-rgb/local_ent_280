@@ -24,7 +24,7 @@ class TripHistoryMapper {
           ? 'Premium'
           : trip.transportType.name.trim(),
       duration: minutes > 0 ? '$minutes min' : '',
-      status: _mapStatus(trip.status),
+      status: _mapStatus(trip),
       imageUrl: AppAssets.tripHistoryMarinaImage,
       createdAt: createdAt,
       costMinor: costMinor,
@@ -32,14 +32,24 @@ class TripHistoryMapper {
     );
   }
 
-  static TripHistoryStatus _mapStatus(String status) {
-    return switch (status.toUpperCase()) {
+  static TripHistoryStatus _mapStatus(TripRecord trip) {
+    if (trip.completedAt != null) {
+      return TripHistoryStatus.concluida;
+    }
+
+    final status = trip.status.trim().toUpperCase();
+    return switch (status) {
       'CANCELLED_BY_CLIENT' ||
       'CANCELLED_BY_DRIVER' ||
       'NO_SHOW' ||
-      'NO_DRIVERS_AVAILABLE' =>
+      'NO_DRIVERS_AVAILABLE' ||
+      'DRIVER_DECLINED' =>
         TripHistoryStatus.cancelada,
-      'COMPLETED' || 'TRIP_COMPLETED' || 'DONE' => TripHistoryStatus.concluida,
+      'COMPLETED' ||
+      'CHARGE_APPLIED' ||
+      'TRIP_COMPLETED' ||
+      'DONE' =>
+        TripHistoryStatus.concluida,
       'REQUESTED' || 'DRIVER_ASSIGNED_WAITING_ACCEPTANCE' =>
         TripHistoryStatus.agendada,
       _ => TripHistoryStatus.emCurso,

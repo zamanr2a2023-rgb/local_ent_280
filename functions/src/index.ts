@@ -15,6 +15,7 @@ import { buildOperationalMonitoringFunctions } from "./operations/buildOperation
 import { buildReservationsJobs } from "./reservations/buildReservationsJobs";
 import { buildSchedules } from "./schedules/buildSchedules";
 import { buildTripPackageFunctions } from "./trip_packages/buildTripPackageFunctions";
+import { buildVehicleRentalFunctions } from "./rentals/buildVehicleRentalFunctions";
 import { buildTripsFunctions } from "./trips/buildTripsFunctions";
 
 setGlobalOptions({ maxInstances: 10 });
@@ -63,6 +64,8 @@ const operationalMonitoringFunctions = buildOperationalMonitoringFunctions({
   realtimeDb,
   auth,
 });
+
+const vehicleRentalFunctions = buildVehicleRentalFunctions({ firestore });
 
 const reservationsJobs = buildReservationsJobs({
   tripsFunctions,
@@ -122,6 +125,7 @@ export const resolveAuditSubjectIdentities =
   adminFunctions.resolveAuditSubjectIdentities;
 export const requestPasswordHelp = adminFunctions.requestPasswordHelp;
 export const requestSupportTicket = adminFunctions.requestSupportTicket;
+export const bookVehicleRental = vehicleRentalFunctions.bookVehicleRental;
 export const resolvePasswordHelpRequest =
   adminFunctions.resolvePasswordHelpRequest;
 export const sendSupportChatMessage = chatFunctions.sendSupportChatMessage;

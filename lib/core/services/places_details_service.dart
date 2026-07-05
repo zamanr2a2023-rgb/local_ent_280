@@ -35,7 +35,7 @@ class PlacesDetailsService {
       {
         'place_id': placeId,
         'fields': 'geometry',
-        'key': GoogleMapsConfig.placesApiKey,
+        'key': GoogleMapsConfig.preferredWebServicesKey,
         'language': 'pt',
       },
     );
@@ -69,7 +69,7 @@ class PlacesDetailsService {
       '/maps/api/geocode/json',
       {
         'address': address,
-        'key': GoogleMapsConfig.placesApiKey,
+        'key': GoogleMapsConfig.preferredWebServicesKey,
         'language': 'pt',
         'region': 'cv',
       },
